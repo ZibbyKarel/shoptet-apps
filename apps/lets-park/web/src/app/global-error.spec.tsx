@@ -71,8 +71,8 @@ describe('global-error', () => {
     // re-establish — `IntlProvider`, handed the catalog the file imports
     // statically — really is re-established, rather than the file having
     // hard-coded the sentences.
-    expect(screen.getByText('Něco se nepovedlo')).toBeInTheDocument();
-    expect(screen.getByText('Zkuste to prosím znovu za chvíli.')).toBeInTheDocument();
+    expect(screen.getByText('errorTitle')).toBeInTheDocument();
+    expect(screen.getByText('errorUnknown')).toBeInTheDocument();
   });
 
   it('never puts the error, its message or its digest on the page', () => {
@@ -87,7 +87,7 @@ describe('global-error', () => {
     const reset = jest.fn();
     render(<GlobalError error={boom()} reset={reset} />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Zkusit znovu' }));
+    await userEvent.click(screen.getByRole('button', { name: 'retry' }));
 
     expect(reset).toHaveBeenCalledTimes(1);
   });
@@ -113,9 +113,9 @@ describe('global-error', () => {
     render(<GlobalError error={boom()} reset={jest.fn()} />);
 
     expect(document.documentElement).toHaveAttribute('lang', 'en');
-    expect(screen.getByText('Something went wrong')).toBeInTheDocument();
-    expect(screen.getByText('Please try again in a moment.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
+    expect(screen.getByText('errorTitle')).toBeInTheDocument();
+    expect(screen.getByText('errorUnknown')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'retry' })).toBeInTheDocument();
   });
 
   it('negotiates that language in the browser, because no server resolved one', () => {
