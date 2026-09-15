@@ -92,6 +92,15 @@ export type BulkUnavailableReason = (typeof BULK_UNAVAILABLE_REASONS)[number];
 export const MAX_BULK_BOOKING_DAYS = 31;
 
 /**
+ * Upper bound on how many confirmed reservations one user may hold in a single
+ * calendar month. Enforced server-side, inside the same transaction as every
+ * insert, by `assertWithinMonthlyReservationCap`
+ * (`apps/lets-park/api/src/reservations/monthly-reservation-cap.ts`) — this is
+ * the single source of the number `5`; nothing else may write it as a literal.
+ */
+export const MONTHLY_RESERVATION_CAP = 5;
+
+/**
  * Upper bound on the number of months `admin.window.months` may report on in
  * one call, counting both endpoints of the inclusive `from`–`to` range.
  *

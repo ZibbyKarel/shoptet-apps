@@ -32,11 +32,17 @@
  */
 
 import type { Prisma } from '@lets-park/database';
-import { endOfMonth, startOfMonth, toYearMonth, type DateOnly } from '@lets-park/shared-types';
+import {
+  endOfMonth,
+  MONTHLY_RESERVATION_CAP,
+  startOfMonth,
+  toYearMonth,
+  type DateOnly,
+} from '@lets-park/shared-types';
 import { toDateColumn } from '../common/prisma-mapping';
 import { DomainError } from '../common/errors/domain-error';
 
-export const MONTHLY_RESERVATION_CAP = 5;
+export { MONTHLY_RESERVATION_CAP };
 
 /**
  * Throws `DomainError('MONTHLY_RESERVATION_LIMIT_REACHED')` if `userId` already
