@@ -199,6 +199,12 @@ function meKey() {
   return createApiQueryUtils(buildClient() as never).me.get.queryOptions().queryKey;
 }
 
+function myMonthKey(month: string) {
+  return createApiQueryUtils(buildClient() as never).reservation.myMonth.queryOptions({
+    input: { month },
+  }).queryKey;
+}
+
 interface MyMonthOutput {
   readonly month: string;
   readonly reservedDates: readonly string[];
@@ -535,7 +541,7 @@ describe('BulkReservationModal — the monthly cap and the reserved-day highligh
     await user.click(firstSelectable);
 
     const secondSelectable = screen.getByRole('button', {
-      name: 'dayCellBlocked: date=pátek 18. září 2026',
+      name: 'dayCellCapped: date=pátek 18. září 2026',
     });
     expect(secondSelectable).toBeDisabled();
     // The already-selected one must stay clickable, so it can be deselected.
@@ -547,6 +553,90 @@ describe('BulkReservationModal — the monthly cap and the reserved-day highligh
 
     const day = await screen.findByRole('button', { name: 'dayCell: date=čtvrtek 17. září 2026' });
     expect(day).not.toBeDisabled();
+  });
+
+  it('shows the cap note in the same session it is first hit, even with zero existing reservations (I5)', async () => {
+    // `existingCount` stays 0 all along — only `selected.length` moves — so a
+    // guard of `existingCount > 0` alone would never show this note, even
+    // though day 6 onward greys out mid-session.
+    const { user } = setup({ myMonthOutput: { month: '2026-09', reservedDates: [], count: 0 } });
+
+    expect(screen.queryByText(/^capNote:/)).not.toBeInTheDocument();
+
+    for (const label of [
+      'dayCell: date=úterý 1. září 2026',
+      'dayCell: date=středa 2. září 2026',
+      'dayCell: date=čtvrtek 3. září 2026',
+      'dayCell: date=pátek 4. září 2026',
+      'dayCell: date=pondělí 7. září 2026',
+    ]) {
+      await user.click(screen.getByRole('button', { name: label }));
+    }
+
+    expect(screen.getByText('capNote: count=0,cap=5')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'dayCellCapped: date=úterý 8. září 2026' })
+    ).toBeDisabled();
+  });
+
+  it('renders errorMonthlyCapReached with the real cap value, not a hardcoded literal (I4)', async () => {
+    const { user } = setup({
+      previewFailure: await contractFailure('MONTHLY_RESERVATION_LIMIT_REACHED'),
+    });
+
+    await user.click(screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' }));
+    await user.click(screen.getByRole('button', { name: 'ctaGenerate: count=1' }));
+
+    expect(await screen.findByText('errorMonthlyCapReached: cap=5')).toBeInTheDocument();
+  });
+});
+
+describe('BulkReservationModal — cap/highlight suppression while booking for someone else (C1)', () => {
+  const ADMIN_OPTIONS: readonly HolderOption[] = [
+    { userId: 'admin-1', name: 'Dev Admin', licensePlate: null },
+    { userId: 'user-1', name: 'Dev User', licensePlate: '1AB 2345' },
+  ];
+
+  it('leaves the grid fully enabled and unhighlighted for a colleague, even when the admin is at the cap', async () => {
+    const { user } = setup({
+      isAdmin: true,
+      viewerUserId: 'admin-1',
+      holderOptions: ADMIN_OPTIONS,
+      // The admin themselves is at the cap and already holds today's cell —
+      // if this leaked through, the whole grid would be disabled/highlighted.
+      myMonthOutput: { month: '2026-09', reservedDates: ['2026-09-16'], count: 5 },
+    });
+
+    await user.selectOptions(screen.getByLabelText('holderField'), 'user-1');
+
+    const previouslyReserved = await screen.findByRole('button', {
+      name: 'dayCell: date=středa 16. září 2026',
+    });
+    expect(previouslyReserved).not.toBeDisabled();
+    expect(previouslyReserved.style.backgroundColor).toBe('');
+
+    const anyOtherDay = screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' });
+    expect(anyOtherDay).not.toBeDisabled();
+    expect(screen.queryByText(/^capNote:/)).not.toBeInTheDocument();
+  });
+
+  it('restores the cap/highlight the moment the holder is switched back to the admin themselves', async () => {
+    const { user } = setup({
+      isAdmin: true,
+      viewerUserId: 'admin-1',
+      holderOptions: ADMIN_OPTIONS,
+      myMonthOutput: { month: '2026-09', reservedDates: ['2026-09-16'], count: 5 },
+    });
+
+    await user.selectOptions(screen.getByLabelText('holderField'), 'user-1');
+    expect(
+      screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' })
+    ).not.toBeDisabled();
+
+    await user.selectOptions(screen.getByLabelText('holderField'), 'admin-1');
+    expect(
+      await screen.findByRole('button', { name: 'dayCellCapped: date=úterý 1. září 2026' })
+    ).toBeDisabled();
   });
 });
 
@@ -909,6 +999,17 @@ describe('BulkReservationModal — the confirmed result against the proposal', (
       expect(invalidate).toHaveBeenCalledWith({ queryKey: dayKey('2026-09-01') });
     });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: dayKey('2026-09-02') });
+  });
+
+  it('invalidates reservation.myMonth for the batch month too (I6)', async () => {
+    // Otherwise a reopened modal can show the pre-write cap/highlight state
+    // for up to `reservation.myMonth`'s stale time.
+    const { user, invalidate } = setup();
+    await user.click(await reachSchedule(user));
+
+    await waitFor(() => {
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: myMonthKey('2026-09') });
+    });
   });
 
   it('invalidates a day even when nothing could be done for it', async () => {

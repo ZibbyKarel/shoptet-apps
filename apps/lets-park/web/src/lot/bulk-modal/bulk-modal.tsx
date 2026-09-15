@@ -191,15 +191,44 @@ function BulkReservationModalContent({
     holderForm.reset({ userId: defaultBulkHolderId(viewerUserId, holderOptions) });
   }, [holderOptions, viewerUserId, holderForm]);
 
+  // Live, not `getValues` — the cap-disable and reserved-day highlight below
+  // have to react to the admin changing the holder `<select>` *before* they
+  // submit, not just at submit time (the one place `getValues` was already
+  // enough, further down at `onConfirm`).
+  const holderId = holderForm.watch('userId');
+
   const profile = useCurrentUser();
   const spotList = useQuery({ ...api.spot.list.queryOptions(), enabled: open });
   const monthSummary = useQuery({
     ...api.reservation.myMonth.queryOptions({ input: { month: toYearMonth(anchorDate) } }),
     enabled: open,
   });
-  const reservedDates = new Set(monthSummary.data?.reservedDates ?? []);
+
+  /**
+   * `reservation.myMonth` is deliberately caller-scoped — it only ever answers
+   * "the viewer's own month" (see the contract doc comment) — but the
+   * server's cap check (`assertWithinMonthlyReservationCap`, called from
+   * `bulk-reservation.service.ts`) is enforced against the **holder**, who can
+   * be someone else entirely while `showHolderForm` is open. Reading
+   * `monthSummary` straight into the grid below would disable the whole
+   * calendar for an admin near their own cap even when the colleague they are
+   * booking for has plenty of room — a real regression of a working admin
+   * flow.
+   *
+   * `viewerUserId === null` (the profile still loading) does not count as
+   * "someone else": there is nothing to compare `holderId` against yet, and
+   * defaulting to "someone else" would suppress the highlight/cap for every
+   * admin for one render for no reason.
+   */
+  const bookingForSomeoneElse =
+    showHolderForm && viewerUserId !== null && holderId !== viewerUserId;
+  const reservedDates = bookingForSomeoneElse
+    ? new Set<DateOnly>()
+    : new Set(monthSummary.data?.reservedDates ?? []);
   const existingCount = monthSummary.data?.count ?? 0;
-  const remainingSlots = Math.max(0, MONTHLY_RESERVATION_CAP - existingCount);
+  const remainingSlots = bookingForSomeoneElse
+    ? Number.POSITIVE_INFINITY
+    : Math.max(0, MONTHLY_RESERVATION_CAP - existingCount);
   const preferredSpot = toPreferredSpotView(
     profile.data === undefined ? undefined : profile.data.preferredParkingSpotId,
     spotList.data?.spots,
@@ -230,12 +259,24 @@ function BulkReservationModalContent({
    * The refetch is not redundant with the realtime broadcast: `canReserve` and
    * `viewerReservationId` are viewer-relative, and no broadcast can carry them
    * (the same reasoning as `LotScreen`'s `onMutationSuccess`).
+   *
+   * `reservation.myMonth` is invalidated too, once per distinct month among
+   * `dates` (a batch can only ever span one month, by contract rule, so this
+   * is one invalidation in practice) — otherwise a reopened modal can show the
+   * cap/highlight state from before this write for up to the query's stale
+   * time, because nothing else in this flow ever invalidates that query.
    */
   const invalidateDays = useCallback(
     (dates: readonly DateOnly[]) => {
       for (const date of dates) {
         void queryClient.invalidateQueries({
           queryKey: api.overview.day.queryOptions({ input: { date } }).queryKey,
+        });
+      }
+      const months = new Set(dates.map((date) => toYearMonth(date)));
+      for (const month of months) {
+        void queryClient.invalidateQueries({
+          queryKey: api.reservation.myMonth.queryOptions({ input: { month } }).queryKey,
         });
       }
     },
@@ -281,6 +322,12 @@ function BulkReservationModalContent({
   // `holderError` is optional (existing test call sites never pass it), so
   // fold its `undefined` into `null` explicitly rather than leaning on `==`.
   const displayedError = failure ?? (isAdmin ? (holderError ?? null) : null);
+  const displayedErrorKey = displayedError === null ? null : toBulkErrorMessageKey(displayedError);
+  // `cap` is only ever interpolated into `errorMonthlyCapReached`'s copy —
+  // passing it unconditionally for every key would also feed it to keys with
+  // no `{cap}` placeholder at all.
+  const displayedErrorValues =
+    displayedErrorKey === 'errorMonthlyCapReached' ? { cap: MONTHLY_RESERVATION_CAP } : undefined;
   // Gated on `open`, matching what the removed local `<ToastRegion>` got for
   // free: it was a descendant of `<Modal open={open}>`, which renders nothing
   // at all while closed (`modal.tsx`'s own early return). This component is
@@ -289,7 +336,7 @@ function BulkReservationModalContent({
   // (shared with `SpotDialog`, which shows it unconditionally) would publish a
   // second, duplicate toast for the same failure while this modal is closed.
   useNotify(
-    open && displayedError !== null ? t(toBulkErrorMessageKey(displayedError)) : null,
+    open && displayedErrorKey !== null ? t(displayedErrorKey, displayedErrorValues) : null,
     'danger'
   );
   useNotify(open && result !== null ? t('resultSuccessToast') : null, 'success');
@@ -532,14 +579,20 @@ function BulkReservationModalContent({
                           ? t('dayCellReserved', { date: f.fullDate(day.date) })
                           : day.selectable &&
                               !(selectedSet.has(day.date) || selected.length < remainingSlots)
-                            ? t('dayCellBlocked', { date: f.fullDate(day.date) })
+                            ? // Distinct from `dayCellBlocked`: this day is a perfectly
+                              // good business day (`day.selectable`) that only can't be
+                              // picked *right now* because the batch would exceed the
+                              // monthly cap — a weekend/holiday/past-day cell never
+                              // reaches this branch. Unreachable while `bookingForSomeoneElse`
+                              // suppresses the cap (`remainingSlots` is `Infinity` there).
+                              t('dayCellCapped', { date: f.fullDate(day.date) })
                             : day.selectable
                               ? t('dayCell', { date: f.fullDate(day.date) })
                               : t('dayCellBlocked', { date: f.fullDate(day.date) })
                       }
-                      style={
+                      accentColor={
                         !day.selectable && day.block === 'ALREADY_RESERVED' && viewerUserId !== null
-                          ? { backgroundColor: carColorVar(viewerUserId) }
+                          ? carColorVar(viewerUserId)
                           : undefined
                       }
                       onClick={() => {
@@ -568,7 +621,20 @@ function BulkReservationModalContent({
         <Text as="span" size="sm" weight="bold" tone="default">
           {preferredSpotNote()}
         </Text>
-        {existingCount > 0 ? (
+        {/*
+          Shown whenever the cap is a live fact for this booking: the viewer
+          already has reservations this month (`existingCount > 0`, so the
+          count itself is worth showing), OR this session's own selection has
+          reached the cap together with what already existed
+          (`existingCount + selected.length >= MONTHLY_RESERVATION_CAP`) — the
+          case a viewer starting the month at zero and picking 5 days in this
+          one session hits, where `existingCount` alone would stay `0` and the
+          note would never appear even though day 6 onward is greying out.
+          Suppressed entirely under `bookingForSomeoneElse`, matching the whole
+          cap-disable path it explains.
+        */}
+        {!bookingForSomeoneElse &&
+        (existingCount > 0 || existingCount + selected.length >= MONTHLY_RESERVATION_CAP) ? (
           <Text as="span" size="sm" tone="subtle">
             {t('capNote', { count: existingCount, cap: MONTHLY_RESERVATION_CAP })}
           </Text>
