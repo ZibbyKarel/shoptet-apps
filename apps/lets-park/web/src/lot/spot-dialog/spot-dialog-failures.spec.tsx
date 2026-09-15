@@ -12,11 +12,6 @@ import { mockedT } from '../../testing/mock-translations';
 import { failureWithCode } from '../../testing/contract-failure';
 import { renderDialog } from './spot-dialog.test-helpers';
 
-jest.mock('next-intl', () => ({
-  ...jest.requireActual('next-intl'),
-  useTranslations: () => mockedT,
-}));
-
 describe('SpotDialog — failures', () => {
   it('renders a contract error by its code, never by its message', async () => {
     // The error carries a developer-facing English `message`, which must not
