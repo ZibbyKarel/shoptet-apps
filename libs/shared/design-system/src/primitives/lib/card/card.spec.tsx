@@ -24,6 +24,18 @@ describe('Card', () => {
     expect(screen.getByTestId('card')).toHaveClass('py-8', 'px-4');
   });
 
+  it('emits no h-full class by default', () => {
+    render(<Card data-testid="card" />);
+
+    expect(screen.getByTestId('card').className).not.toContain('h-full');
+  });
+
+  it('emits h-full when fillHeight is set', () => {
+    render(<Card data-testid="card" fillHeight />);
+
+    expect(screen.getByTestId('card')).toHaveClass('h-full');
+  });
+
   it('forwards a ref to the underlying element', () => {
     const ref = { current: null as HTMLDivElement | null };
     render(<Card ref={ref}>content</Card>);

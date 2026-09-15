@@ -25,7 +25,7 @@
  */
 
 import type { DayOverviewOutput, DaySpotOverview } from '@lets-park/contract';
-import { Badge, Button, Stack } from '@lets-park/design-system/primitives';
+import { Badge, Button, Chip, Stack, Text } from '@lets-park/design-system/primitives';
 import { DataTable } from '@lets-park/design-system/compounds';
 import type { DataTableColumn } from '@lets-park/design-system/compounds';
 import { useDateFormatters, useTranslations } from '@lets-park/i18n';
@@ -62,13 +62,21 @@ export function AdminDayScreen({ date, day, onRetry, onOpenLot }: AdminDayScreen
       id: 'label',
       header: t('dayColumnLabel'),
       sortValue: (row) => row.spot.label,
-      cell: (row) => <span className="font-bold text-fg">{row.spot.label}</span>,
+      cell: (row) => (
+        <Text as="span" weight="bold">
+          {row.spot.label}
+        </Text>
+      ),
     },
     {
       id: 'group',
       header: t('dayColumnGroup'),
       sortValue: (row) => row.spot.group,
-      cell: (row) => <span className="text-fg-2">{row.spot.group}</span>,
+      cell: (row) => (
+        <Text as="span" tone="muted">
+          {row.spot.group}
+        </Text>
+      ),
     },
     {
       id: 'status',
@@ -81,16 +89,21 @@ export function AdminDayScreen({ date, day, onRetry, onOpenLot }: AdminDayScreen
           : `1 ${row.reservation.holder.name.toLocaleLowerCase('cs-CZ')}`,
       cell: (row) =>
         row.reservation === null ? (
-          <span className="text-fg-3">{t('dayStatusFree')}</span>
+          <Text as="span" tone="subtle">
+            {t('dayStatusFree')}
+          </Text>
         ) : (
-          <span className="text-fg">
-            {t('dayStatusTaken', { name: row.reservation.holder.name })}
+          // The `ml-2` on the hand-rolled guest tag was the gap between the
+          // holder's name and the tag next to it — a row `Stack` with that
+          // same gap replaces both the margin and the tag's own markup.
+          <Stack direction="row" align="center" spacing={2}>
+            <Text as="span">{t('dayStatusTaken', { name: row.reservation.holder.name })}</Text>
             {row.reservation.holder.kind === 'GUEST' ? (
-              <span className="ml-2 rounded-xs bg-brand-yellow-100 px-2 py-0.5 text-xs font-bold uppercase tracking-caps text-fg">
+              <Badge size="sm" tone="tag">
                 {tLot('guestHolder')}
-              </span>
+              </Badge>
             ) : null}
-          </span>
+          </Stack>
         ),
     },
     {
@@ -100,7 +113,9 @@ export function AdminDayScreen({ date, day, onRetry, onOpenLot }: AdminDayScreen
       sortValue: (row) => row.waitlistCount,
       cell: (row) =>
         row.waitlistCount === 0 ? (
-          <span className="text-fg-3">{t('dayQueueNone')}</span>
+          <Text as="span" tone="subtle">
+            {t('dayQueueNone')}
+          </Text>
         ) : (
           <Badge tone="warning">{t('dayQueueCount', { count: row.waitlistCount })}</Badge>
         ),
@@ -116,17 +131,21 @@ export function AdminDayScreen({ date, day, onRetry, onOpenLot }: AdminDayScreen
         return (
           <Stack spacing={6}>
             <Stack direction="row" wrap align="center" justify="between" spacing={4}>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-caps text-fg-3">
+              <Stack spacing={1}>
+                <Text size="xs" weight="bold" tone="subtle" tracking="caps" transform="uppercase">
                   {t('dayEyebrow')}
-                </p>
-                <h3 className="mt-1 text-2xl font-bold tracking-tight text-fg">
+                </Text>
+                <Text as="h3" size="2xl" weight="bold" tracking="tight">
                   {f.fullDate(date)}
-                </h3>
-              </div>
+                </Text>
+              </Stack>
               <Stack direction="row" wrap align="center" spacing={3}>
-                <CountPill dotClassName="bg-brand-green" label={t('dayFree', { count: free })} />
-                <CountPill dotClassName="bg-brand-blue" label={t('dayTaken', { count: taken })} />
+                <Chip size="lg" dot="green">
+                  {t('dayFree', { count: free })}
+                </Chip>
+                <Chip size="lg" dot="blue">
+                  {t('dayTaken', { count: taken })}
+                </Chip>
                 <Button variant="primary" onClick={onOpenLot}>
                   {t('dayOpenLot')}
                 </Button>
@@ -150,19 +169,5 @@ export function AdminDayScreen({ date, day, onRetry, onOpenLot }: AdminDayScreen
         );
       }}
     </ScreenDataGuard>
-  );
-}
-
-/**
- * The design's bordered count chip: a coloured dot and a number
- * (`06-admin-overview.png`). Not a `Badge` — that primitive is a solid tint pill
- * with no dot, and this one is a white pill with a border.
- */
-function CountPill({ dotClassName, label }: { dotClassName: string; label: string }) {
-  return (
-    <span className="inline-flex h-10 items-center gap-2 rounded-cta border border-border bg-bg px-4 text-sm text-fg">
-      <span aria-hidden="true" className={`size-2 rounded-cta ${dotClassName}`} />
-      {label}
-    </span>
   );
 }

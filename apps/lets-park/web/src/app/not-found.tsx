@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
+import NextLink from 'next/link';
 import { EmptyState } from '@lets-park/design-system/compounds';
-import { Container } from '@lets-park/design-system/primitives';
+import { Container, Link } from '@lets-park/design-system/primitives';
 import { useTranslations } from '@lets-park/i18n';
 import { LOT_ROUTE } from '../routes';
 
@@ -17,6 +17,11 @@ import { LOT_ROUTE } from '../routes';
  * interactive elements — the design draws no 404 screen to copy either way, so
  * this follows the same "invented, in the design's language" rule `EmptyState`
  * itself was built under (`doc/decision/0071-*`).
+ *
+ * The design-system `Link` primitive owns exactly this treatment (rounded
+ * focus ring, brand-blue underline, bold) — `as={NextLink}` is what keeps
+ * this rendering through `next/link` (as it always did) instead of falling
+ * back to a plain `<a>`, so client-side navigation is unchanged.
  */
 export default function NotFound() {
   const t = useTranslations('shell');
@@ -29,10 +34,7 @@ export default function NotFound() {
           title={t('notFoundTitle')}
           description={t('notFoundDescription')}
           action={
-            <Link
-              href={LOT_ROUTE}
-              className="rounded-sm text-sm font-bold text-brand-blue underline outline-none hover:text-brand-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue"
-            >
+            <Link as={NextLink} href={LOT_ROUTE}>
               {t('backToLot')}
             </Link>
           }

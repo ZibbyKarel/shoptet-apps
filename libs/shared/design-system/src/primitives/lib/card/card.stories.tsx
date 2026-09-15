@@ -33,3 +33,19 @@ export const NoPadding: Story = {
     </Card>
   ),
 };
+
+/** `fillHeight`: two cards side by side in a `Grid`, ending level despite unequal content — `admin-window-screen.tsx`. */
+export const FillHeight: Story = {
+  render: () => (
+    <div className="grid grid-cols-2 gap-6">
+      <Card fillHeight>
+        <p className="text-sm">Krátký obsah.</p>
+      </Card>
+      <Card fillHeight>
+        <p className="text-sm">
+          Delší obsah, který zabírá víc řádků — obě karty by měly končit ve stejné výšce.
+        </p>
+      </Card>
+    </div>
+  ),
+};

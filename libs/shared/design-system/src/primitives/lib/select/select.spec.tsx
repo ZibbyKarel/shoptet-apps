@@ -101,4 +101,21 @@ describe('Select', () => {
 
     expect(ref.current).toBeInstanceOf(HTMLSelectElement);
   });
+
+  it('emits no width class on the wrapper by default', () => {
+    renderSelect();
+
+    const wrapper = screen.getByRole('combobox').closest('div');
+    expect(wrapper?.className).not.toMatch(/w-full|flex-1/);
+  });
+
+  it.each([
+    ['full', 'w-full'],
+    ['grow', 'flex-1'],
+  ] as const)('applies width=%s to the wrapper, not the select', (width, expected) => {
+    renderSelect({ width });
+
+    const select = screen.getByRole('combobox');
+    expect(select.closest('div')).toHaveClass(expected);
+  });
 });

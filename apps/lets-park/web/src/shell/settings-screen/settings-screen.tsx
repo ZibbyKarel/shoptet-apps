@@ -22,7 +22,15 @@ import * as z from 'zod';
 import type { MyProfile, ParkingSpot, UpdateMySettingsInput } from '@lets-park/contract';
 import { toContractError } from '@lets-park/api-client';
 import { FormField, FormProvider, useAppForm } from '@lets-park/form';
-import { Button, Input, Modal, Select, Stack, Toast } from '@lets-park/design-system/primitives';
+import {
+  Button,
+  Input,
+  Modal,
+  Select,
+  Stack,
+  Text,
+  Toast,
+} from '@lets-park/design-system/primitives';
 import { ConfirmDialog } from '@lets-park/design-system/compounds';
 import { useTranslations } from '@lets-park/i18n';
 import { AppToastRegion } from '../notifications/toast-region';
@@ -295,48 +303,57 @@ export function SettingsScreen({
         {ready ? (
           <FormProvider {...form}>
             <Stack spacing={5}>
+              {/*
+               * The `<form>` element itself stays plain — nothing here or in
+               * `settings-screen.spec.tsx` depends on it being the flex
+               * container. `Stack` supplies the `gap-5` layout as its one
+               * (and only) child.
+               */}
               <form
                 id={SETTINGS_FORM_ID}
                 onSubmit={form.handleSubmit((values) => onSave(toUpdateInput(values)))}
-                className="flex flex-col gap-5"
               >
-                <FormField
-                  name="licensePlate"
-                  render={({ field, error: fieldError }) => (
-                    <Input
-                      label={t('licensePlateLabel')}
-                      error={fieldError ? t('licensePlateTooLong') : undefined}
-                      {...field}
-                    />
-                  )}
-                />
-                <FormField
-                  name="preferredParkingSpotId"
-                  render={({ field, error: fieldError }) => (
-                    <Select label={t('preferredSpotLabel')} error={fieldError} {...field}>
-                      <option value={NO_PREFERRED_SPOT}>{t('preferredSpotNone')}</option>
-                      {spots.map((spot) => (
-                        <option key={spot.id} value={spot.id}>
-                          {spot.label} · {spot.group}
-                        </option>
-                      ))}
-                    </Select>
-                  )}
-                />
-                {spotsPending ? (
-                  <p className="text-sm text-fg-3">{t('preferredSpotLoading')}</p>
-                ) : null}
-                {spotsError ? (
-                  <AppToastRegion>
-                    <Toast tone="danger">{t('preferredSpotLoadError')}</Toast>
-                  </AppToastRegion>
-                ) : null}
+                <Stack spacing={5}>
+                  <FormField
+                    name="licensePlate"
+                    render={({ field, error: fieldError }) => (
+                      <Input
+                        label={t('licensePlateLabel')}
+                        error={fieldError ? t('licensePlateTooLong') : undefined}
+                        {...field}
+                      />
+                    )}
+                  />
+                  <FormField
+                    name="preferredParkingSpotId"
+                    render={({ field, error: fieldError }) => (
+                      <Select label={t('preferredSpotLabel')} error={fieldError} {...field}>
+                        <option value={NO_PREFERRED_SPOT}>{t('preferredSpotNone')}</option>
+                        {spots.map((spot) => (
+                          <option key={spot.id} value={spot.id}>
+                            {spot.label} · {spot.group}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
+                  />
+                  {spotsPending ? (
+                    <Text size="sm" tone="subtle">
+                      {t('preferredSpotLoading')}
+                    </Text>
+                  ) : null}
+                  {spotsError ? (
+                    <AppToastRegion>
+                      <Toast tone="danger">{t('preferredSpotLoadError')}</Toast>
+                    </AppToastRegion>
+                  ) : null}
 
-                {saveErrorMessage ? (
-                  <AppToastRegion>
-                    <Toast tone="danger">{saveErrorMessage}</Toast>
-                  </AppToastRegion>
-                ) : null}
+                  {saveErrorMessage ? (
+                    <AppToastRegion>
+                      <Toast tone="danger">{saveErrorMessage}</Toast>
+                    </AppToastRegion>
+                  ) : null}
+                </Stack>
               </form>
 
               {/* Deliberately outside the `<form>` above: the ICS section acts

@@ -80,3 +80,27 @@ export const PRESS_FEEDBACK = 'active:not-disabled:scale-[0.97]';
 
 /** Shared transition. */
 export const CONTROL_TRANSITION = 'transition duration-[var(--dur-base)] ease-out';
+
+/**
+ * Width of a field's outer *wrapper* — `Input`/`Select`'s `Field` div — as
+ * opposed to `fullWidth`, which stretches the control itself inside that
+ * wrapper. Two real call sites needed this: `date-picker-dialog.tsx`'s month
+ * select sits between two nav buttons in a flex row and needs to fill the
+ * space between them (`grow`); a plain block context that should span its
+ * parent needs `full`.
+ *
+ * Deliberately does not cover `admin-users-screen.tsx`'s `w-full sm:w-80`
+ * search field — a *responsive* wrapper width has no vocabulary here or
+ * anywhere else in the design system (no primitive takes a breakpoint-keyed
+ * prop), and inventing one for this single call site would be exactly the
+ * kind of value this rewrite is meant to stop reaching for. See the rewrite
+ * report: the recommended fix is wrapping in `Box` once `Box` gains a width
+ * prop, not a responsive step added here.
+ */
+export type ControlWrapperWidth = 'full' | 'grow';
+
+/** `w-full`/`flex-1` literals for `ControlWrapperWidth`. */
+export const WRAPPER_WIDTH_CLASSES: Record<ControlWrapperWidth, string> = {
+  full: 'w-full',
+  grow: 'flex-1',
+};

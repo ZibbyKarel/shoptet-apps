@@ -2,7 +2,7 @@
 
 import { useId } from 'react';
 import type { ParkingSpot } from '@lets-park/contract';
-import { Stack } from '@lets-park/design-system/primitives';
+import { Chip, Stack, Text } from '@lets-park/design-system/primitives';
 import { useTranslations } from '@lets-park/i18n';
 import { toCategoryCounts } from './spots-view';
 
@@ -20,19 +20,28 @@ export function CategoryBand({ spots }: { readonly spots: readonly ParkingSpot[]
     // A named group, so the band is distinguishable from the table's own
     // "Kategorie" column heading — to a screen reader as much as to a test.
     <Stack role="group" aria-labelledby={labelId} direction="row" align="center" wrap spacing={3}>
-      <span id={labelId} className="text-xs font-bold uppercase tracking-caps text-fg-3">
+      <Text
+        as="span"
+        id={labelId}
+        size="xs"
+        weight="bold"
+        tone="subtle"
+        tracking="caps"
+        transform="uppercase"
+      >
         {t('spotsCategories')}
-      </span>
+      </Text>
       {toCategoryCounts(spots).map(({ group, count }) => (
-        <span
-          key={group}
-          className="inline-flex h-8 items-center gap-2 rounded-cta bg-bg-muted px-3 text-sm font-medium text-fg"
-        >
+        <Chip key={group} size="sm" tone="muted" weight="medium">
           {group}
-          <span className="text-fg-3">{count}</span>
-        </span>
+          <Text as="span" tone="subtle">
+            {count}
+          </Text>
+        </Chip>
       ))}
-      <span className="text-xs text-fg-3">{t('spotsCategoriesFixed')}</span>
+      <Text as="span" size="xs" tone="subtle">
+        {t('spotsCategoriesFixed')}
+      </Text>
     </Stack>
   );
 }

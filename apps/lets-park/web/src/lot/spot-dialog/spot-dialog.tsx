@@ -35,9 +35,15 @@
 import { useEffect } from 'react';
 import {
   Avatar,
+  Badge,
+  Box,
   Button,
+  Callout,
+  IconCircle,
   Modal,
+  Spacer,
   Stack,
+  Text,
   Toast,
   ToastRegion,
 } from '@lets-park/design-system/primitives';
@@ -301,14 +307,17 @@ export function SpotDialog({
       footer={
         <>
           {showCancel ? (
-            <Button
-              variant="danger"
-              className="mr-auto"
-              loading={pending}
-              onClick={onCancelReservation}
-            >
-              {t('cancelReservation')}
-            </Button>
+            <>
+              <Button variant="danger" loading={pending} onClick={onCancelReservation}>
+                {t('cancelReservation')}
+              </Button>
+              {/* `Modal`'s footer wraps every child in one `justify-end` flex row
+                  (owned by `modal.tsx`, out of reach here). A growing `Spacer`
+                  right after this button reproduces the `mr-auto` it used to
+                  carry — pushing this button to the left edge while the rest
+                  stay clustered on the right. */}
+              <Spacer />
+            </>
           ) : null}
           <Button variant="secondary" onClick={onClose}>
             {t('close')}
@@ -348,43 +357,67 @@ export function SpotDialog({
       ) : null}
 
       {isTaken && spot.holderName !== null ? (
-        <div className="mb-5">
-          <Stack
-            direction="row"
-            align="center"
-            spacing={3}
-            className="mb-3 rounded-md border border-border px-4 py-3"
-          >
-            <Avatar initials={initialsOf(spot.holderName)} tone="neutral" size="lg" />
-            <div>
-              <p className="text-base font-bold text-fg">
-                {spot.holderName}
-                {spot.holderIsGuest ? (
-                  <span className="ml-2 rounded-xs bg-brand-yellow-100 px-2 py-0.5 text-xs font-bold uppercase tracking-caps text-fg">
-                    {t('guestHolder')}
-                  </span>
-                ) : null}
-              </p>
-              {spot.holderPlate === null ? null : (
-                <p className="text-sm text-fg-3">{t('occupiedBy', { plate: spot.holderPlate })}</p>
-              )}
-            </div>
-          </Stack>
+        // `mb-5` was this block's own placement, not the card's chrome.
+        <Box margin={[0, 0, 5, 0]}>
+          {/* `mb-3 rounded-md border border-border px-4 py-3` — a *neutral*
+              bordered panel, so `Callout` (whose only tones are
+              `warning`/`success`) does not fit; `Box` carries the chrome
+              instead, wrapping a `Stack` for the row layout. */}
+          <Box margin={[0, 0, 3, 0]} radius="md" border padding={[3, 4]}>
+            <Stack direction="row" align="center" spacing={3}>
+              <Avatar initials={initialsOf(spot.holderName)} tone="neutral" size="lg" />
+              {/* Replaces the plain `<div>` that held the name and plate lines.
+                  Neither line carried a margin class before — the gap between
+                  them was the browser's default paragraph margin (1em = 16px
+                  at the base font size, collapsed between adjacent blocks).
+                  `Text` always emits `m-0`, so that invisible UA spacing is
+                  made explicit here as the equal `spacing={4}` (16px) step. */}
+              <Stack spacing={4}>
+                {/* `spacing={2}` (8px) stands in for the guest badge's old
+                    `ml-2` — same value, expressed as a row gap instead of a
+                    margin so the badge can leave the `<p>` and become a real
+                    `Badge` sibling. */}
+                <Stack direction="row" align="center" spacing={2}>
+                  <Text size="base" weight="bold">
+                    {spot.holderName}
+                  </Text>
+                  {spot.holderIsGuest ? (
+                    <Badge size="sm" tone="tag">
+                      {t('guestHolder')}
+                    </Badge>
+                  ) : null}
+                </Stack>
+                {spot.holderPlate === null ? null : (
+                  <Text size="sm" tone="subtle">
+                    {t('occupiedBy', { plate: spot.holderPlate })}
+                  </Text>
+                )}
+              </Stack>
+            </Stack>
+          </Box>
 
           {isAdmin || spot.waitlistCount > 0 ? (
             <>
-              <p className="mb-2 text-xs font-bold uppercase tracking-caps text-fg-2">
-                {t('queueHeading')}
-              </p>
+              <Box margin={[0, 0, 2, 0]}>
+                <Text size="xs" weight="bold" tone="muted" transform="uppercase" tracking="caps">
+                  {t('queueHeading')}
+                </Text>
+              </Box>
               {spot.waitlistCount === 0 ? (
-                <p className="text-base text-fg-3">{t('queueEmpty')}</p>
+                <Text size="base" tone="subtle">
+                  {t('queueEmpty')}
+                </Text>
               ) : (
-                <p className="text-base text-fg-3">{t('waiting', { count: spot.waitlistCount })}</p>
+                <Text size="base" tone="subtle">
+                  {t('waiting', { count: spot.waitlistCount })}
+                </Text>
               )}
               {spot.viewerWaitlistPosition !== null ? (
-                <p className="mt-1 text-base font-bold text-fg">
-                  {t('queuePosition', { position: spot.viewerWaitlistPosition })}
-                </p>
+                <Box margin={[1, 0, 0, 0]}>
+                  <Text size="base" weight="bold">
+                    {t('queuePosition', { position: spot.viewerWaitlistPosition })}
+                  </Text>
+                </Box>
               ) : null}
               {showQueueTargetForm ? (
                 <FormProvider {...queueForm}>
@@ -393,24 +426,24 @@ export function SpotDialog({
               ) : null}
             </>
           ) : null}
-        </div>
+        </Box>
       ) : null}
 
       {!canReserve && !isInfo ? (
-        <Stack
-          direction="row"
-          align="start"
-          spacing={3}
-          className="mb-5 rounded-md border border-brand-yellow bg-brand-yellow-100 px-4 py-3"
-        >
-          <span
-            aria-hidden="true"
-            className="inline-flex size-6 shrink-0 items-center justify-center rounded-xs bg-brand-yellow text-sm font-bold text-fg-on-yellow"
+        <Box margin={[0, 0, 5, 0]}>
+          <Callout
+            tone="warning"
+            icon={
+              <IconCircle size="sm" shape="square" tone="yellow" weight="bold">
+                ⊘
+              </IconCircle>
+            }
           >
-            ⊘
-          </span>
-          <p className="text-sm leading-normal text-fg">{t('lockNote', { month: monthName })}</p>
-        </Stack>
+            <Text size="sm" leading="normal">
+              {t('lockNote', { month: monthName })}
+            </Text>
+          </Callout>
+        </Box>
       ) : null}
 
       {failureMessage === null ? null : (

@@ -42,7 +42,7 @@
 
 import { useMemo, useState } from 'react';
 import type { AdminListUsersOutput, AdminUser } from '@lets-park/contract';
-import { Avatar, Input, Stack, Switch, Toast } from '@lets-park/design-system/primitives';
+import { Avatar, Input, Stack, Switch, Text, Toast } from '@lets-park/design-system/primitives';
 import { ConfirmDialog, DataTable } from '@lets-park/design-system/compounds';
 import type { DataTableColumn } from '@lets-park/design-system/compounds';
 import { useTranslations } from '@lets-park/i18n';
@@ -135,17 +135,23 @@ export function AdminUsersScreen({
       header: t('usersColumnName'),
       sortValue: (user) => user.name.toLocaleLowerCase('cs-CZ'),
       cell: (user) => (
-        <span className="inline-flex items-center gap-3">
+        <Stack direction="row" align="center" spacing={3}>
           <Avatar initials={initialsOf(user.name)} size="sm" />
-          <span className="font-bold text-fg">{user.name}</span>
-        </span>
+          <Text as="span" weight="bold">
+            {user.name}
+          </Text>
+        </Stack>
       ),
     },
     {
       id: 'email',
       header: t('usersColumnEmail'),
       sortValue: (user) => user.email.toLocaleLowerCase('cs-CZ'),
-      cell: (user) => <span className="text-fg-3">{user.email}</span>,
+      cell: (user) => (
+        <Text as="span" tone="subtle">
+          {user.email}
+        </Text>
+      ),
     },
     {
       id: 'role',
@@ -155,8 +161,9 @@ export function AdminUsersScreen({
       cell: (user) => {
         const isLastActiveAdmin = user.role === 'ADMIN' && user.active && activeAdminCount <= 1;
         return (
-          <span
-            className="inline-flex items-center"
+          <Stack
+            direction="row"
+            align="center"
             title={isLastActiveAdmin ? t('usersLastAdminHint') : undefined}
           >
             <Switch
@@ -182,7 +189,7 @@ export function AdminUsersScreen({
                 onRoleChange(user.id, next);
               }}
             />
-          </span>
+          </Stack>
         );
       },
     },
@@ -194,8 +201,9 @@ export function AdminUsersScreen({
       cell: (user) => {
         const isSelf = user.id === viewerId;
         return (
-          <span
-            className="inline-flex items-center"
+          <Stack
+            direction="row"
+            align="center"
             title={isSelf ? t('usersSelfActiveHint') : undefined}
           >
             <Switch
@@ -213,7 +221,7 @@ export function AdminUsersScreen({
               disabled={isSelf || isRowBusy(pendingChange, user.id)}
               onCheckedChange={(next) => onActiveChange(user.id, next)}
             />
-          </span>
+          </Stack>
         );
       },
     },
@@ -245,7 +253,15 @@ export function AdminUsersScreen({
                 placeholder={t('usersSearchPlaceholder')}
                 value={search}
                 onChange={(event) => setSearch(event.currentTarget.value)}
-                wrapperClassName="w-full sm:w-80"
+                // `width="full"` covers the base `w-full` step; the original
+                // `sm:w-80` cap (staying full-width below the `sm` breakpoint,
+                // capped at 320px from it up) has no equivalent — no primitive
+                // here takes a breakpoint-keyed width, and inventing one for
+                // this single call site was rejected. Dropping the cap is a
+                // small, stated visual change: the search field now stays
+                // full-width at every breakpoint instead of capping at 320px
+                // on wider screens.
+                width="full"
               />
             }
             defaultSort={{ columnId: 'name', direction: 'asc' }}

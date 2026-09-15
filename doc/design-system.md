@@ -226,10 +226,24 @@ libs/shared/design-system/
       input.tsx     select.tsx   checkbox.tsx   radio.tsx
       switch.tsx    stepper.tsx
       modal.tsx     dropdown.tsx tabs.tsx       tooltip.tsx    toast.tsx
+      box.tsx       card.tsx     container.tsx  divider.tsx    grid.tsx
+      spacer.tsx    stack.tsx
+      text.tsx      visually-hidden.tsx          list.tsx       chip.tsx
+      icon-circle.tsx                            toggle-tile.tsx
+      link.tsx      callout.tsx  spinner.tsx
       *.stories.tsx        – a story for every component
       *.spec.tsx            – a test for every component
     index.ts                 – the public API
 ```
+
+The last three rows above (`text.tsx` through `spinner.tsx`) and `list.tsx`
+were added, and `Badge`/`Box`/`Stack`/`Card`/`Input`/`Select` extended, while
+removing every Tailwind class-name string from `apps/lets-park/web/src` –
+`doc/decision/0311-the-application-layer-carries-no-tailwind.md`. The
+"Fourteen components" count and the two-batch (Task 7 / Task 8) history above
+predate that work and predate the layout primitives (`Box`, `Stack`, `Card`,
+`Container`, `Divider`, `Grid`, `Spacer`) as well; neither count has been kept
+current since.
 
 ## Rules that apply across every primitive
 
@@ -370,6 +384,94 @@ The value has `role="spinbutton"`, so it's reachable via Tab and operable
 with the arrow keys, Home, and End – the buttons are a mouse convenience, not
 the only way in. `formatValue` also becomes `aria-valuetext`, so the unit
 gets read out too.
+
+### `Badge`, `Box`, `Stack`, `Card`, `Input`, `Select` – what grew
+
+Added by `doc/decision/0311-*`, alongside the app-layer Tailwind ban:
+
+- `Badge` – `size?: 'sm' | 'md'` (default `'md'`), `tone` gained `'tag'`,
+  `transform?: 'none' | 'uppercase'` (forces uppercase + caps tracking).
+- `Box` – `as` (one of the tags `StackAs` below lists), `position?: 'static' |
+  'relative' | 'absolute' | 'sticky'`, `placement?:` one of six
+  corner/edge-centre positions (implies `position="absolute"`),
+  `interactive?: 'none'` (`pointer-events-none`), `radius` gained `'cta'`
+  (the fully-rounded pill step), `inset?: 'top'`, `layer?: 'sticky' |
+  'dropdown' | 'overlay'`, `height?: 'bar'`, `minHeight?: 'viewport'`,
+  `shadow?: 'sm' | 'md' | 'lg'`, and `border` widened from `boolean` to
+  `boolean | 'bottom' | 'top'`.
+- `Stack` – `as?: 'div' | 'section' | 'header' | 'footer' | 'main' | 'nav' |
+  'aside' | 'article' | 'span'`, `spacingX`/`spacingY` (override `spacing`
+  per axis), `minHeight?: 'viewport'`, `height?: 'full'`.
+- `Card` – `fillHeight?: boolean` (`h-full`, for cards stretched to a `Grid`
+  row's tallest sibling).
+- `Input`/`Select` – `width?: ControlWrapperWidth`, spent on the outer
+  wrapper alongside `wrapperClassName`.
+
+### `Text`
+
+The one primitive most of the app-layer Tailwind ban moved onto. `as` (a
+heading level, `p`, `span`, …), `size` (`xs` through `3xl`), `weight`
+(`normal | medium | bold`), `tone` (including `faint`, pinned below AA on
+purpose – see `doc/decision/0311-*`), `tracking`, `leading` (`tight | snug |
+normal | loose` – no `relaxed` step; `loose` is `1.6` in this workspace's
+token, not stock Tailwind's `2`), `transform` (`none | uppercase`), `align`,
+`display`.
+
+### `VisuallyHidden`
+
+`as?: 'span' | 'div' | 'caption' | 'h1' | 'h2' | 'legend'`. Screen-reader-only
+content with no visual footprint – an accessible name for a control the
+design draws with no visible label.
+
+### `List` and `ListItem`
+
+`List`: `as?: 'ul' | 'ol'`, `marker?: 'none' | 'disc'`, `divider?: 'none' |
+'line'` (a context-driven `border-b border-divider last:border-b-0` on every
+`ListItem`, replacing what call sites used to put on the `<li>` itself).
+Needs `"use client"` – it uses React context for the divider mechanism, and
+its absence fails `web:build`, not a test or `typecheck`. `ListItem` takes
+ordinary `<li>` attributes plus the padding/flex props most primitives here
+share.
+
+### `Chip`
+
+A small pill of text – `size` (`sm | md | lg`), `tone` (`outline | muted`),
+`weight`, `dot?: 'none' | 'green' | 'blue'` (a small status dot before the
+label), `as?: 'span' | 'div' | 'p'`.
+
+### `IconCircle`
+
+A round-or-square badge holding one glyph or character. `size` (`xs` through
+`lg`), `shape` (`square | circle`), `tone` (`yellow | green | blue |
+translucent | translucent-light`), `fontSize`, `weight`, `leading?: 'none'`.
+`tone="green"` deliberately pairs `--brand-dark` rather than
+`--fg-on-green` – the latter measured 1.88:1 on `--brand-green` (see
+`doc/decision/0311-*`). Decorative by default (`aria-hidden`).
+
+### `ToggleTile`
+
+One option of a selected/selectable-unselected/not-interactive button group –
+a day cell in a calendar grid, or a pill in a segmented control. `shape`
+(`cell | pill`), `selected`, `selectable` (the calendar's "blocked day"
+state, distinct from merely unselected), `transition` (`none | base | fast`).
+Always a real `<button>`. Replaces three previously hand-rolled call sites
+(two day-pickers, one segmented control) with one primitive.
+
+### `Link`
+
+`size` (`sm | base`), `weight`, `tone` (`link | plain`). A styled `<a>`, no
+routing behaviour of its own.
+
+### `Callout`
+
+A bordered notice band. `tone` (`warning | success`), `align` (`start |
+center`).
+
+### `Spinner`
+
+`size` (`sm | md`), `tone` (`brand`). Presentational only – no timer, no
+imperative API; see `Button`'s own `loading` prop for the control that uses
+it.
 
 ## Overlay and navigation primitives
 

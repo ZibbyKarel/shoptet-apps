@@ -2,7 +2,7 @@
 
 import { useDateFormatters } from '@lets-park/i18n';
 import type { useTranslations } from '@lets-park/i18n';
-import { Badge } from '@lets-park/design-system/primitives';
+import { Badge, Box, List, ListItem, Stack, Text } from '@lets-park/design-system/primitives';
 import type { BadgeTone } from '@lets-park/design-system/primitives';
 import {
   toBadgeMessage,
@@ -44,23 +44,31 @@ export function CalendarTable({ days, t }: CalendarTableProps) {
   // Only a preview that filtered days out of its response would change that.
   const rows = toScheduleRows(days);
   return (
-    <ul className="flex flex-col gap-2">
+    <List spacing={2}>
       {rows.map((row) => (
-        <li
-          key={row.date}
-          className="flex flex-wrap items-center justify-between gap-3 rounded-sm border border-border px-4 py-3"
-        >
-          <span className="text-base text-fg">
-            {f.dayAndMonth(row.date)} · {f.weekdayName(row.date)}
-          </span>
-          <span className="flex items-center gap-3">
-            {row.spotLabel === null ? null : (
-              <span className="text-sm font-bold text-fg-2">{row.spotLabel}</span>
-            )}
-            <Badge tone={BADGE_TONES[row.badge.kind]}>{badgeLabel(row.badge, t)}</Badge>
-          </span>
-        </li>
+        // `ListItem` has no prop for a *full* border — only `divider="line"`
+        // (a bottom border shared between items via `List`'s context), which
+        // is a different shape from this row's own `rounded-sm border
+        // border-border` box. Reported as a DS gap in this file's rewrite
+        // report; `Box` supplies the border/radius/padding one level in.
+        <ListItem key={row.date}>
+          <Box border radius="sm" padding={[3, 4]}>
+            <Stack direction="row" wrap align="center" justify="between" spacing={3}>
+              <Text as="span" size="base" tone="default">
+                {f.dayAndMonth(row.date)} · {f.weekdayName(row.date)}
+              </Text>
+              <Stack direction="row" align="center" spacing={3}>
+                {row.spotLabel === null ? null : (
+                  <Text as="span" size="sm" weight="bold" tone="muted">
+                    {row.spotLabel}
+                  </Text>
+                )}
+                <Badge tone={BADGE_TONES[row.badge.kind]}>{badgeLabel(row.badge, t)}</Badge>
+              </Stack>
+            </Stack>
+          </Box>
+        </ListItem>
       ))}
-    </ul>
+    </List>
   );
 }

@@ -15,7 +15,7 @@
  * `libs/shared/design-system` (`plan.md`, design-system-first).
  */
 
-import { Select, Stack } from '@lets-park/design-system/primitives';
+import { Box, Select, Stack } from '@lets-park/design-system/primitives';
 import { FormField } from '@lets-park/form';
 import { useTranslations } from '@lets-park/i18n';
 import type { HolderOption } from './holder-input';
@@ -28,20 +28,24 @@ export interface QueueTargetFieldsProps {
 export function QueueTargetFields({ options }: QueueTargetFieldsProps) {
   const t = useTranslations('lot');
 
+  // `mt-3` was baked into the field stack's own className; caller placement,
+  // not `Stack` chrome, so it moves to a wrapping `Box margin=`.
   return (
-    <Stack spacing={4} className="mt-3">
-      <FormField<QueueTargetFormValues, 'userId'>
-        name="userId"
-        render={({ field, error: fieldError }) => (
-          <Select label={t('queueHolderField')} error={fieldError} {...field}>
-            {options.map((option) => (
-              <option key={option.userId} value={option.userId}>
-                {option.name}
-              </option>
-            ))}
-          </Select>
-        )}
-      />
-    </Stack>
+    <Box margin={[3, 0, 0, 0]}>
+      <Stack spacing={4}>
+        <FormField<QueueTargetFormValues, 'userId'>
+          name="userId"
+          render={({ field, error: fieldError }) => (
+            <Select label={t('queueHolderField')} error={fieldError} {...field}>
+              {options.map((option) => (
+                <option key={option.userId} value={option.userId}>
+                  {option.name}
+                </option>
+              ))}
+            </Select>
+          )}
+        />
+      </Stack>
+    </Box>
   );
 }

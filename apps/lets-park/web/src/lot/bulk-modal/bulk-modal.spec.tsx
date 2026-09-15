@@ -274,6 +274,11 @@ describe('BulkReservationModal — step 1, choosing the days', () => {
     // "Víkendy vizuálně v zákrytu vpravo" — the design draws the two weekend
     // heads a step lighter, which is what makes the boundary readable when the
     // cells below are grey for three different reasons.
+    //
+    // `Text` now renders `as="th"` directly (see `bulk-modal.tsx`), so the
+    // tone class lands on the `<th>` itself rather than on a nested `<span>` —
+    // this queries the head element directly. The asserted class strings are
+    // unchanged, only what carries them.
     setup();
     const heads = screen.getAllByRole('columnheader');
     for (const head of heads.slice(0, 5)) {

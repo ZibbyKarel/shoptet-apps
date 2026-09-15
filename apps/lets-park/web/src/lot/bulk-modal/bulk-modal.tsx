@@ -30,7 +30,19 @@ import {
   type DateOnly,
 } from '@lets-park/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Box, Button, Modal, Toast, ToastRegion, cx } from '@lets-park/design-system/primitives';
+import {
+  Button,
+  Callout,
+  List,
+  ListItem,
+  Modal,
+  Stack,
+  Text,
+  Toast,
+  ToastRegion,
+  ToggleTile,
+  VisuallyHidden,
+} from '@lets-park/design-system/primitives';
 import type { ConfirmBulkOutput, PreviewBulkOutput } from '@lets-park/contract';
 import { FormProvider, useAppForm } from '@lets-park/form';
 import { useApi } from '../../shell/api-provider/api-provider';
@@ -292,47 +304,59 @@ function BulkReservationModalContent({
         closeOnScrimClick={false}
         footer={<Button onClick={onClose}>{t('ctaDone')}</Button>}
       >
-        {differences.length === 0 ? (
-          <p role="status" className="mb-5 text-base text-fg-3">
-            {t('resultUnchanged')}
-          </p>
-        ) : (
-          <Box
-            role="alert"
-            radius="md"
-            padding={[3, 4]}
-            className="mb-5 border border-brand-yellow bg-brand-yellow-100"
-          >
-            <p className="text-base font-bold text-fg">{t('resultChangedTitle')}</p>
-            <p className="mt-1 text-base leading-loose text-fg-2">
-              {t('resultChangedDescription')}
-            </p>
-            <ul className="mt-3 flex flex-col gap-2">
-              {differences.map((difference) => (
-                <li key={difference.date} className="text-base text-fg">
-                  <span className="font-bold">
-                    {f.dayAndMonth(difference.date)} · {f.weekdayName(difference.date)}
-                  </span>
-                  <span className="block text-fg-2">
-                    {t('resultChangedProposed')}: {describeOutcome(difference.proposed)}
-                  </span>
-                  <span className="block text-fg-2">
-                    {t('resultChangedActual')}: {describeOutcome(difference.confirmed)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Box>
-        )}
+        <Stack spacing={4}>
+          {/*
+            The two visible children below (the status/alert panel and the
+            calendar table) sit a `gap-5` apart, one step wider than the
+            `gap-4` between the table and the summary line — the same two
+            steps `mb-5`/`mt-4` expressed by hand before. `Stack.spacing` is
+            uniform, so the only way to keep both steps is to nest one.
+          */}
+          <Stack spacing={5}>
+            {differences.length === 0 ? (
+              <Text as="p" role="status" tone="subtle" size="base">
+                {t('resultUnchanged')}
+              </Text>
+            ) : (
+              <Callout tone="warning" role="alert">
+                <Stack spacing={3}>
+                  <Stack spacing={1}>
+                    <Text as="p" size="base" weight="bold" tone="default">
+                      {t('resultChangedTitle')}
+                    </Text>
+                    <Text as="p" size="base" tone="muted" leading="loose">
+                      {t('resultChangedDescription')}
+                    </Text>
+                  </Stack>
+                  <List spacing={2}>
+                    {differences.map((difference) => (
+                      <ListItem key={difference.date}>
+                        <Text as="span" size="base" weight="bold" tone="default">
+                          {f.dayAndMonth(difference.date)} · {f.weekdayName(difference.date)}
+                        </Text>
+                        <Text as="span" size="base" display="block" tone="muted">
+                          {t('resultChangedProposed')}: {describeOutcome(difference.proposed)}
+                        </Text>
+                        <Text as="span" size="base" display="block" tone="muted">
+                          {t('resultChangedActual')}: {describeOutcome(difference.confirmed)}
+                        </Text>
+                      </ListItem>
+                    ))}
+                  </List>
+                </Stack>
+              </Callout>
+            )}
 
-        <CalendarTable days={result.days} t={t} />
+            <CalendarTable days={result.days} t={t} />
+          </Stack>
 
-        <p className="mt-4 text-base text-fg-2">
-          {t('scheduleSummary', {
-            assigned: result.summary.assigned,
-            queued: result.summary.queued,
-          })}
-        </p>
+          <Text as="p" size="base" tone="muted">
+            {t('scheduleSummary', {
+              assigned: result.summary.assigned,
+              queued: result.summary.queued,
+            })}
+          </Text>
+        </Stack>
 
         <ToastRegion placement="top-right" label={tShell('notificationsRegion')}>
           <Toast tone="success">{t('resultSuccessToast')}</Toast>
@@ -365,7 +389,9 @@ function BulkReservationModalContent({
           </Button>
         }
       >
-        <p className="text-base leading-loose text-fg-3">{t('lockedDescription')}</p>
+        <Text as="p" size="base" leading="loose" tone="subtle">
+          {t('lockedDescription')}
+        </Text>
       </Modal>
     );
   }
@@ -443,25 +469,35 @@ function BulkReservationModalContent({
         </FormProvider>
       ) : null}
 
-      <table className="w-full border-separate border-spacing-2">
-        <caption className="sr-only">{t('gridLabel')}</caption>
+      {/*
+        `border-spacing` has no Tailwind utility that takes a token, so the
+        grid chrome lives in the named `.calendar-grid` class in
+        `app/global.css` (owned by another agent in this rewrite) rather than
+        as an inline utility string here.
+      */}
+      {/* eslint-disable-next-line no-restricted-syntax -- `.calendar-grid` is the one class the design system cannot express (border-spacing has no token utility); see global.css */}
+      <table className="calendar-grid">
+        <VisuallyHidden as="caption">{t('gridLabel')}</VisuallyHidden>
         <thead>
           <tr>
             {WEEKDAY_KEYS.map((key, column) => (
-              <th
+              // `Text` now renders `as="th"` with a `scope` prop, so the
+              // `<th>`/inner-`<span>` pair collapses into one element. `Text`
+              // deliberately has no padding prop (no spacing surface was in
+              // scope for it), so the bottom padding is carried by
+              // `.calendar-grid th` in `global.css` instead.
+              <Text
                 key={key}
+                as="th"
                 scope="col"
-                className={cx(
-                  'pb-1 text-xs font-bold uppercase tracking-caps',
-                  // "Víkendy vizuálně v zákrytu vpravo" — the design draws the
-                  // SO/NE heads a step lighter than PO–PÁ, which is what makes
-                  // the weekend boundary readable at a glance. Which columns
-                  // those are is read off the grid, never spelled out twice.
-                  weekendHeads[column] === true ? 'text-neutral-400' : 'text-fg-3'
-                )}
+                size="xs"
+                weight="bold"
+                transform="uppercase"
+                tracking="caps"
+                tone={weekendHeads[column] === true ? 'faint' : 'subtle'}
               >
                 {t(key)}
-              </th>
+              </Text>
             ))}
           </tr>
         </thead>
@@ -473,9 +509,11 @@ function BulkReservationModalContent({
                   <td key={key} />
                 ) : (
                   <td key={key}>
-                    <button
-                      type="button"
-                      disabled={!day.selectable}
+                    <ToggleTile
+                      shape="cell"
+                      transition="base"
+                      selected={day.selectable ? selectedSet.has(day.date) : false}
+                      selectable={day.selectable}
                       aria-pressed={day.selectable ? selectedSet.has(day.date) : undefined}
                       aria-label={
                         day.selectable
@@ -485,20 +523,9 @@ function BulkReservationModalContent({
                       onClick={() => {
                         toggleDay(day);
                       }}
-                      className={cx(
-                        'h-[var(--control-h-lg)] w-full rounded-sm border text-base font-bold',
-                        'transition duration-[var(--dur-base)] ease-out',
-                        'outline-none focus-visible:outline-2 focus-visible:outline-offset-2',
-                        'focus-visible:outline-brand-blue',
-                        day.selectable
-                          ? selectedSet.has(day.date)
-                            ? 'cursor-pointer border-brand-blue bg-brand-blue text-fg-on-blue'
-                            : 'cursor-pointer border-border bg-bg text-fg hover:bg-bg-muted'
-                          : 'cursor-default border-transparent bg-bg-soft text-fg-3'
-                      )}
                     >
                       {day.dayOfMonth}
-                    </button>
+                    </ToggleTile>
                   </td>
                 )
               )}
@@ -507,10 +534,19 @@ function BulkReservationModalContent({
         </tbody>
       </table>
 
-      <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-fg-3">
-        <span>{t('nonSelectableNote')}</span>
-        <span className="font-bold text-fg">{preferredSpotNote()}</span>
-      </p>
+      {/*
+        `Stack` now exposes `spacingX`/`spacingY` (separate `gap-x-*`/`gap-y-*`)
+        alongside `spacing`, so the original `gap-x-4 gap-y-1` is reproduced
+        exactly rather than widened to `gap-4` on both axes.
+      */}
+      <Stack direction="row" wrap spacingX={4} spacingY={1}>
+        <Text as="span" size="sm" tone="subtle">
+          {t('nonSelectableNote')}
+        </Text>
+        <Text as="span" size="sm" weight="bold" tone="default">
+          {preferredSpotNote()}
+        </Text>
+      </Stack>
 
       {failureNote}
     </Modal>

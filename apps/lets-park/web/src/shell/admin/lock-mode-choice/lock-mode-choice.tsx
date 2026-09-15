@@ -27,7 +27,7 @@
  */
 
 import { useId, useRef, type KeyboardEvent } from 'react';
-import { cx, FOCUS_RING, Stack } from '@lets-park/design-system/primitives';
+import { Stack, Text, ToggleTile } from '@lets-park/design-system/primitives';
 
 export interface LockModeOption<TValue extends string> {
   readonly value: TValue;
@@ -103,9 +103,17 @@ export function LockModeChoice<TValue extends string>({
 
   return (
     <Stack spacing={3}>
-      <span id={labelId} className="text-xs font-bold uppercase tracking-caps text-fg-3">
+      <Text
+        as="span"
+        id={labelId}
+        size="xs"
+        weight="bold"
+        tone="subtle"
+        tracking="caps"
+        transform="uppercase"
+      >
         {label}
-      </span>
+      </Text>
       <Stack
         role="radiogroup"
         aria-labelledby={labelId}
@@ -118,36 +126,28 @@ export function LockModeChoice<TValue extends string>({
           const isSelected = option.value === value;
 
           return (
-            <button
+            // `ToggleTile shape="pill"` reproduces the selected/unselected/
+            // disabled state machine this file used to hand-roll (including
+            // the same `FOCUS_RING` and `transition="fast"` timing) — only
+            // the keyboard/ARIA wiring below stays this component's own.
+            <ToggleTile
               key={option.value}
               ref={(node) => {
                 pillRefs.current[index] = node;
               }}
-              type="button"
+              shape="pill"
+              transition="fast"
+              selected={isSelected}
+              disabled={disabled}
               role="radio"
               aria-checked={isSelected}
-              disabled={disabled}
               // Roving tabindex. When nothing is selected the first pill takes
               // the stop, so the group is never unreachable by Tab.
               tabIndex={isSelected || (selectedIndex === -1 && index === 0) ? 0 : -1}
               onClick={() => onValueChange(option.value)}
-              className={cx(
-                'inline-flex h-11 items-center rounded-cta border px-5 text-sm',
-                'transition duration-[var(--dur-fast)] ease-out',
-                FOCUS_RING,
-                // Swapped, never layered: each state supplies its own border,
-                // background and text colour, because two utilities setting the
-                // same property resolve by Tailwind's emit order rather than by
-                // the order they are written here (see `button.tsx`).
-                disabled
-                  ? 'cursor-not-allowed border-border bg-bg-muted font-medium text-border-strong'
-                  : isSelected
-                    ? 'cursor-pointer border-transparent bg-brand-blue font-bold text-fg-on-blue'
-                    : 'cursor-pointer border-border bg-bg font-medium text-fg hover:border-brand-dark'
-              )}
             >
               {option.label}
-            </button>
+            </ToggleTile>
           );
         })}
       </Stack>

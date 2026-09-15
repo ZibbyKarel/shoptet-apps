@@ -35,7 +35,16 @@ import type {
   ParkingSpot,
   SpotListOutput,
 } from '@lets-park/contract';
-import { Badge, Button, Select, Stack, Switch, Toast } from '@lets-park/design-system/primitives';
+import {
+  Badge,
+  Button,
+  Select,
+  Stack,
+  Switch,
+  Text,
+  Toast,
+  VisuallyHidden,
+} from '@lets-park/design-system/primitives';
 import { ConfirmDialog, DataTable } from '@lets-park/design-system/compounds';
 import type { DataTableColumn } from '@lets-park/design-system/compounds';
 import { PARKING_GROUPS, useTranslations } from '@lets-park/i18n';
@@ -156,10 +165,12 @@ export function AdminSpotsScreen({
       header: t('spotsColumnLabel'),
       sortValue: (spot) => spot.label,
       cell: (spot) => (
-        <span className="inline-flex items-center gap-2">
-          <span className="font-bold text-fg">{spot.label}</span>
+        <Stack direction="row" align="center" spacing={2}>
+          <Text as="span" weight="bold">
+            {spot.label}
+          </Text>
           {spot.active ? null : <Badge tone="neutral">{t('spotsInactive')}</Badge>}
-        </span>
+        </Stack>
       ),
     },
     {
@@ -196,19 +207,27 @@ export function AdminSpotsScreen({
       cell: (spot) => {
         const today = todayBySpotId.get(spot.id);
         if (today === undefined) {
-          return <span className="text-fg-3">{t('spotsTodayUnknown')}</span>;
+          return (
+            <Text as="span" tone="subtle">
+              {t('spotsTodayUnknown')}
+            </Text>
+          );
         }
         return today.holderName === null ? (
-          <span className="text-fg-3">{t('dayStatusFree')}</span>
+          <Text as="span" tone="subtle">
+            {t('dayStatusFree')}
+          </Text>
         ) : (
-          <span className="text-fg">
-            {t('dayStatusTaken', { name: today.holderName })}
+          // Same `ml-2`-as-row-gap replacement as `AdminDayScreen`'s status
+          // column — this cell renders the identical guest tag.
+          <Stack direction="row" align="center" spacing={2}>
+            <Text as="span">{t('dayStatusTaken', { name: today.holderName })}</Text>
             {today.holderIsGuest ? (
-              <span className="ml-2 rounded-xs bg-brand-yellow-100 px-2 py-0.5 text-xs font-bold uppercase tracking-caps text-fg">
+              <Badge size="sm" tone="tag">
                 {tLot('guestHolder')}
-              </span>
+              </Badge>
             ) : null}
-          </span>
+          </Stack>
         );
       },
     },
@@ -228,11 +247,11 @@ export function AdminSpotsScreen({
     },
     {
       id: 'actions',
-      header: <span className="sr-only">{t('spotsColumnActions')}</span>,
+      header: <VisuallyHidden>{t('spotsColumnActions')}</VisuallyHidden>,
       align: 'end',
       width: '210px',
       cell: (spot) => (
-        <span className="inline-flex items-center gap-2">
+        <Stack direction="row" align="center" spacing={2}>
           <Button
             variant="secondary"
             disabled={pendingSpotId === spot.id}
@@ -247,7 +266,7 @@ export function AdminSpotsScreen({
           >
             {t('spotsDelete')}
           </Button>
-        </span>
+        </Stack>
       ),
     },
   ];

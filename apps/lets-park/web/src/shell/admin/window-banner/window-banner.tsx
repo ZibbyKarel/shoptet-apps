@@ -18,20 +18,15 @@ import { toAdminWindowBannerView } from './window-view';
 
 export interface WindowBannerProps {
   readonly window: MonthWindowOverview;
-  readonly className?: string | undefined;
 }
 
-export function WindowBanner({ window: month, className }: WindowBannerProps) {
+export function WindowBanner({ window: month }: WindowBannerProps) {
   const t = useTranslations('admin');
   const f = useDateFormatters();
   const banner = toAdminWindowBannerView(month, f);
 
   return (
-    <Toast
-      tone={banner.tone}
-      icon={banner.glyph}
-      {...(className === undefined ? {} : { className })}
-    >
+    <Toast tone={banner.tone} icon={banner.glyph}>
       {t(banner.messageKey, banner.values)}
     </Toast>
   );

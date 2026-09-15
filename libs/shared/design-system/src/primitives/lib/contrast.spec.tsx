@@ -5,10 +5,16 @@ import { COLOR_UTILITIES } from '@lets-park/design-system/tokens';
 import { Avatar, type AvatarTone } from './avatar/avatar';
 import { Badge, type BadgeTone } from './badge/badge';
 import { Button, type ButtonVariant } from './button/button';
+import { Callout, type CalloutTone } from './callout/callout';
+import { Chip, type ChipTone } from './chip/chip';
+import { IconCircle, type IconCircleTone } from './icon-circle/icon-circle';
 import { Input } from './input/input';
+import { Link } from './link/link';
 import { Modal } from './modal/modal';
 import { Stepper } from './stepper/stepper';
+import { Text, type TextTone } from './text/text';
 import { Toast, type ToastTone } from './toast/toast';
+import { ToggleTile } from './toggle-tile/toggle-tile';
 
 /**
  * Colour-contrast guard for the pairings this lib chooses.
@@ -153,7 +159,7 @@ describe('colour contrast of the pairings this lib chooses', () => {
     expect(ratioOf('fg-on-green', 'brand-green')).toBeCloseTo(1.88, 2);
   });
 
-  it.each<BadgeTone>(['neutral', 'info', 'success', 'warning', 'danger'])(
+  it.each<BadgeTone>(['neutral', 'info', 'success', 'warning', 'danger', 'tag'])(
     'Badge tone=%s clears AA',
     (tone) => {
       render(<Badge tone={tone}>Volno</Badge>);
@@ -272,5 +278,252 @@ describe('colour contrast of the pairings this lib chooses', () => {
     expect(ratioFor(screen.getByRole('spinbutton', { name: 'Počet' }))).toBeGreaterThanOrEqual(
       DISABLED_FLOOR
     );
+  });
+
+  describe('Text', () => {
+    it.each<TextTone>(['default', 'muted', 'subtle'])('tone=%s clears AA on --bg', (tone) => {
+      render(<Text tone={tone}>Volno</Text>);
+
+      expect(ratioFor(screen.getByText('Volno'))).toBeGreaterThanOrEqual(AA_NORMAL_TEXT);
+    });
+
+    /**
+     * `faint` (`text-neutral-400` on `--bg`) does **not** clear AA — 2.56:1,
+     * measured below. Left pinned rather than folded into the blanket check
+     * above: `text.tsx`'s own comment says this tone exists for exactly one
+     * call site, the recessed weekend column heads in `bulk-modal.tsx`, whose
+     * own spec (`bulk-modal.spec.tsx`) already asserts the literal class
+     * `text-neutral-400` — this predates `Text` and is a decorative label
+     * doing the same job it did before this component wrapped it, not a
+     * regression this batch introduced. Reported per `0265`'s pinning
+     * approach; no ruling exists on it yet.
+     */
+    it('tone=faint is BELOW AA on --bg — pinned, pre-existing, not fixed here', () => {
+      render(<Text tone="faint">SO</Text>);
+
+      expect(ratioFor(screen.getByText('SO'))).toBeCloseTo(2.56, 2);
+    });
+
+    /**
+     * `on-yellow`/`on-green`/`on-blue` are **not** drawn on the `--brand-*-100`
+     * tints — `fg-on-green`/`fg-on-blue` are white, which only reads on a
+     * *solid* fill. The real call sites (`lot-header.tsx`: `bg-brand-green
+     * text-fg-on-green` / `bg-brand-yellow text-fg-on-yellow`; `bulk-modal.tsx`,
+     * `date-picker-dialog.tsx`, `lock-mode-choice.tsx`: `bg-brand-blue
+     * text-fg-on-blue`) all pair the tone with the matching *solid* brand
+     * background, so that is what is checked here — not the tint the initial
+     * recommendation for this test named.
+     */
+    it.each<[TextTone, string]>([['on-yellow', 'brand-yellow']])(
+      'tone=%s clears AA on its real solid %s surface',
+      (tone, backgroundToken) => {
+        render(<Text tone={tone}>Volno</Text>);
+        const { foreground } = colorsOf(screen.getByText('Volno'));
+
+        expect(ratioOf(foreground, backgroundToken)).toBeGreaterThanOrEqual(AA_NORMAL_TEXT);
+      }
+    );
+
+    it('tone=on-blue on its real solid brand-blue surface is the already-pinned exemption', () => {
+      render(<Text tone="on-blue">Volno</Text>);
+      const { foreground } = colorsOf(screen.getByText('Volno'));
+
+      expect(ratioOf(foreground, 'brand-blue')).toBeCloseTo(3.3, 2);
+    });
+
+    /**
+     * `on-green` on its real solid `brand-green` surface is **not** exempt —
+     * it is the exact `--fg-on-green`/`--brand-green` pairing (1.88:1) that
+     * `0266` already fixed in `toast.tsx` and that `icon-circle.tsx`'s
+     * `green` tone was fixed to avoid here too (see that file's comment).
+     * `lot-header.tsx` still draws this pairing at its `isSuccess` state
+     * (outside this lib's reach — `apps/` is not touched from here), so it is
+     * reported rather than silently weakened, same as `faint` above.
+     */
+    it('tone=on-green on its real solid brand-green surface is BELOW AA — pinned, reported, not fixed here', () => {
+      render(<Text tone="on-green">Volno</Text>);
+      const { foreground } = colorsOf(screen.getByText('Volno'));
+
+      expect(ratioOf(foreground, 'brand-green')).toBeCloseTo(1.88, 2);
+    });
+
+    /**
+     * The `inverse-*` family sets `text-neutral-0/NN` — an alpha-modified
+     * utility. `colorsOf`/`ratioFor` cannot see it: they match a class's
+     * token against `COLOR_UTILITIES` verbatim, and `neutral-0/90` is not a
+     * key in that map (nor should it be — `theme-css.spec.ts` only derives
+     * opaque tokens). `0265`'s own risk section already names this as a
+     * blind spot ("a pairing produced by opacity ... is outside what the
+     * test can see"), so this block computes the composited colour itself
+     * rather than pretending the existing helpers cover it.
+     *
+     * The real background is `lot-grid.tsx`'s `<Box className="... bg-neutral-600">`
+     * — the map's asphalt, not `--bg`. Nested group headers sit on a further
+     * darkened overlay (`bg-brand-dark/10` on top of that), so `neutral-600`
+     * is the *lighter* of the two real surfaces this family is drawn on —
+     * checking against it is the harder case, and passing it implies passing
+     * the darker one too.
+     */
+    function compositeOverNeutral600(alpha: number): string {
+      const onto = hexOf('neutral-600');
+      const channel = (offset: number) => parseInt('FFFFFF'.slice(offset, offset + 2), 16);
+      const ontoChannel = (offset: number) => parseInt(onto.slice(offset + 1, offset + 3), 16);
+      const mix = (offset: number) =>
+        Math.round(channel(offset) * alpha + ontoChannel(offset) * (1 - alpha));
+
+      return `#${[0, 2, 4].map((offset) => mix(offset).toString(16).padStart(2, '0')).join('')}`;
+    }
+
+    it.each<[TextTone, number, number]>([
+      ['inverse', 1, 7.73],
+      ['inverse-90', 0.9, 6.67],
+      ['inverse-80', 0.8, 5.64],
+      ['inverse-70', 0.7, 4.78],
+    ])(
+      'tone=%s clears AA on the dark parking-map surface (bg-neutral-600)',
+      (_tone, alpha, expected) => {
+        const composited = compositeOverNeutral600(alpha);
+        const ratio = contrastRatio(composited, hexOf('neutral-600'));
+
+        expect(ratio).toBeCloseTo(expected, 2);
+        expect(ratio).toBeGreaterThanOrEqual(AA_NORMAL_TEXT);
+      }
+    );
+
+    /**
+     * `inverse-60` and `inverse-50` do **not** clear AA on the real surface
+     * — 3.99:1 and 3.30:1 against the 4.5:1 floor. Left alone rather than
+     * silently weakened here (per `0265`'s pinning approach), because these
+     * are new failures this test run found, not an accepted design
+     * decision recorded anywhere yet: unlike `0265`'s two pinned pairs,
+     * nothing has ruled on these. Reported to the owner with the measured
+     * ratios; a designer call (widen the floor, or stop using these two
+     * steps for body-sized text on the map) is still needed.
+     */
+    it.each<[TextTone, number, number]>([
+      ['inverse-60', 0.6, 3.99],
+      ['inverse-50', 0.5, 3.3],
+    ])(
+      'tone=%s is BELOW AA on the dark parking-map surface — pinned, not fixed',
+      (_tone, alpha, expected) => {
+        const composited = compositeOverNeutral600(alpha);
+        const ratio = contrastRatio(composited, hexOf('neutral-600'));
+
+        expect(ratio).toBeCloseTo(expected, 2);
+        expect(ratio).toBeLessThan(AA_NORMAL_TEXT);
+      }
+    );
+  });
+
+  describe('Callout', () => {
+    // `text-fg` on `bg-brand-yellow-100`/`bg-brand-green-100` — the same tint
+    // pair `Toast` and `Badge`'s `tone="tag"` already draw text on. Both
+    // clear AA comfortably: 16.19:1 and 15.41:1, recomputed here.
+    it.each<CalloutTone>(['warning', 'success'])('tone=%s clears AA', (tone) => {
+      render(<Callout tone={tone}>Zamčeno pro tento měsíc.</Callout>);
+
+      expect(ratioFor(screen.getByText('Zamčeno pro tento měsíc.'))).toBeGreaterThanOrEqual(
+        AA_NORMAL_TEXT
+      );
+    });
+
+    it('measures the exact ratios named in its own comment', () => {
+      expect(ratioOf('fg', 'brand-yellow-100')).toBeCloseTo(16.19, 2);
+      expect(ratioOf('fg', 'brand-green-100')).toBeCloseTo(15.41, 2);
+    });
+  });
+
+  describe('Chip', () => {
+    it.each<ChipTone>(['outline', 'muted'])('tone=%s clears AA', (tone) => {
+      render(<Chip tone={tone}>3 volná</Chip>);
+
+      expect(ratioFor(screen.getByText('3 volná'))).toBeGreaterThanOrEqual(AA_NORMAL_TEXT);
+    });
+  });
+
+  describe('IconCircle', () => {
+    // Only the three solid-fill tones carry their own foreground; `translucent`
+    // and `translucent-light` set no text colour at all and inherit whatever
+    // the surrounding context sets, so there is no pairing here to measure in
+    // isolation — see `icon-circle.tsx`'s own comment on `TONE_CLASSES`.
+    it.each<IconCircleTone>(['yellow', 'green'])('tone=%s clears AA', (tone) => {
+      render(<IconCircle tone={tone}>!</IconCircle>);
+
+      expect(ratioFor(screen.getByText('!'))).toBeGreaterThanOrEqual(AA_NORMAL_TEXT);
+    });
+
+    // `blue` is `bg-brand-blue text-fg-on-blue` — the same hex pair as the
+    // already-pinned primary-CTA exemption (`0265`), reached by a second
+    // route rather than a new failure.
+    it('tone=blue is the already-pinned --fg-on-blue/--brand-blue exemption', () => {
+      render(<IconCircle tone="blue">!</IconCircle>);
+
+      expect(isExempt(screen.getByText('!'))).toBe(true);
+    });
+  });
+
+  describe('ToggleTile', () => {
+    it('shape=cell, unselected clears AA', () => {
+      render(<ToggleTile shape="cell">1</ToggleTile>);
+
+      expect(ratioFor(screen.getByRole('button', { name: '1' }))).toBeGreaterThanOrEqual(
+        AA_NORMAL_TEXT
+      );
+    });
+
+    it('shape=cell, inactive clears AA even though disabled text is exempt from it', () => {
+      render(
+        <ToggleTile shape="cell" selectable={false}>
+          1
+        </ToggleTile>
+      );
+
+      expect(ratioFor(screen.getByRole('button', { name: '1' }))).toBeGreaterThanOrEqual(
+        AA_NORMAL_TEXT
+      );
+    });
+
+    it('shape=pill, unselected clears AA', () => {
+      render(<ToggleTile shape="pill">Ráno</ToggleTile>);
+
+      expect(ratioFor(screen.getByRole('button', { name: 'Ráno' }))).toBeGreaterThanOrEqual(
+        AA_NORMAL_TEXT
+      );
+    });
+
+    it('shape=pill, inactive clears the disabled floor (fixed: was text-border-strong, 1.38:1)', () => {
+      render(
+        <ToggleTile shape="pill" disabled>
+          Ráno
+        </ToggleTile>
+      );
+
+      expect(ratioFor(screen.getByRole('button', { name: 'Ráno' }))).toBeGreaterThanOrEqual(
+        DISABLED_FLOOR
+      );
+    });
+
+    it.each<'cell' | 'pill'>(['cell', 'pill'])(
+      'shape=%s, selected is the already-pinned --fg-on-blue/--brand-blue exemption',
+      (shape) => {
+        render(
+          <ToggleTile shape={shape} selected>
+            1
+          </ToggleTile>
+        );
+        const tile = screen.getByRole('button', { name: '1' });
+
+        expect(isExempt(tile)).toBe(true);
+      }
+    );
+  });
+
+  describe('Link', () => {
+    it('is the already-pinned --brand-blue/--bg exemption, not a new failure', () => {
+      render(<Link href="/">Zpět na parkoviště</Link>);
+      const link = screen.getByRole('link', { name: 'Zpět na parkoviště' });
+
+      expect(isExempt(link)).toBe(true);
+    });
   });
 });

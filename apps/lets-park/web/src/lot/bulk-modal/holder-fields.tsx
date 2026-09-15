@@ -12,7 +12,7 @@
  * `libs/shared/design-system` (`plan.md`, design-system-first).
  */
 
-import { Select, Stack } from '@lets-park/design-system/primitives';
+import { Box, Select, Stack } from '@lets-park/design-system/primitives';
 import { FormField } from '@lets-park/form';
 import { useTranslations } from '@lets-park/i18n';
 import type { HolderOption } from '../spot-dialog/holder-input';
@@ -26,19 +26,24 @@ export function BulkHolderFields({ options }: BulkHolderFieldsProps) {
   const t = useTranslations('bulk');
 
   return (
-    <Stack spacing={4} className="mb-4">
-      <FormField<BulkHolderFormValues, 'userId'>
-        name="userId"
-        render={({ field, error: fieldError }) => (
-          <Select label={t('holderField')} error={fieldError} {...field}>
-            {options.map((option) => (
-              <option key={option.userId} value={option.userId}>
-                {option.name}
-              </option>
-            ))}
-          </Select>
-        )}
-      />
-    </Stack>
+    // `mb-4` was the caller's placement (space before the grid below it in
+    // `bulk-modal.tsx`), not this field's own chrome — a `Box margin=` wrapper
+    // expresses it since `Stack` has no margin prop of its own.
+    <Box margin={[0, 0, 4, 0]}>
+      <Stack spacing={4}>
+        <FormField<BulkHolderFormValues, 'userId'>
+          name="userId"
+          render={({ field, error: fieldError }) => (
+            <Select label={t('holderField')} error={fieldError} {...field}>
+              {options.map((option) => (
+                <option key={option.userId} value={option.userId}>
+                  {option.name}
+                </option>
+              ))}
+            </Select>
+          )}
+        />
+      </Stack>
+    </Box>
   );
 }

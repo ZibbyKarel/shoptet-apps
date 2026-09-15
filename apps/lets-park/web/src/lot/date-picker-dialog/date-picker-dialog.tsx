@@ -20,7 +20,16 @@
  */
 
 import { useState } from 'react';
-import { Button, Modal, Select, Stack, cx } from '@lets-park/design-system/primitives';
+import {
+  Box,
+  Button,
+  Modal,
+  Select,
+  Stack,
+  Text,
+  ToggleTile,
+  VisuallyHidden,
+} from '@lets-park/design-system/primitives';
 import {
   addMonths,
   parseDateOnly,
@@ -87,72 +96,92 @@ function DatePickerDialogContent({
       title={t('datePickerTitle')}
       closeLabel={t('close')}
     >
-      <Stack direction="row" align="center" spacing={2} className="mb-4">
-        <Button
-          variant="outline"
-          size="sm"
-          aria-label={t('previousDay')}
-          onClick={() => {
-            setViewAnchor((current) => addMonths(current, -1));
-          }}
-        >
-          ‹
-        </Button>
-        <Select
-          aria-label={t('monthLabel')}
-          value={String(parts.month)}
-          onChange={(event) => {
-            setViewAnchor((current) =>
-              addMonths(current, Number(event.target.value) - parts.month)
-            );
-          }}
-          className="flex-1"
-        >
-          {Array.from({ length: MONTHS_IN_YEAR }, (_unused, index) => index + 1).map((month) => (
-            <option key={month} value={month}>
-              {f.monthName(month)}
-            </option>
-          ))}
-        </Select>
-        <Select
-          aria-label={t('yearLabel')}
-          value={String(parts.year)}
-          onChange={(event) => {
-            setViewAnchor((current) =>
-              addMonths(current, (Number(event.target.value) - parts.year) * MONTHS_IN_YEAR)
-            );
-          }}
-        >
-          {years.map((year) => (
-            <option key={year} value={year}>
-              {year}
-            </option>
-          ))}
-        </Select>
-        <Button
-          variant="outline"
-          size="sm"
-          aria-label={t('nextDay')}
-          onClick={() => {
-            setViewAnchor((current) => addMonths(current, 1));
-          }}
-        >
-          ›
-        </Button>
-      </Stack>
+      {/* `mb-4` is this row's own placement above the grid — `Stack` has no margin prop, hence the `Box` wrapper. */}
+      <Box margin={[0, 0, 4, 0]}>
+        <Stack direction="row" align="center" spacing={2}>
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label={t('previousDay')}
+            onClick={() => {
+              setViewAnchor((current) => addMonths(current, -1));
+            }}
+          >
+            ‹
+          </Button>
+          {/*
+            `Select` now takes `width="grow"`, which emits the wrapper's
+            `flex-1` — filling the row between the two arrow buttons and the
+            year select — through a real prop instead of `wrapperClassName`.
+          */}
+          <Select
+            aria-label={t('monthLabel')}
+            value={String(parts.month)}
+            onChange={(event) => {
+              setViewAnchor((current) =>
+                addMonths(current, Number(event.target.value) - parts.month)
+              );
+            }}
+            width="grow"
+          >
+            {Array.from({ length: MONTHS_IN_YEAR }, (_unused, index) => index + 1).map((month) => (
+              <option key={month} value={month}>
+                {f.monthName(month)}
+              </option>
+            ))}
+          </Select>
+          <Select
+            aria-label={t('yearLabel')}
+            value={String(parts.year)}
+            onChange={(event) => {
+              setViewAnchor((current) =>
+                addMonths(current, (Number(event.target.value) - parts.year) * MONTHS_IN_YEAR)
+              );
+            }}
+          >
+            {years.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label={t('nextDay')}
+            onClick={() => {
+              setViewAnchor((current) => addMonths(current, 1));
+            }}
+          >
+            ›
+          </Button>
+        </Stack>
+      </Box>
 
-      <table className="w-full border-separate border-spacing-2">
-        <caption className="sr-only">{t('gridLabel')}</caption>
+      {/* eslint-disable-next-line no-restricted-syntax -- `.calendar-grid` is the one class the design system cannot express (border-spacing has no token utility); see global.css */}
+      <table className="calendar-grid">
+        <VisuallyHidden as="caption">{t('gridLabel')}</VisuallyHidden>
         <thead>
           <tr>
             {WEEKDAY_KEYS.map((key) => (
-              <th
+              // `Text` renders `as="th"` with a `scope` prop, same as
+              // `bulk-modal.tsx`'s weekday heads — collapses the `<th>`/inner
+              // `<span>` pair into one element. This dialog has no weekend
+              // recess to preserve, so the tone has no conditional. The
+              // bottom padding is carried by `.calendar-grid th` in
+              // `global.css`.
+              <Text
                 key={key}
+                as="th"
                 scope="col"
-                className="pb-1 text-xs font-bold uppercase tracking-caps text-fg-3"
+                size="xs"
+                weight="bold"
+                transform="uppercase"
+                tracking="caps"
+                tone="subtle"
               >
                 {t(key)}
-              </th>
+              </Text>
             ))}
           </tr>
         </thead>
@@ -164,9 +193,10 @@ function DatePickerDialogContent({
                   <td key={key} />
                 ) : (
                   <td key={key}>
-                    <button
-                      type="button"
-                      disabled={!day.selectable}
+                    <ToggleTile
+                      shape="cell"
+                      selected={day.selected}
+                      selectable={day.selectable}
                       aria-pressed={day.selectable ? day.selected : undefined}
                       aria-label={
                         day.selectable
@@ -176,19 +206,9 @@ function DatePickerDialogContent({
                       onClick={() => {
                         onSelect(day.date);
                       }}
-                      className={cx(
-                        'h-[var(--control-h-lg)] w-full rounded-sm border text-base font-bold',
-                        'outline-none focus-visible:outline-2 focus-visible:outline-offset-2',
-                        'focus-visible:outline-brand-blue',
-                        day.selectable
-                          ? day.selected
-                            ? 'cursor-pointer border-brand-blue bg-brand-blue text-fg-on-blue'
-                            : 'cursor-pointer border-border bg-bg text-fg hover:bg-bg-muted'
-                          : 'cursor-default border-transparent bg-bg-soft text-fg-3'
-                      )}
                     >
                       {day.dayOfMonth}
-                    </button>
+                    </ToggleTile>
                   </td>
                 )
               )}

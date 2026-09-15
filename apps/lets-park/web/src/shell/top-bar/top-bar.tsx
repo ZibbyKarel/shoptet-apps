@@ -18,11 +18,19 @@
  * ask about all of them without a router, a session or a network.
  */
 
-import { Avatar, Badge, Dropdown, Stack, cx } from '@lets-park/design-system/primitives';
+import {
+  Avatar,
+  Badge,
+  Box,
+  Dropdown,
+  Link,
+  Stack,
+  Text,
+} from '@lets-park/design-system/primitives';
 import type { DropdownItem } from '@lets-park/design-system/primitives';
 import type { UserRole } from '@lets-park/contract';
 import { LOCALES, LOCALE_LABELS, isLocale, useTranslations, type Locale } from '@lets-park/i18n';
-import Link from 'next/link';
+import NextLink from 'next/link';
 import { ADMIN_ROUTE, LOT_ROUTE, SETTINGS_ROUTE } from '../../routes';
 import { Brand } from '../brand';
 import { initialsOf } from '../initials';
@@ -118,45 +126,65 @@ export function TopBar({
   };
 
   return (
-    <header
-      className={cx(
-        'sticky top-0 z-[var(--z-sticky)] flex h-16 items-center justify-between gap-4',
-        'border-b border-border bg-bg px-4'
-      )}
+    // `Box` supplies the sticky positioning (`position="sticky"`, `inset="top"`),
+    // the `--z-sticky` layer (`layer="sticky"`), the fixed bar height
+    // (`height="bar"`, i.e. `h-16`), the bottom-only rule (`border="bottom"`,
+    // i.e. `border-b border-border` — matching the original single-element
+    // markup exactly, not the four-sided `border border-border` a bare
+    // `border` boolean would emit) and the horizontal padding. `Stack` is the
+    // `flex items-center justify-between gap-4` row inside it, with
+    // `height="full"` (`h-full`) so it fills the bar's fixed 64px instead of
+    // sizing to its own content — `align="center"` then centres against that
+    // real height, matching the original `flex h-16 items-center`.
+    <Box
+      as="header"
+      position="sticky"
+      inset="top"
+      layer="sticky"
+      height="bar"
+      border="bottom"
+      background="bg"
+      padding={[0, 4]}
     >
-      <Link href={LOT_ROUTE} className="inline-flex items-center rounded-sm">
-        <Brand />
-      </Link>
+      <Stack direction="row" height="full" align="center" justify="between" spacing={4}>
+        <Link tone="plain" as={NextLink} href={LOT_ROUTE}>
+          <Brand />
+        </Link>
 
-      <Stack direction="row" align="center" spacing={3}>
-        {isAdmin ? (
-          <Badge tone="info" className="uppercase tracking-caps">
-            {t('adminBadge')}
-          </Badge>
-        ) : null}
+        <Stack direction="row" align="center" spacing={3}>
+          {isAdmin ? (
+            <Badge tone="info" transform="uppercase">
+              {t('adminBadge')}
+            </Badge>
+          ) : null}
 
-        <Dropdown
-          triggerLabel={t('userMenu')}
-          label={t('userMenu')}
-          trigger={
-            <>
-              <Avatar tone="dark" initials={initialsOf(name)} />
-              <span className="font-medium">{name}</span>
-              <span aria-hidden="true" className="text-xs text-fg-3">
-                ▾
-              </span>
-            </>
-          }
-          header={
-            <div>
-              <div className="text-sm font-bold text-fg">{name}</div>
-              <div className="text-xs text-fg-3">{email}</div>
-            </div>
-          }
-          items={items}
-          onSelect={onSelect}
-        />
+          <Dropdown
+            triggerLabel={t('userMenu')}
+            label={t('userMenu')}
+            trigger={
+              <>
+                <Avatar tone="dark" initials={initialsOf(name)} />
+                <Text as="span" weight="medium">
+                  {name}
+                </Text>
+                <Text as="span" size="xs" tone="subtle" aria-hidden="true">
+                  ▾
+                </Text>
+              </>
+            }
+            header={
+              <div>
+                <Text weight="bold">{name}</Text>
+                <Text size="xs" tone="subtle">
+                  {email}
+                </Text>
+              </div>
+            }
+            items={items}
+            onSelect={onSelect}
+          />
+        </Stack>
       </Stack>
-    </header>
+    </Box>
   );
 }

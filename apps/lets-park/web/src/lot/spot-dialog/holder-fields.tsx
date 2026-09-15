@@ -14,7 +14,7 @@
  * `libs/shared/design-system` (`plan.md`, design-system-first).
  */
 
-import { Input, Select, Stack } from '@lets-park/design-system/primitives';
+import { Box, Input, Select, Stack } from '@lets-park/design-system/primitives';
 import { FormField } from '@lets-park/form';
 import { useTranslations } from '@lets-park/i18n';
 import { GUEST_HOLDER_VALUE, plateHintFor } from './holder-input';
@@ -30,51 +30,56 @@ export function HolderFields({ options, holderId }: HolderFieldsProps) {
   const t = useTranslations('lot');
   const hint = plateHintFor(options, holderId);
 
+  // `mb-5` was baked into the field stack's own className; it is this
+  // component's placement in `SpotDialog`, not part of `Stack`'s own chrome,
+  // so it moves to a wrapping `Box margin=`.
   return (
-    <Stack spacing={4} className="mb-5">
-      <FormField<HolderFormValues, 'holderId'>
-        name="holderId"
-        render={({ field, error: fieldError }) => (
-          <Select label={t('holderField')} error={fieldError} {...field}>
-            {options.map((option) => (
-              <option key={option.userId} value={option.userId}>
-                {option.name}
-                {option.licensePlate === null ? '' : ` — ${option.licensePlate}`}
-              </option>
-            ))}
-            <option value={GUEST_HOLDER_VALUE}>{t('holderGuestOption')}</option>
-          </Select>
-        )}
-      />
+    <Box margin={[0, 0, 5, 0]}>
+      <Stack spacing={4}>
+        <FormField<HolderFormValues, 'holderId'>
+          name="holderId"
+          render={({ field, error: fieldError }) => (
+            <Select label={t('holderField')} error={fieldError} {...field}>
+              {options.map((option) => (
+                <option key={option.userId} value={option.userId}>
+                  {option.name}
+                  {option.licensePlate === null ? '' : ` — ${option.licensePlate}`}
+                </option>
+              ))}
+              <option value={GUEST_HOLDER_VALUE}>{t('holderGuestOption')}</option>
+            </Select>
+          )}
+        />
 
-      {holderId === GUEST_HOLDER_VALUE ? (
-        <FormField<HolderFormValues, 'guestName'>
-          name="guestName"
+        {holderId === GUEST_HOLDER_VALUE ? (
+          <FormField<HolderFormValues, 'guestName'>
+            name="guestName"
+            render={({ field, error: fieldError }) => (
+              <Input
+                label={t('guestNameField')}
+                // The schema carries no messages — it is built at module level,
+                // where there is no translator — so the copy is resolved here.
+                error={fieldError === undefined ? undefined : t('guestNameRequired')}
+                {...field}
+              />
+            )}
+          />
+        ) : null}
+
+        <FormField<HolderFormValues, 'licensePlate'>
+          name="licensePlate"
           render={({ field, error: fieldError }) => (
             <Input
-              label={t('guestNameField')}
-              // The schema carries no messages — it is built at module level,
-              // where there is no translator — so the copy is resolved here.
-              error={fieldError === undefined ? undefined : t('guestNameRequired')}
+              label={t('plateField')}
+              // Blank means "use the holder's stored plate", so the placeholder is
+              // what will actually be used — not a hint about formatting.
+              placeholder={hint ?? t('noPlate')}
+              error={fieldError}
               {...field}
             />
           )}
         />
-      ) : null}
-
-      <FormField<HolderFormValues, 'licensePlate'>
-        name="licensePlate"
-        render={({ field, error: fieldError }) => (
-          <Input
-            label={t('plateField')}
-            // Blank means "use the holder's stored plate", so the placeholder is
-            // what will actually be used — not a hint about formatting.
-            placeholder={hint ?? t('noPlate')}
-            error={fieldError}
-            {...field}
-          />
-        )}
-      />
-    </Stack>
+      </Stack>
+    </Box>
   );
 }

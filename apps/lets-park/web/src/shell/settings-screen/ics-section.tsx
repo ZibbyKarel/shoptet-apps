@@ -1,6 +1,15 @@
 'use client';
 
-import { Button, Input, Stack, Toast, type ToastTone } from '@lets-park/design-system/primitives';
+import {
+  Box,
+  Button,
+  Divider,
+  Input,
+  Stack,
+  Text,
+  Toast,
+  type ToastTone,
+} from '@lets-park/design-system/primitives';
 import { useTranslations } from '@lets-park/i18n';
 import type { IcsFeedView } from './settings-view';
 import type { CopyState } from './settings-screen';
@@ -35,50 +44,64 @@ export function IcsSection({
   const t = useTranslations('settings');
 
   return (
-    <section
-      aria-labelledby={headingId}
-      className="flex flex-col gap-3 border-t border-border pt-5"
-    >
-      <div>
-        <h3 id={headingId} className="text-sm font-bold text-fg">
-          {t('icsHeading')}
-        </h3>
-        <p className="mt-1 text-sm text-fg-3">{t('icsDescription')}</p>
-      </div>
-
-      {feed.kind === 'unavailable' ? (
-        <p className="text-sm text-fg-3">{t('icsUnavailable')}</p>
-      ) : (
-        <>
-          <Input
-            label={t('icsUrlLabel')}
-            value={feed.url}
-            readOnly
-            onFocus={(event) => event.currentTarget.select()}
-          />
-          <Stack direction="row" align="center" wrap spacing={3}>
-            {/* `size="lg"`, matching the footer's Cancel/Save buttons — the
-                design shows one control height throughout the modal. */}
-            <Button type="button" variant="secondary" size="lg" onClick={onCopy}>
-              {t('icsCopy')}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              onClick={onRequestRegenerate}
-              disabled={isRegenerating}
-            >
-              {t('icsRegenerate')}
-            </Button>
+    <Box as="section" aria-labelledby={headingId}>
+      {/*
+       * `Divider` draws the top rule the plain `<section>` used to carry as
+       * `border-t`. `pt-5` (space between the rule and the heading below)
+       * becomes a top-only `Box` padding rather than `Divider`'s own
+       * `spacing`, because `Divider`'s `spacing` is symmetric (`my-*`) and
+       * would also add space *above* the rule — space this section already
+       * gets from the outer `Stack`'s own `spacing={5}` in `settings-screen.tsx`.
+       */}
+      <Divider />
+      <Box padding={[5, 0, 0, 0]}>
+        <Stack spacing={3}>
+          <Stack spacing={1}>
+            <Text as="h3" id={headingId} size="sm" weight="bold">
+              {t('icsHeading')}
+            </Text>
+            <Text size="sm" tone="subtle">
+              {t('icsDescription')}
+            </Text>
           </Stack>
-          {copyState === 'idle' ? null : (
-            <Toast tone={COPY_FEEDBACK_TONE[copyState]}>
-              {copyState === 'copied' ? t('icsCopied') : t('icsCopyFailed')}
-            </Toast>
+
+          {feed.kind === 'unavailable' ? (
+            <Text size="sm" tone="subtle">
+              {t('icsUnavailable')}
+            </Text>
+          ) : (
+            <>
+              <Input
+                label={t('icsUrlLabel')}
+                value={feed.url}
+                readOnly
+                onFocus={(event) => event.currentTarget.select()}
+              />
+              <Stack direction="row" align="center" wrap spacing={3}>
+                {/* `size="lg"`, matching the footer's Cancel/Save buttons — the
+                    design shows one control height throughout the modal. */}
+                <Button type="button" variant="secondary" size="lg" onClick={onCopy}>
+                  {t('icsCopy')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  onClick={onRequestRegenerate}
+                  disabled={isRegenerating}
+                >
+                  {t('icsRegenerate')}
+                </Button>
+              </Stack>
+              {copyState === 'idle' ? null : (
+                <Toast tone={COPY_FEEDBACK_TONE[copyState]}>
+                  {copyState === 'copied' ? t('icsCopied') : t('icsCopyFailed')}
+                </Toast>
+              )}
+            </>
           )}
-        </>
-      )}
-    </section>
+        </Stack>
+      </Box>
+    </Box>
   );
 }

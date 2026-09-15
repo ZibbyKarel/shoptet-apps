@@ -8,7 +8,9 @@ import {
   CONTROL_TRANSITION,
   FIELD_PADDING_X,
   FOCUS_RING,
+  WRAPPER_WIDTH_CLASSES,
   type ControlSize,
+  type ControlWrapperWidth,
 } from '../control-size';
 import { cx } from '../cx';
 import { Field, mergeDescribedBy, useFieldIds, type FieldOwnProps } from '../field/field';
@@ -20,6 +22,14 @@ export interface SelectProps
   size?: ControlSize | undefined;
   /** Stretches the select to its container. Defaults to `true`. */
   fullWidth?: boolean | undefined;
+  /**
+   * Width of the outer wrapper — as opposed to `fullWidth`, which stretches
+   * the `<select>` itself inside it. No default: omitting it keeps the
+   * wrapper shrink-to-fit, exactly as before this prop existed. See
+   * `ControlWrapperWidth` in `control-size.ts` for what it does and does not
+   * cover.
+   */
+  width?: ControlWrapperWidth | undefined;
   /** Class applied to the outer wrapper rather than the `<select>` itself. */
   wrapperClassName?: string | undefined;
   /** `<option>` elements. */
@@ -38,6 +48,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
   {
     size = 'md',
     fullWidth = true,
+    width,
     label,
     hint,
     error,
@@ -56,7 +67,13 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
   const ids = useFieldIds(id, { hint, error });
 
   return (
-    <Field ids={ids} label={label} hint={hint} error={error} className={wrapperClassName}>
+    <Field
+      ids={ids}
+      label={label}
+      hint={hint}
+      error={error}
+      className={cx(width !== undefined && WRAPPER_WIDTH_CLASSES[width], wrapperClassName)}
+    >
       <span className={cx('relative inline-flex items-center', fullWidth && 'w-full')}>
         <select
           {...rest}

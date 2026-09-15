@@ -19,8 +19,15 @@ export default async function LoginPage() {
   // Someone who is already signed in has no business on the sign-in page —
   // they arrive here by bookmark or by pressing Back after signing in.
   // Bouncing them is what stops a second, pointless trip through Okta.
+  //
+  // The `error === undefined` half of this check matters as much as the
+  // `user` half: `libs/lets-park/auth`'s `isAuthorized` (what `proxy.ts` uses
+  // to gate every other route) treats a session with a refresh error as
+  // unauthenticated and sends it back here. Without the same check here, a
+  // session stuck with `error: 'RefreshAccessTokenError'` bounces forever —
+  // rejected by the proxy, then bounced straight back to `/` by this page.
   const session = await auth();
-  if (session?.user != null) {
+  if (session?.user != null && session.error === undefined) {
     redirect(LOT_ROUTE);
   }
 

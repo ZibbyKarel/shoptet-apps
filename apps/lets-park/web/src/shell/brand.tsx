@@ -18,26 +18,43 @@
  * the scale rather than hand-writing four pixel values is the rule
  * `doc/decision/0011-derived-control-tokens-and-rounding.md` set for exactly
  * this situation.
+ *
+ * **Composed from `IconCircle`/`Text`/`Stack` rather than raw Tailwind** —
+ * this app carries no Tailwind of its own.
+ *
+ * `IconCircle` now covers both size steps this lockup needs: `md` (`size-8`,
+ * 32px) for the top bar's `sm` step, and `lg` (`size-12`, 48px, added for
+ * this exact tile) for the login screen's `lg` step — restoring the design's
+ * 48px tile instead of the previous 32px regression. The glyph's `fontSize`
+ * scale now has `md` (`text-md`) and `2xl` (`text-2xl`) too, so the "P"
+ * glyph is drawn at the design's own two sizes rather than rounded down to
+ * `base`/`xl`.
  */
 
-import { cx } from '@lets-park/design-system/primitives';
+import { IconCircle, Stack, Text } from '@lets-park/design-system/primitives';
 import { useTranslations } from '@lets-park/i18n';
 
 export type BrandSize = 'sm' | 'lg';
 
-const TILE_CLASSES: Record<BrandSize, string> = {
-  sm: 'size-8 rounded-xs text-md',
-  lg: 'size-12 rounded-md text-2xl',
-};
-
-const WORDMARK_CLASSES: Record<BrandSize, string> = {
-  sm: 'text-md tracking-snug',
-  lg: 'text-2xl tracking-tight',
-};
-
-const GAP_CLASSES: Record<BrandSize, string> = {
-  sm: 'gap-2',
-  lg: 'gap-3',
+/** Per-size step, expressed entirely in design-system props. */
+const SIZE_CONFIG: Record<
+  BrandSize,
+  {
+    readonly tileSize: 'md' | 'lg';
+    readonly tileFontSize: 'md' | '2xl';
+    readonly wordmarkSize: 'md' | '2xl';
+    readonly wordmarkTracking: 'snug' | 'tight';
+    readonly gap: 2 | 3;
+  }
+> = {
+  sm: { tileSize: 'md', tileFontSize: 'md', wordmarkSize: 'md', wordmarkTracking: 'snug', gap: 2 },
+  lg: {
+    tileSize: 'lg',
+    tileFontSize: '2xl',
+    wordmarkSize: '2xl',
+    wordmarkTracking: 'tight',
+    gap: 3,
+  },
 };
 
 export interface BrandProps {
@@ -51,31 +68,38 @@ export interface BrandProps {
    * title and a second one in the top bar would break the outline.
    */
   readonly asHeading?: boolean;
-  readonly className?: string;
 }
 
-export function Brand({ size = 'sm', asHeading = false, className }: BrandProps) {
+export function Brand({ size = 'sm', asHeading = false }: BrandProps) {
   const t = useTranslations('shell');
-  const Wordmark = asHeading ? 'h1' : 'span';
+  const config = SIZE_CONFIG[size];
 
-  // A `<div>` rather than a `<span>`, because `asHeading` puts an `<h1>`
-  // inside it and a heading is flow content that phrasing content may not
-  // contain. `<a>` may contain flow content, so the top bar's link still wraps
-  // this legally.
   return (
-    <div className={cx('inline-flex items-center', GAP_CLASSES[size], className)}>
-      <span
+    <Stack direction="row" align="center" spacing={config.gap}>
+      {/*
+       * `sm` renders at `IconCircle`'s `md` step (`size-8`/`rounded-xs`,
+       * 32px) — unchanged from before. `lg` now renders at `IconCircle`'s
+       * `lg` step (`size-12`, 48px), restoring the design's larger tile
+       * instead of the previous fallback to `md`.
+       */}
+      <IconCircle
         aria-hidden="true"
-        className={cx(
-          'inline-flex shrink-0 items-center justify-center bg-brand-blue font-bold text-fg-on-blue tracking-tight',
-          TILE_CLASSES[size]
-        )}
+        shape="square"
+        tone="blue"
+        size={config.tileSize}
+        fontSize={config.tileFontSize}
+        weight="bold"
       >
         P
-      </span>
-      <Wordmark className={cx('m-0 font-bold text-fg', WORDMARK_CLASSES[size])}>
+      </IconCircle>
+      <Text
+        as={asHeading ? 'h1' : 'span'}
+        size={config.wordmarkSize}
+        weight="bold"
+        tracking={config.wordmarkTracking}
+      >
         {t('brand')}
-      </Wordmark>
-    </div>
+      </Text>
+    </Stack>
   );
 }

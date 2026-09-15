@@ -101,4 +101,35 @@ describe('Input', () => {
 
     expect(ref.current).toBeInstanceOf(HTMLInputElement);
   });
+
+  it('emits no width class on the wrapper by default', () => {
+    render(<Input label="Jméno" data-testid="input" />);
+
+    const wrapper = screen.getByRole('textbox').closest('div');
+    expect(wrapper?.className).not.toMatch(/w-full|flex-1/);
+  });
+
+  it.each([
+    ['full', 'w-full'],
+    ['grow', 'flex-1'],
+  ] as const)('applies width=%s to the wrapper', (width, expected) => {
+    render(<Input label="Jméno" width={width} />);
+
+    expect(screen.getByRole('textbox').closest('div')).toHaveClass(expected);
+  });
+
+  it('applies width=grow to the wrapper without also stretching the input', () => {
+    // `grow` (`flex-1`) has no reason to also appear on the `<input>` — unlike
+    // `full`, which would coincide with `fullWidth`'s own `w-full`, this class
+    // is unambiguous evidence `width` lands on the wrapper only.
+    render(<Input label="Jméno" width="grow" />);
+
+    expect(screen.getByRole('textbox').className).not.toContain('flex-1');
+  });
+
+  it('combines width with wrapperClassName', () => {
+    render(<Input label="Jméno" width="grow" wrapperClassName="custom-wrapper" />);
+
+    expect(screen.getByRole('textbox').closest('div')).toHaveClass('flex-1', 'custom-wrapper');
+  });
 });

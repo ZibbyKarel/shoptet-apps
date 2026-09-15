@@ -1,6 +1,14 @@
 'use client';
 
-import { Badge, cx } from '@lets-park/design-system/primitives';
+import {
+  Badge,
+  Box,
+  IconCircle,
+  INSET_FOCUS_RING,
+  Stack,
+  Text,
+  cx,
+} from '@lets-park/design-system/primitives';
 import { useTranslations } from '@lets-park/i18n';
 import type { SpotView } from '../lot-view';
 import { CarGlyph } from './car-glyph';
@@ -84,13 +92,8 @@ export function SpotTile({ spot, onOpen, onAdminOpen }: SpotTileProps) {
     .join(', ');
 
   return (
-    <div
-      className={cx(
-        'relative flex flex-1 basis-[var(--lot-tile-min-w)]',
-        'max-w-[var(--lot-tile-max-w)] flex-col',
-        'border-r-[length:var(--lot-line-w)] border-t-[length:var(--lot-kerb-w)] border-neutral-0/50'
-      )}
-    >
+    // eslint-disable-next-line no-restricted-syntax -- `.lot-bay`: the painted divider lines between bays and at the kerb (`--lot-line-w`/`--lot-kerb-w`), plus the bay's own stretch/max-width pair — domain geometry, no `Box` prop for either.
+    <div className="lot-bay">
       <button
         type="button"
         disabled={inert}
@@ -98,96 +101,152 @@ export function SpotTile({ spot, onOpen, onAdminOpen }: SpotTileProps) {
           onOpen(spot.spotId);
         }}
         aria-label={accessibleName}
-        className={cx(
-          'flex h-[var(--lot-tile-h)] w-full cursor-pointer flex-col items-center',
-          'px-3 py-3 text-left transition duration-[var(--dur-base)] ease-out',
-          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px]',
-          'focus-visible:outline-brand-blue',
-          inert ? 'cursor-default bg-brand-yellow/6' : 'hover:bg-neutral-0/6'
-        )}
+        // eslint-disable-next-line no-restricted-syntax -- `.lot-bay-button` is the bay's own native-button chrome (height, gap, hover/disabled paint); `INSET_FOCUS_RING` is the design system's exported focus-ring constant, not a hand-picked utility.
+        className={cx('lot-bay-button', INSET_FOCUS_RING)}
       >
-        <span className="mb-3 text-sm font-bold tracking-wide text-neutral-0/80">{spot.label}</span>
+        <Text as="span" size="sm" weight="bold" tracking="wide" tone="inverse-80">
+          {spot.label}
+        </Text>
 
         {spot.appearance === 'free' ? (
-          <span className="flex w-full flex-1 flex-col items-center justify-center gap-3 rounded-sm border-2 border-dashed border-neutral-0/30 text-neutral-0/70">
-            <span
-              aria-hidden="true"
-              className="flex size-8 items-center justify-center rounded-cta bg-neutral-0/15 text-xl font-bold leading-none"
+          // `Stack` now takes `as="span"`, so the flex layout (column,
+          // centred, `gap-3`) moves onto it — `.lot-bay-free` shrinks to
+          // just the dashed outline, the width/flex-sizing pair, and the
+          // inherited caption/icon colour (`IconCircle`'s `translucent` tone
+          // sets no foreground of its own), none of which `Stack` reaches.
+          <Stack
+            as="span"
+            direction="column"
+            align="center"
+            justify="center"
+            spacing={3}
+            // eslint-disable-next-line no-restricted-syntax -- `.lot-bay-free`: dashed outline, width/flex-sizing and inherited colour — see the comment above.
+            className="lot-bay-free"
+          >
+            <IconCircle
+              size="md"
+              shape="circle"
+              tone="translucent"
+              fontSize="xl"
+              weight="bold"
+              leading="none"
             >
               +
-            </span>
-            <span className="text-sm font-medium">{t('free')}</span>
-          </span>
+            </IconCircle>
+            <Text as="span" size="sm" weight="medium">
+              {t('free')}
+            </Text>
+          </Stack>
         ) : null}
 
         {spot.appearance === 'taken' && spot.carColorClass !== null ? (
-          <span className="flex flex-1 flex-col items-center justify-start gap-2">
-            <CarGlyph colorClass={spot.carColorClass} />
-            <span className="block text-center">
-              <span className="block text-sm font-bold text-neutral-0">{spot.holderName}</span>
-              {spot.holderPlate === null ? null : (
-                <span className="block text-xs tracking-normal text-neutral-0/60">
-                  {spot.holderPlate}
-                </span>
-              )}
-            </span>
-          </span>
+          // Same move as `.lot-bay-free`: the flex layout is now `Stack`'s
+          // job (`justify="start"` — the design starts this group at the top
+          // of the bay, not centred, unlike the other three states).
+          // `.lot-bay-taken` shrinks to the width/flex-sizing pair alone; it
+          // never carried a border or colour of its own.
+          <Stack
+            as="span"
+            direction="column"
+            align="center"
+            justify="start"
+            spacing={2}
+            // eslint-disable-next-line no-restricted-syntax -- `.lot-bay-taken`: the width/flex-sizing pair only — see the comment above.
+            className="lot-bay-taken"
+          >
+            <CarGlyph colorVar={spot.carColorClass} />
+            <Text as="span" display="block" size="sm" weight="bold" tone="inverse" align="center">
+              {spot.holderName}
+            </Text>
+            {spot.holderPlate === null ? null : (
+              <Text
+                as="span"
+                display="block"
+                size="xs"
+                tracking="normal"
+                tone="inverse-60"
+                align="center"
+              >
+                {spot.holderPlate}
+              </Text>
+            )}
+          </Stack>
         ) : null}
 
         {spot.appearance === 'window-locked' ? (
-          <span className="flex w-full flex-1 flex-col items-center justify-center gap-3 rounded-sm border-2 border-neutral-0/20 bg-brand-dark/15 text-neutral-0/60">
-            <span
-              aria-hidden="true"
-              className="flex size-8 items-center justify-center rounded-cta bg-neutral-0/15 text-base"
-            >
+          // Same move as `.lot-bay-free`. `.lot-bay-locked` shrinks to the
+          // solid tinted outline, the width/flex-sizing pair and the
+          // inherited caption/icon colour.
+          <Stack
+            as="span"
+            direction="column"
+            align="center"
+            justify="center"
+            spacing={3}
+            // eslint-disable-next-line no-restricted-syntax -- `.lot-bay-locked`: solid tinted outline, width/flex-sizing and inherited colour — see the comment above.
+            className="lot-bay-locked"
+          >
+            <IconCircle size="md" shape="circle" tone="translucent">
               ⊘
-            </span>
-            <span className="px-2 text-center text-xs leading-snug">{t('tileLocked')}</span>
-          </span>
+            </IconCircle>
+            <Box padding={[0, 2]}>
+              <Text as="span" size="xs" leading="snug" align="center">
+                {t('tileLocked')}
+              </Text>
+            </Box>
+          </Stack>
         ) : null}
 
         {spot.appearance === 'editing' ? (
-          <span className="lot-hatch flex w-full flex-1 flex-col items-center justify-center gap-3 rounded-sm border-2 border-brand-yellow/65">
-            <span
-              aria-hidden="true"
-              className="flex size-8 items-center justify-center rounded-cta bg-brand-yellow text-base font-bold text-fg-on-yellow"
-            >
+          // Same move as `.lot-bay-free`. `.lot-bay-editing` shrinks to its
+          // own yellow outline and the width/flex-sizing pair;
+          // `.lot-hatch` (the hatched fill, Task 24's painted-surface class)
+          // is unrelated to this move and stays exactly as it was.
+          <Stack
+            as="span"
+            direction="column"
+            align="center"
+            justify="center"
+            spacing={3}
+            // eslint-disable-next-line no-restricted-syntax -- `.lot-hatch`/`.lot-bay-editing`: the hatched fill plus this state's own yellow outline and width/flex-sizing pair — see the comment above.
+            className={cx('lot-hatch', 'lot-bay-editing')}
+          >
+            <IconCircle size="md" shape="circle" tone="yellow" fontSize="base" weight="bold">
               ✎
-            </span>
-            <span className="px-2 text-center text-xs leading-snug text-neutral-0">
-              {t('tileEditing')}
-              <br />
-              <strong className="font-bold">{spot.editorName}</strong>
-            </span>
-          </span>
+            </IconCircle>
+            <Box padding={[0, 2]}>
+              <Text as="span" size="xs" leading="snug" align="center" tone="inverse">
+                {t('tileEditing')}
+                <br />
+                <Text as="strong" weight="bold">
+                  {spot.editorName}
+                </Text>
+              </Text>
+            </Box>
+          </Stack>
         ) : null}
       </button>
 
       {spot.waitlistCount > 0 ? (
-        <Badge
-          tone="warning"
-          className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2"
-        >
-          {t('waiting', { count: spot.waitlistCount })}
-        </Badge>
+        <Box placement="bottom-center" interactive="none">
+          <Badge tone="warning">{t('waiting', { count: spot.waitlistCount })}</Badge>
+        </Box>
       ) : null}
 
       {spot.showAdminMenu ? (
-        <button
-          type="button"
-          onClick={() => {
-            onAdminOpen(spot.spotId);
-          }}
-          aria-label={t('spotMenu', { label: spot.label })}
-          className={cx(
-            'absolute right-2 top-2 flex size-6 cursor-pointer items-center justify-center',
-            'rounded-xs border-0 bg-neutral-0/20 text-sm font-bold leading-none text-neutral-0',
-            'transition duration-[var(--dur-base)] ease-out hover:bg-neutral-0 hover:text-fg',
-            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-blue'
-          )}
-        >
-          ⋯
-        </button>
+        <Box placement="top-right">
+          <button
+            type="button"
+            onClick={() => {
+              onAdminOpen(spot.spotId);
+            }}
+            aria-label={t('spotMenu', { label: spot.label })}
+            // eslint-disable-next-line no-restricted-syntax -- `.lot-spot-menu`: the admin `⋯` control's own chrome (size, translucent fill, hover inversion) — no icon-button primitive exists for it, see the report.
+            className="lot-spot-menu"
+          >
+            ⋯
+          </button>
+        </Box>
       ) : null}
     </div>
   );

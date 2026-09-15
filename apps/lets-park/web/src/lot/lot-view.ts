@@ -73,24 +73,27 @@ export function carColorIndex(userId: string): number {
 }
 
 /**
- * Tailwind utility per palette index — `--color-car-1..3` in `theme.css`.
- *
- * A **text** colour rather than a background: the car is an SVG whose body is
- * `fill="currentColor"`, so one utility colours the shape and anything else
- * the glyph wants to tint with it.
+ * `--color-car-1..3` (`theme.css`), as `var()` references rather than
+ * Tailwind utilities — `car-glyph.tsx` sets these directly as an SVG `fill`
+ * presentation attribute, not through a `className`, so there is no utility
+ * to spell here for the app to spend.
  */
-export const CAR_COLOR_CLASSES = ['text-car-1', 'text-car-2', 'text-car-3'] as const;
+export const CAR_COLOR_VARS = [
+  'var(--color-car-1)',
+  'var(--color-car-2)',
+  'var(--color-car-3)',
+] as const;
 
 /**
- * A guest's car glyph. Deliberately outside {@link CAR_COLOR_CLASSES}: those
+ * A guest's car glyph. Deliberately outside {@link CAR_COLOR_VARS}: those
  * are a stable hash of a user id, and a guest has no id — falling through to
  * index 0 would hand every guest the first user's colour.
  */
-export const GUEST_CAR_COLOR_CLASS = 'text-fg-3';
+export const GUEST_CAR_COLOR_VAR = 'var(--color-fg-3)';
 
 /** The car glyph's fill for one holder. Stable for the life of that user. */
-export function carColorClass(userId: string): string {
-  return CAR_COLOR_CLASSES[carColorIndex(userId)] ?? CAR_COLOR_CLASSES[0];
+export function carColorVar(userId: string): string {
+  return CAR_COLOR_VARS[carColorIndex(userId)] ?? CAR_COLOR_VARS[0];
 }
 
 /** Somebody else's editing hold, as the grid needs to draw it. */
@@ -148,7 +151,14 @@ export interface SpotView {
   /** Holder's name, for `taken`. */
   readonly holderName: string | null;
   readonly holderPlate: string | null;
-  /** Tailwind fill class of the car glyph, for `taken`. */
+  /**
+   * The car glyph's fill, as a `var(...)` reference, for `taken`. The field
+   * keeps this name — not `carColorVar` — because `spot-dialog.tsx` (a
+   * different agent's file) constructs this same shape in its own fixtures;
+   * renaming the field would break a file this task does not own. Only the
+   * *value* changed, from a Tailwind class to a CSS custom-property
+   * reference — see `carColorVar()` below.
+   */
   readonly carColorClass: string | null;
   /** Who is editing, for `editing`. */
   readonly editorName: string | null;
@@ -258,8 +268,8 @@ export function toSpotView(row: DaySpotOverview, context: LotViewContext): SpotV
     carColorClass:
       isTaken && holder !== null
         ? holder.kind === 'USER'
-          ? carColorClass(holder.userId)
-          : GUEST_CAR_COLOR_CLASS
+          ? carColorVar(holder.userId)
+          : GUEST_CAR_COLOR_VAR
         : null,
     editorName: lock?.holderName ?? null,
     waitlistCount: row.waitlistCount,

@@ -61,3 +61,18 @@ export const Disabled: Story = {
 export const KeyboardOperation: Story = {
   args: { label: 'Ovládej klávesnicí' },
 };
+
+/** `width="grow"` (`flex-1`) — the month select filling the row between the nav buttons in `date-picker-dialog.tsx`. */
+export const GrowingInARow: Story = {
+  render: (args) => (
+    <div className="flex items-center gap-2">
+      <button type="button" className="shrink-0">
+        ‹
+      </button>
+      <Select {...args} width="grow" />
+      <button type="button" className="shrink-0">
+        ›
+      </button>
+    </div>
+  ),
+};

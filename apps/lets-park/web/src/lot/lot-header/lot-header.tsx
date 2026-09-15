@@ -13,7 +13,17 @@
  * - {@link RealtimeNotice} — the affordance for a refused socket.
  */
 
-import { Button, Stack, cx } from '@lets-park/design-system/primitives';
+import {
+  Box,
+  Button,
+  Callout,
+  Chip,
+  IconCircle,
+  Spacer,
+  Stack,
+  Text,
+  VisuallyHidden,
+} from '@lets-park/design-system/primitives';
 import { useDateFormatters, useTranslations } from '@lets-park/i18n';
 import type { DateOnly } from '@lets-park/i18n';
 import type { BannerView, DayNoteView, LotCounts } from '../lot-view';
@@ -55,52 +65,65 @@ export function LotHeader({
   const f = useDateFormatters();
 
   return (
-    <Stack direction="row" wrap align="center" justify="between" spacing={6} className="mb-6">
-      {/* The design has no visible page title — the date pill is the heading
-          now — but the document still needs one `h1` for assistive tech. */}
-      <h1 className="sr-only">{sectionTitle}</h1>
+    // `mb-6` on the row below is caller spacing, not part of `Stack` — expressed
+    // as a wrapping `Box margin=` (a bottom-only quad, since `Stack` has no
+    // margin prop of its own).
+    <Box margin={[0, 0, 6, 0]}>
+      <Stack direction="row" wrap align="center" justify="between" spacing={6}>
+        {/* The design has no visible page title — the date pill is the heading
+            now — but the document still needs one `h1` for assistive tech. */}
+        <VisuallyHidden as="h1">{sectionTitle}</VisuallyHidden>
 
-      <Stack direction="row" wrap align="center" spacing={3}>
-        <Stack
-          direction="row"
-          align="center"
-          spacing={1}
-          className="rounded-cta border border-border bg-bg p-1"
-        >
-          <Button variant="ghost" size="sm" aria-label={t('previousDay')} onClick={onPreviousDay}>
-            ‹
-          </Button>
-          <Button variant="ghost" size="sm" onClick={onOpenDatePicker}>
-            {f.fullDate(date)}
-          </Button>
-          <Button variant="ghost" size="sm" aria-label={t('nextDay')} onClick={onNextDay}>
-            ›
-          </Button>
+        <Stack direction="row" wrap align="center" spacing={3}>
+          {/* `Box`'s radius scale now includes `cta`, the fully-rounded pill
+              step every other pill-shaped control in the design uses. */}
+          <Box border background="bg" padding={1} radius="cta">
+            <Stack direction="row" align="center" spacing={1}>
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label={t('previousDay')}
+                onClick={onPreviousDay}
+              >
+                ‹
+              </Button>
+              <Button variant="ghost" size="sm" onClick={onOpenDatePicker}>
+                {f.fullDate(date)}
+              </Button>
+              <Button variant="ghost" size="sm" aria-label={t('nextDay')} onClick={onNextDay}>
+                ›
+              </Button>
+            </Stack>
+          </Box>
+          <Text
+            size="xs"
+            weight="bold"
+            transform="uppercase"
+            tracking="caps"
+            tone={note.highlighted ? 'default' : 'subtle'}
+          >
+            {t(note.key, { name: note.name })}
+          </Text>
         </Stack>
-        <p
-          className={cx(
-            'text-xs font-bold uppercase tracking-caps',
-            note.highlighted ? 'text-fg' : 'text-fg-3'
-          )}
-        >
-          {t(note.key, { name: note.name })}
-        </p>
-      </Stack>
 
-      <Stack direction="row" wrap align="center" spacing={3}>
-        <Button variant="outline" size="sm" onClick={onToday}>
-          {t('today')}
-        </Button>
-        <p className="flex h-9 items-center gap-2 rounded-cta border border-border bg-bg px-4 text-base">
-          {t('occupiedCount', { taken: counts.taken, total: counts.free + counts.taken })}
-        </p>
-        {showBulk ? (
-          <Button size="sm" onClick={onBulk}>
-            {t('bulkReservation')}
+        <Stack direction="row" wrap align="center" spacing={3}>
+          <Button variant="outline" size="sm" onClick={onToday}>
+            {t('today')}
           </Button>
-        ) : null}
+          {/* Byte-for-byte `Chip`'s `md` size + `outline` tone, rendered as the
+              `<p>` this call site has always used — see `chip.tsx`'s own
+              `ChipAs` doc comment, which names this exact spot. */}
+          <Chip size="md" tone="outline" as="p">
+            {t('occupiedCount', { taken: counts.taken, total: counts.free + counts.taken })}
+          </Chip>
+          {showBulk ? (
+            <Button size="sm" onClick={onBulk}>
+              {t('bulkReservation')}
+            </Button>
+          ) : null}
+        </Stack>
       </Stack>
-    </Stack>
+    </Box>
   );
 }
 
@@ -120,29 +143,27 @@ export function WindowBanner({ banner }: { readonly banner: BannerView }) {
   const isSuccess = banner.tone === 'success';
 
   return (
-    <Stack
-      direction="row"
-      align="center"
-      spacing={3}
-      role="status"
-      className={cx(
-        'mb-5 rounded-md border px-4 py-3',
-        isSuccess
-          ? 'border-brand-green bg-brand-green-100'
-          : 'border-brand-yellow bg-brand-yellow-100'
-      )}
-    >
-      <span
-        aria-hidden="true"
-        className={cx(
-          'inline-flex size-6 shrink-0 items-center justify-center rounded-xs text-sm font-bold',
-          isSuccess ? 'bg-brand-green text-fg-on-green' : 'bg-brand-yellow text-fg-on-yellow'
-        )}
+    // `mb-5` was baked into the panel's own className before `Callout` existed;
+    // it is caller placement, not chrome, so it moves to a wrapping `Box`.
+    <Box margin={[0, 0, 5, 0]}>
+      <Callout
+        tone={isSuccess ? 'success' : 'warning'}
+        align="center"
+        role="status"
+        icon={
+          // `tone="green"` reads `text-brand-dark` here, not white — a
+          // deliberate contrast fix (`doc/decision/0266`) that changes this
+          // glyph's colour on the green banner.
+          <IconCircle size="sm" shape="square" tone={isSuccess ? 'green' : 'yellow'} weight="bold">
+            {isSuccess ? '✓' : '⊘'}
+          </IconCircle>
+        }
       >
-        {isSuccess ? '✓' : '⊘'}
-      </span>
-      <p className="text-base leading-snug text-fg">{t(banner.messageKey, banner.values)}</p>
-    </Stack>
+        <Text size="base" leading="snug">
+          {t(banner.messageKey, banner.values)}
+        </Text>
+      </Callout>
+    </Box>
   );
 }
 
@@ -177,20 +198,27 @@ export function RealtimeNotice({
   const t = useTranslations('lot');
 
   return (
-    <Stack
-      direction="row"
-      wrap
-      align="center"
-      spacing={3}
-      role="status"
-      className="mb-5 rounded-md border border-brand-yellow bg-brand-yellow-100 px-4 py-3"
-    >
-      <p className="flex-1 text-base leading-snug text-fg">{t('realtimeRejected')}</p>
-      {onReconnect === undefined ? null : (
-        <Button variant="secondary" size="sm" onClick={onReconnect}>
-          {t('realtimeReconnect')}
-        </Button>
-      )}
-    </Stack>
+    <Box margin={[0, 0, 5, 0]}>
+      {/* No `icon` slot here, so `Callout` imposes no layout of its own — the
+          text-plus-button row is this caller's own `Stack`, exactly as
+          `callout.tsx`'s doc comment names this call site. */}
+      <Callout tone="warning" role="status">
+        <Stack direction="row" wrap align="center" spacing={3}>
+          <Text size="base" leading="snug">
+            {t('realtimeRejected')}
+          </Text>
+          {onReconnect === undefined ? null : (
+            <>
+              {/* Grows to fill the row, pushing the button to the trailing edge —
+                  the same job the original `<p className="flex-1">` did. */}
+              <Spacer />
+              <Button variant="secondary" size="sm" onClick={onReconnect}>
+                {t('realtimeReconnect')}
+              </Button>
+            </>
+          )}
+        </Stack>
+      </Callout>
+    </Box>
   );
 }

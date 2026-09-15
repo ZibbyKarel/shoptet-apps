@@ -131,4 +131,60 @@ describe('Stack', () => {
     expect(screen.getByTestId('input-a')).toHaveValue('hello');
     expect(screen.getByTestId('input-b')).toHaveValue('');
   });
+
+  it('renders a div by default', () => {
+    render(<Stack data-testid="stack" />);
+
+    expect(screen.getByTestId('stack').tagName).toBe('DIV');
+  });
+
+  it.each(['section', 'header', 'footer', 'main', 'nav', 'aside', 'article', 'span'] as const)(
+    'renders as=%s as the matching element',
+    (as) => {
+      render(<Stack data-testid="stack" as={as} />);
+
+      expect(screen.getByTestId('stack').tagName).toBe(as.toUpperCase());
+    }
+  );
+
+  it('forwards a ref to the element chosen by as', () => {
+    const ref = { current: null as HTMLElement | null };
+    render(<Stack ref={ref} as="nav" />);
+
+    expect(ref.current).toBeInstanceOf(HTMLElement);
+    expect(ref.current?.tagName).toBe('NAV');
+  });
+
+  it('applies spacingX/spacingY independently of spacing', () => {
+    render(<Stack data-testid="stack" spacingX={4} spacingY={1} />);
+
+    const stack = screen.getByTestId('stack');
+    expect(stack).toHaveClass('gap-x-4', 'gap-y-1');
+    expect(stack.className).not.toMatch(/(?<!-x-|-y-)gap-\d/);
+  });
+
+  it('spacingX/spacingY override spacing on their own axis', () => {
+    render(<Stack data-testid="stack" spacing={6} spacingY={1} />);
+
+    const stack = screen.getByTestId('stack');
+    expect(stack).toHaveClass('gap-6', 'gap-y-1');
+  });
+
+  it('maps minHeight="viewport" to min-h-dvh', () => {
+    render(<Stack data-testid="stack" minHeight="viewport" />);
+
+    expect(screen.getByTestId('stack')).toHaveClass('min-h-dvh');
+  });
+
+  it('maps height="full" to h-full', () => {
+    render(<Stack data-testid="stack" height="full" />);
+
+    expect(screen.getByTestId('stack')).toHaveClass('h-full');
+  });
+
+  it('emits no height class by default', () => {
+    render(<Stack data-testid="stack" />);
+
+    expect(screen.getByTestId('stack').className).not.toContain('h-full');
+  });
 });

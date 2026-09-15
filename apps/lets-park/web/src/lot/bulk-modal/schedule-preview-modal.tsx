@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import type { useTranslations } from '@lets-park/i18n';
-import { Button, Modal } from '@lets-park/design-system/primitives';
+import { Box, Button, Modal, Text } from '@lets-park/design-system/primitives';
 import type { PreviewBulkOutput } from '@lets-park/contract';
 import { CalendarTable } from './calendar-table';
 
@@ -60,19 +60,22 @@ export function SchedulePreviewModal({
       }
     >
       <CalendarTable days={proposal.days} t={t} />
-      <p className="mt-4 text-base text-fg-2">
-        {/*
-          The server's own count, exactly as the result step uses
-          `result.summary`. Re-deriving it here by filtering `days` would put
-          two authorities behind one sentence, and the moment they disagreed
-          the user would read a difference between the two steps that the
-          comparison panel cannot explain, because no day moved.
-        */}
-        {t('scheduleSummary', {
-          assigned: proposal.summary.assigned,
-          queued: proposal.summary.queued,
-        })}
-      </p>
+      {/* `mt-4` is this line's placement under the table, not its own chrome — see `Box.margin`. */}
+      <Box margin={[4, 0, 0, 0]}>
+        <Text as="p" size="base" tone="muted">
+          {/*
+            The server's own count, exactly as the result step uses
+            `result.summary`. Re-deriving it here by filtering `days` would put
+            two authorities behind one sentence, and the moment they disagreed
+            the user would read a difference between the two steps that the
+            comparison panel cannot explain, because no day moved.
+          */}
+          {t('scheduleSummary', {
+            assigned: proposal.summary.assigned,
+            queued: proposal.summary.queued,
+          })}
+        </Text>
+      </Box>
       {failureNote}
     </Modal>
   );

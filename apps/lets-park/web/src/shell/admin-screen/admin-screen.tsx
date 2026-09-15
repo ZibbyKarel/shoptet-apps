@@ -27,7 +27,7 @@
 import type { ReactNode } from 'react';
 import type { UserRole } from '@lets-park/contract';
 import { useTranslations } from '@lets-park/i18n';
-import { Tabs } from '@lets-park/design-system/primitives';
+import { Stack, Tabs, Text } from '@lets-park/design-system/primitives';
 import { EmptyState } from '@lets-park/design-system/compounds';
 import { ScreenError, ScreenLoading } from '../screen-state/screen-state';
 
@@ -78,19 +78,31 @@ export function AdminScreen({
 
   return (
     <>
-      <p className="text-xs font-bold uppercase tracking-caps text-fg-3">{t('eyebrow')}</p>
-      <h1 className="mt-2 mb-6 text-3xl font-bold tracking-tight text-fg">
-        {sections('administration')}
-      </h1>
-      <Tabs
-        label={t('tabsLabel')}
-        items={[
-          { id: 'overview', label: t('tabOverview'), content: panels.overview },
-          { id: 'users', label: t('tabUsers'), content: panels.users },
-          { id: 'spots', label: t('tabSpots'), content: panels.spots },
-          { id: 'window', label: t('tabWindow'), content: panels.window },
-        ]}
-      />
+      {/*
+        `mt-2 mb-6` on the heading below was the gap between the eyebrow and
+        the title *and* the gap after the title before the tab strip — `Text`
+        emits no margin of its own, so both are now `Stack spacing`: one
+        wrapping the pair, one after it.
+      */}
+      <Stack spacing={6}>
+        <Stack spacing={2}>
+          <Text size="xs" weight="bold" tone="subtle" tracking="caps" transform="uppercase">
+            {t('eyebrow')}
+          </Text>
+          <Text as="h1" size="3xl" weight="bold" tracking="tight">
+            {sections('administration')}
+          </Text>
+        </Stack>
+        <Tabs
+          label={t('tabsLabel')}
+          items={[
+            { id: 'overview', label: t('tabOverview'), content: panels.overview },
+            { id: 'users', label: t('tabUsers'), content: panels.users },
+            { id: 'spots', label: t('tabSpots'), content: panels.spots },
+            { id: 'window', label: t('tabWindow'), content: panels.window },
+          ]}
+        />
+      </Stack>
     </>
   );
 }

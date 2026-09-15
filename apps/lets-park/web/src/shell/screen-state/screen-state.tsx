@@ -17,7 +17,7 @@
  */
 
 import type { ReactNode } from 'react';
-import { Button, Stack } from '@lets-park/design-system/primitives';
+import { Box, Button, Spinner, Stack, Text } from '@lets-park/design-system/primitives';
 import { EmptyState } from '@lets-park/design-system/compounds';
 import type { EmptyStateHeadingLevel } from '@lets-park/design-system/compounds';
 import { toContractError } from '@lets-park/api-client';
@@ -41,13 +41,24 @@ export function ScreenLoading({ label }: ScreenLoadingProps) {
   const text = label ?? t('loading');
 
   return (
-    <Stack role="status" align="center" justify="center" spacing={3} className="px-6 py-16">
-      <span
-        aria-hidden="true"
-        className="size-6 animate-spin rounded-cta border-2 border-border border-t-brand-blue"
-      />
-      <span className="text-sm text-fg-3">{text}</span>
-    </Stack>
+    // `Box` supplies the `py-16 px-6` padding — `Stack` has no padding prop
+    // of its own, so the two layers split the job the way `Card`/`Container`
+    // already do elsewhere (padding on an outer `Box`/`div`, layout on the
+    // flex child). `role="status"` stays on the `Stack`: that is the element
+    // whose accessible content changes when this state is replaced.
+    <Box padding={[16, 6]}>
+      <Stack role="status" align="center" justify="center" spacing={3}>
+        {/*
+         * `Spinner size="md"` is byte-identical to the hand-rolled ring this
+         * used to be (`size-6 animate-spin rounded-cta border-2 border-border
+         * border-t-brand-blue`), now owned by the design system.
+         */}
+        <Spinner size="md" />
+        <Text as="span" size="sm" tone="subtle">
+          {text}
+        </Text>
+      </Stack>
+    </Box>
   );
 }
 

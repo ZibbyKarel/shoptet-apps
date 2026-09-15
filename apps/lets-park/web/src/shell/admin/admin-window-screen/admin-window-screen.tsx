@@ -29,7 +29,19 @@ import type {
   MonthWindowOverview,
   ReservationLockMode,
 } from '@lets-park/contract';
-import { Badge, Card, Grid, Stack, Stepper, Toast } from '@lets-park/design-system/primitives';
+import {
+  Badge,
+  Box,
+  Card,
+  Divider,
+  Grid,
+  List,
+  ListItem,
+  Stack,
+  Stepper,
+  Text,
+  Toast,
+} from '@lets-park/design-system/primitives';
 import type { BadgeTone } from '@lets-park/design-system/primitives';
 import {
   MAX_OPEN_DAYS_BEFORE,
@@ -105,19 +117,34 @@ export function AdminWindowScreen({
       {({ settings: { openDaysBefore, lockMode }, months }) => (
         <Grid columns={{ base: 1, md: 2 }} spacing={6}>
           <section aria-label={t('windowOpenTitle')}>
-            <Card className="h-full">
+            {/*
+              `Card`'s `fillHeight` prop (`h-full`) is `Grid`'s two direct
+              children stretching to end level — `Grid` gets no `align` prop
+              of its own because CSS grid's default `align-items: stretch`
+              already does this for both cards without one.
+            */}
+            <Card fillHeight>
               <Stack spacing={5}>
-                <div>
-                  <h3 className="text-lg font-bold text-fg">{t('windowOpenTitle')}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-fg-3">
+                <Stack spacing={2}>
+                  <Text as="h3" size="lg" weight="bold">
+                    {t('windowOpenTitle')}
+                  </Text>
+                  {/*
+                    Original was `leading-relaxed` (1.625). `Text`'s `leading`
+                    scale has no `relaxed` step, but `loose` in this
+                    workspace resolves to `1.6` (`theme.css` maps
+                    `--lh-loose: 1.6`), not stock Tailwind's `2` — within 1.5%
+                    of the original, so it is used rather than left unset.
+                  */}
+                  <Text size="sm" tone="subtle" leading="loose">
                     {t('windowOpenDescription')}
-                  </p>
-                </div>
+                  </Text>
+                </Stack>
 
                 <Stack spacing={3}>
-                  <span className="text-xs font-bold uppercase tracking-caps text-fg-3">
+                  <Text size="xs" weight="bold" tone="subtle" tracking="caps" transform="uppercase">
                     {t('windowDaysLabel')}
-                  </span>
+                  </Text>
                   <Stepper
                     label={t('windowDaysLabel')}
                     value={openDaysBefore}
@@ -157,19 +184,29 @@ export function AdminWindowScreen({
           </section>
 
           <section aria-label={t('windowMonthsTitle')}>
-            <Card padding={0} className="h-full">
+            <Card padding={0} fillHeight>
               <Stack>
-                <div className="border-b border-divider px-6 py-5">
-                  <h3 className="text-lg font-bold text-fg">{t('windowMonthsTitle')}</h3>
-                  <p className="mt-1 text-sm text-fg-3">
-                    {t('windowMonthsDescription', { today: f.dayMonthAndYear(today) })}
-                  </p>
-                </div>
-                <ul className="flex flex-col">
+                {/*
+                  `Box` composes the header's own padding, `Divider` the rule
+                  under it — the same two classes the hand-rolled
+                  `border-b border-divider px-6 py-5` div carried at once.
+                */}
+                <Box padding={[5, 6]}>
+                  <Stack spacing={1}>
+                    <Text as="h3" size="lg" weight="bold">
+                      {t('windowMonthsTitle')}
+                    </Text>
+                    <Text size="sm" tone="subtle">
+                      {t('windowMonthsDescription', { today: f.dayMonthAndYear(today) })}
+                    </Text>
+                  </Stack>
+                </Box>
+                <Divider tone="divider" />
+                <List divider="line">
                   {months.map((month) => (
                     <MonthRow key={month.month} month={month} />
                   ))}
-                </ul>
+                </List>
               </Stack>
             </Card>
           </section>
@@ -189,16 +226,26 @@ function MonthRow({ month }: { readonly month: MonthWindowOverview }) {
   };
 
   return (
-    <li className="flex flex-wrap items-center justify-between gap-3 border-b border-divider px-6 py-4 last:border-b-0">
-      <div>
-        <p className="font-bold text-fg">{f.monthAndYear(startOfYearMonth(month.month))}</p>
-        <p className="mt-0.5 text-sm text-fg-3">
+    // `divider="line"` on the enclosing `List` supplies the
+    // `border-b border-divider last:border-b-0` this `<li>` used to carry
+    // itself. The e2e suite locates this row by role and reads its two `<p>`
+    // elements by position (`admin-window.spec.ts:93,99`) — `Text`'s default
+    // `as="p"` keeps both real paragraphs, in the same order.
+    <ListItem padding={[4, 6]} direction="row" wrap align="center" justify="between" spacing={3}>
+      <Stack spacing={1}>
+        <Text weight="bold">{f.monthAndYear(startOfYearMonth(month.month))}</Text>
+        {/*
+          Original was `mt-0.5` (2px). `Stack`'s gap scale starts at `1`
+          (4px) — the nearest step, used here as an approximation, not an
+          exact match.
+        */}
+        <Text size="sm" tone="subtle">
           {month.lockMode === 'AUTO'
             ? t('windowMonthRangeAuto', range)
             : t('windowMonthRangeForced', range)}
-        </p>
-      </div>
+        </Text>
+      </Stack>
       <Badge tone={BADGE_STATE_TONE[month.state]}>{t(`windowState${month.state}`)}</Badge>
-    </li>
+    </ListItem>
   );
 }

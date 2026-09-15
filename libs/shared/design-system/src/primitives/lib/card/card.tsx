@@ -11,6 +11,14 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
    * header/list children each manage their own spacing.
    */
   padding?: Padding | undefined;
+  /**
+   * `h-full` — stretches the card to fill its parent's row height. Added for
+   * the two `Grid`-sibling cards in `admin-window-screen.tsx`, which carried
+   * `className="h-full"` before this rewrite so they end level even when
+   * their content doesn't. Defaults to `false`, so an existing `<Card>` with
+   * no `fillHeight` keeps its content-sized height, unchanged.
+   */
+  fillHeight?: boolean | undefined;
 }
 
 /**
@@ -24,7 +32,7 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
  * because `theme.css` remaps the `--radius-*` namespace.
  */
 export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
-  { padding = 6, className, children, ...rest },
+  { padding = 6, fillHeight = false, className, children, ...rest },
   ref
 ) {
   return (
@@ -34,6 +42,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
       className={cx(
         'rounded-lg border border-border bg-bg',
         resolvePadding(padding, 'p'),
+        fillHeight && 'h-full',
         className
       )}
     >

@@ -51,3 +51,18 @@ export const Disabled: Story = {
 export const Focus: Story = {
   args: { label: 'Klikni nebo zmáčkni Tab' },
 };
+
+/** `width="grow"` (`flex-1`) — a field filling the space between fixed-width siblings, as in `date-picker-dialog.tsx`'s calendar nav row. */
+export const GrowingInARow: Story = {
+  render: () => (
+    <div className="flex items-center gap-2">
+      <button type="button" className="shrink-0">
+        ‹
+      </button>
+      <Input label="Měsíc" width="grow" />
+      <button type="button" className="shrink-0">
+        ›
+      </button>
+    </div>
+  ),
+};

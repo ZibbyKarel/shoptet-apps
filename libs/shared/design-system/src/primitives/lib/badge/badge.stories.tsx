@@ -32,3 +32,13 @@ export const Tones: Story = {
 export const LongLabel: Story = {
   args: { children: 'Čeká na potvrzení správcem', tone: 'warning' },
 };
+
+/** The smaller "tag" shape — the GUEST label next to a holder's name. */
+export const Tag: Story = {
+  args: { children: 'Host', tone: 'tag', size: 'sm' },
+};
+
+/** `transform="uppercase"` on an ordinary `md` badge, as `top-bar.tsx` needs it. */
+export const UppercaseTransform: Story = {
+  args: { children: 'Admin', tone: 'info', transform: 'uppercase' },
+};

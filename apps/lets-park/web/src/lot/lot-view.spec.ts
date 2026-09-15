@@ -2,9 +2,9 @@ import type { AdminUser, DaySpotOverview, MonthWindowOverview } from '@lets-park
 import { CAR_COLOR_PALETTE } from '@lets-park/design-system/tokens';
 import { createDateFormatters } from '@lets-park/i18n';
 import {
-  CAR_COLOR_CLASSES,
-  GUEST_CAR_COLOR_CLASS,
-  carColorClass,
+  CAR_COLOR_VARS,
+  GUEST_CAR_COLOR_VAR,
+  carColorVar,
   carColorIndex,
   toBannerView,
   toDayNoteView,
@@ -85,7 +85,7 @@ describe('carColorIndex', () => {
     // The design requires this explicitly: a car whose colour changed between
     // renders would be a different car every repaint.
     expect(carColorIndex(VIEWER)).toBe(carColorIndex(VIEWER));
-    expect(carColorClass(VIEWER)).toBe(carColorClass(VIEWER));
+    expect(carColorVar(VIEWER)).toBe(carColorVar(VIEWER));
   });
 
   it('does not collapse ids that share a long prefix', () => {
@@ -104,17 +104,17 @@ describe('carColorIndex', () => {
   it('names the utility for the index it picked, not a fixed one', () => {
     // Written as an invariant tying the two functions together rather than as
     // a shape check. A shape check (`/^text-car-[123]$/`) was the first
-    // version and a constant `carColorClass` survived it — the hazard of
+    // version and a constant `carColorVar` survived it — the hazard of
     // mutating only the helper the tests call, when the call site is what
     // ships.
     for (const id of ['', 'a', VIEWER, OTHER, 'spot-holder-7', 'ř💥']) {
-      expect(carColorClass(id)).toBe(`text-car-${carColorIndex(id) + 1}`);
+      expect(carColorVar(id)).toBe(`var(--color-car-${carColorIndex(id) + 1})`);
     }
   });
 
   it('does not paint every car the same colour', () => {
     const classes = new Set(
-      Array.from({ length: 40 }, (_unused, index) => carColorClass(`user-${index}`))
+      Array.from({ length: 40 }, (_unused, index) => carColorVar(`user-${index}`))
     );
     expect(classes.size).toBe(CAR_COLOR_PALETTE.length);
   });
@@ -203,7 +203,7 @@ describe('toSpotView', () => {
     expect(view.isMine).toBe(false);
     expect(view.holderName).toBe('Petr Novák');
     expect(view.holderPlate).toBe('8SC 9012');
-    expect(view.carColorClass).toBe(carColorClass(OTHER));
+    expect(view.carColorClass).toBe(carColorVar(OTHER));
   });
 
   it('offers cancelling rather than queueing on the caller’s own reservation', () => {
@@ -486,7 +486,7 @@ describe('toSpotView — who holds the bay', () => {
   });
 
   it('gives a guest the neutral car colour, not a per-user one', () => {
-    // `carColorClass` is a hash of a user id and is stable for the life of that
+    // `carColorVar` is a hash of a user id and is stable for the life of that
     // user. A guest has no id to hash, and falling through to index 0 would
     // silently claim the first user's colour.
     const view = toSpotView(
@@ -494,7 +494,7 @@ describe('toSpotView — who holds the bay', () => {
       context({ viewerUserId: VIEWER })
     );
 
-    expect(view.carColorClass).toBe(GUEST_CAR_COLOR_CLASS);
-    expect(CAR_COLOR_CLASSES).not.toContain(view.carColorClass);
+    expect(view.carColorClass).toBe(GUEST_CAR_COLOR_VAR);
+    expect(CAR_COLOR_VARS).not.toContain(view.carColorClass);
   });
 });

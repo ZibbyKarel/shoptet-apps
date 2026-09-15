@@ -13,7 +13,7 @@
  * `doc/auth.md` §"The flow, end to end".
  */
 
-import { Button, Stack } from '@lets-park/design-system/primitives';
+import { Box, Button, IconCircle, Stack, Text } from '@lets-park/design-system/primitives';
 import { useTranslations } from '@lets-park/i18n';
 import { Brand } from '../brand';
 
@@ -26,36 +26,58 @@ export function LoginScreen({ action }: LoginScreenProps) {
   const t = useTranslations('login');
 
   return (
-    <Stack align="center" justify="center" spacing={8} className="min-h-dvh bg-bg px-4 text-center">
-      <Brand size="lg" asHeading />
+    // Split across two layers: `Box` carries the background and the
+    // horizontal-only padding (`px-4`), `Stack` the full-viewport height
+    // (`minHeight="viewport"`, i.e. `min-h-dvh`) and the centring
+    // (`align`/`justify`/`spacing`) that used to sit on one element together.
+    // `text-center` had no single prop either — each text child below gets
+    // its own `align="center"` instead of relying on inheritance.
+    <Box background="bg" padding={[0, 4]}>
+      <Stack minHeight="viewport" align="center" justify="center" spacing={8}>
+        <Brand size="lg" asHeading />
 
-      <p className="text-md leading-loose text-fg-3">
-        {t('tagline')}
-        <br />
-        {t('taglineSecondary')}
-      </p>
+        <Text size="md" leading="loose" tone="subtle" align="center">
+          {t('tagline')}
+          <br />
+          {t('taglineSecondary')}
+        </Text>
 
-      <form action={action}>
-        <Button
-          type="submit"
-          size="xl"
-          startAdornment={
-            // The design's inset "O" chip: a translucent square on the blue
-            // fill, not an icon. `bg-bg/20` is the white surface token at the
-            // design's 22% alpha.
-            <span
-              aria-hidden="true"
-              className="inline-flex size-5 items-center justify-center rounded-xs bg-bg/20 text-xs font-bold"
-            >
-              O
-            </span>
-          }
+        <form action={action}>
+          <Button
+            type="submit"
+            size="xl"
+            startAdornment={
+              // The design's inset "O" chip: a translucent square on the blue
+              // fill, not an icon. `translucent-light` (`bg-bg/20`) is the
+              // white surface token at the design's 22% alpha.
+              <IconCircle
+                aria-hidden="true"
+                size="xs"
+                shape="square"
+                tone="translucent-light"
+                fontSize="xs"
+                weight="bold"
+              >
+                O
+              </IconCircle>
+            }
+          >
+            {t('signIn')}
+          </Button>
+        </form>
+
+        <Text
+          as="p"
+          size="xs"
+          weight="bold"
+          transform="uppercase"
+          tracking="caps"
+          tone="faint"
+          align="center"
         >
-          {t('signIn')}
-        </Button>
-      </form>
-
-      <p className="text-xs font-bold uppercase tracking-caps text-neutral-400">{t('footnote')}</p>
-    </Stack>
+          {t('footnote')}
+        </Text>
+      </Stack>
+    </Box>
   );
 }
