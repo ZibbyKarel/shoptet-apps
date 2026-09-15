@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import type { useTranslations } from '@lets-park/i18n';
 import { Box, Button, Modal, Text } from '@lets-park/design-system/primitives';
 import type { PreviewBulkOutput } from '@lets-park/contract';
@@ -25,7 +24,6 @@ export interface SchedulePreviewModalProps {
   readonly onBack: () => void;
   readonly confirmPending: boolean;
   readonly onConfirm: () => void;
-  readonly failureNote: ReactNode;
 }
 
 export function SchedulePreviewModal({
@@ -37,7 +35,6 @@ export function SchedulePreviewModal({
   onBack,
   confirmPending,
   onConfirm,
-  failureNote,
 }: SchedulePreviewModalProps) {
   return (
     <Modal
@@ -76,7 +73,6 @@ export function SchedulePreviewModal({
           })}
         </Text>
       </Box>
-      {failureNote}
     </Modal>
   );
 }

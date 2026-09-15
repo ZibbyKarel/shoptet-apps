@@ -44,8 +44,6 @@ import {
   Spacer,
   Stack,
   Text,
-  Toast,
-  ToastRegion,
 } from '@lets-park/design-system/primitives';
 import { useDateFormatters, useTranslations } from '@lets-park/i18n';
 import type { DateOnly } from '@lets-park/i18n';
@@ -53,6 +51,7 @@ import { FormProvider, useAppForm } from '@lets-park/form';
 import type { ReservationHolderInput } from '@lets-park/contract';
 import { toContractError } from '@lets-park/api-client';
 import { initialsOf } from '../../shell/initials';
+import { useNotify } from '../../shell/notifications/toast-provider';
 import type { SpotView } from '../lot-view';
 import { HolderFields } from './holder-fields';
 import { holderFormSchema, toHolderInput } from './holder-input';
@@ -221,6 +220,19 @@ export function SpotDialog({
     // different spot — after this effect has already run once.
   }, [openSpotId, viewerUserId, queueTargetOptions, form, queueForm]);
 
+  // Same rule `ScreenError` documents: keyed off the contract error's
+  // **code**, never its message — a contract message is developer-facing
+  // English and a transport failure's is stack-adjacent.
+  // `errorMessage` overrides it — see `SpotDialogProps.errorMessage`'s doc
+  // comment for the one caller (a named-holder `RESERVATION_LIMIT_REACHED`).
+  const contractError = toContractError(error);
+  const failureMessage =
+    error === null || error === undefined
+      ? null
+      : (errorMessage ??
+        (contractError === null ? tShell('errorUnknown') : errors(contractError.code)));
+  useNotify(failureMessage, 'danger');
+
   if (spot === null) return null;
 
   const isTaken = spot.appearance === 'taken';
@@ -273,18 +285,6 @@ export function SpotDialog({
               ? t('subQueue')
               : t('subTaken')
         : t('subReserve', { date: f.dayAndMonth(date) });
-
-  // Same rule `ScreenError` documents: keyed off the contract error's
-  // **code**, never its message — a contract message is developer-facing
-  // English and a transport failure's is stack-adjacent.
-  // `errorMessage` overrides it — see `SpotDialogProps.errorMessage`'s doc
-  // comment for the one caller (a named-holder `RESERVATION_LIMIT_REACHED`).
-  const contractError = toContractError(error);
-  const failureMessage =
-    error === null || error === undefined
-      ? null
-      : (errorMessage ??
-        (contractError === null ? tShell('errorUnknown') : errors(contractError.code)));
 
   return (
     <Modal
@@ -445,12 +445,6 @@ export function SpotDialog({
           </Callout>
         </Box>
       ) : null}
-
-      {failureMessage === null ? null : (
-        <ToastRegion placement="top-right" label={tShell('notificationsRegion')}>
-          <Toast tone="danger">{failureMessage}</Toast>
-        </ToastRegion>
-      )}
     </Modal>
   );
 }

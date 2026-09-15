@@ -38,8 +38,6 @@ import {
   Modal,
   Stack,
   Text,
-  Toast,
-  ToastRegion,
   ToggleTile,
   VisuallyHidden,
 } from '@lets-park/design-system/primitives';
@@ -47,6 +45,7 @@ import type { ConfirmBulkOutput, PreviewBulkOutput } from '@lets-park/contract';
 import { FormProvider, useAppForm } from '@lets-park/form';
 import { useApi } from '../../shell/api-provider/api-provider';
 import { useCurrentUser } from '../../shell/use-current-user';
+import { useNotify } from '../../shell/notifications/toast-provider';
 import type { HolderOption } from '../spot-dialog/holder-input';
 import {
   buildMonthGrid,
@@ -150,7 +149,6 @@ function BulkReservationModalContent({
   holderError,
 }: BulkReservationModalProps) {
   const t = useTranslations('bulk');
-  const tShell = useTranslations('shell');
   const f = useDateFormatters();
   const api = useApi();
   const queryClient = useQueryClient();
@@ -273,12 +271,18 @@ function BulkReservationModalContent({
   // `holderError` is optional (existing test call sites never pass it), so
   // fold its `undefined` into `null` explicitly rather than leaning on `==`.
   const displayedError = failure ?? (isAdmin ? (holderError ?? null) : null);
-  const failureNote =
-    displayedError === null ? null : (
-      <ToastRegion placement="top-right" label={tShell('notificationsRegion')}>
-        <Toast tone="danger">{t(toBulkErrorMessageKey(displayedError))}</Toast>
-      </ToastRegion>
-    );
+  // Gated on `open`, matching what the removed local `<ToastRegion>` got for
+  // free: it was a descendant of `<Modal open={open}>`, which renders nothing
+  // at all while closed (`modal.tsx`'s own early return). This component is
+  // always mounted regardless of `open` — `LotScreen` renders it unconditionally
+  // and relies on `Modal` to hide it — so without this guard `holderError`
+  // (shared with `SpotDialog`, which shows it unconditionally) would publish a
+  // second, duplicate toast for the same failure while this modal is closed.
+  useNotify(
+    open && displayedError !== null ? t(toBulkErrorMessageKey(displayedError)) : null,
+    'danger'
+  );
+  useNotify(open && result !== null ? t('resultSuccessToast') : null, 'success');
 
   const pending = previewBulk.isPending || confirmBulk.isPending;
 
@@ -357,10 +361,6 @@ function BulkReservationModalContent({
             })}
           </Text>
         </Stack>
-
-        <ToastRegion placement="top-right" label={tShell('notificationsRegion')}>
-          <Toast tone="success">{t('resultSuccessToast')}</Toast>
-        </ToastRegion>
       </Modal>
     );
   }
@@ -421,7 +421,6 @@ function BulkReservationModalContent({
             ...(showHolderForm ? { holderId: holderForm.getValues('userId') } : {}),
           });
         }}
-        failureNote={failureNote}
       />
     );
   }
@@ -547,8 +546,6 @@ function BulkReservationModalContent({
           {preferredSpotNote()}
         </Text>
       </Stack>
-
-      {failureNote}
     </Modal>
   );
 }

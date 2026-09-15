@@ -9,6 +9,7 @@ import userEvent from '@testing-library/user-event';
 import { IntlProvider } from '@lets-park/i18n';
 import cs from '../../../messages/cs.json';
 import { SpotDialog } from './spot-dialog';
+import { ToastProvider } from '../../shell/notifications/toast-provider';
 import type { SpotView } from '../lot-view';
 
 export function spot(overrides: Partial<SpotView> = {}): SpotView {
@@ -74,22 +75,24 @@ export function renderDialog(overrides: DialogOverrides = {}) {
   function tree(props: DialogOverrides) {
     return (
       <IntlProvider locale="cs" messages={cs}>
-        <SpotDialog
-          spot={props.spot === undefined ? spot() : props.spot}
-          date="2026-09-28"
-          canReserve={props.canReserve ?? true}
-          isAdmin={props.isAdmin ?? false}
-          monthName="září"
-          error={props.error ?? null}
-          {...(props.errorMessage === undefined ? {} : { errorMessage: props.errorMessage })}
-          pending={false}
-          viewerUserId={props.viewerUserId ?? null}
-          holderOptions={props.holderOptions ?? []}
-          holderPending={props.holderPending ?? false}
-          queueTargetOptions={props.queueTargetOptions ?? []}
-          queueTargetPending={props.queueTargetPending ?? false}
-          {...callbacks}
-        />
+        <ToastProvider>
+          <SpotDialog
+            spot={props.spot === undefined ? spot() : props.spot}
+            date="2026-09-28"
+            canReserve={props.canReserve ?? true}
+            isAdmin={props.isAdmin ?? false}
+            monthName="září"
+            error={props.error ?? null}
+            {...(props.errorMessage === undefined ? {} : { errorMessage: props.errorMessage })}
+            pending={false}
+            viewerUserId={props.viewerUserId ?? null}
+            holderOptions={props.holderOptions ?? []}
+            holderPending={props.holderPending ?? false}
+            queueTargetOptions={props.queueTargetOptions ?? []}
+            queueTargetPending={props.queueTargetPending ?? false}
+            {...callbacks}
+          />
+        </ToastProvider>
       </IntlProvider>
     );
   }
