@@ -139,4 +139,43 @@ describe('ToggleTile', () => {
 
     expect(screen.getByRole('button')).toHaveClass('custom-class');
   });
+
+  describe('accentColor', () => {
+    it('applies the accent background and swaps the inactive text token, for an inactive cell', () => {
+      render(
+        <ToggleTile shape="cell" selectable={false} accentColor="var(--color-car-2)">
+          16
+        </ToggleTile>
+      );
+
+      const button = screen.getByRole('button', { name: '16' });
+      expect(button).toHaveStyle({ backgroundColor: 'var(--color-car-2)' });
+      expect(button).toHaveClass('text-fg');
+      expect(button).not.toHaveClass('bg-bg-soft', 'text-fg-3');
+    });
+
+    it('has no effect on an active (selectable) cell', () => {
+      render(
+        <ToggleTile shape="cell" accentColor="var(--color-car-1)">
+          1
+        </ToggleTile>
+      );
+
+      const button = screen.getByRole('button', { name: '1' });
+      expect(button.style.backgroundColor).toBe('');
+      expect(button).toHaveClass('bg-bg');
+    });
+
+    it('has no effect on an inactive pill', () => {
+      render(
+        <ToggleTile shape="pill" disabled accentColor="var(--color-car-3)">
+          Zamčeno
+        </ToggleTile>
+      );
+
+      const button = screen.getByRole('button', { name: 'Zamčeno' });
+      expect(button.style.backgroundColor).toBe('');
+      expect(button).toHaveClass('bg-bg-muted', 'text-fg-3');
+    });
+  });
 });

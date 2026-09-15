@@ -48,6 +48,27 @@ export const PillStates: Story = {
   ),
 };
 
+/**
+ * The already-reserved-day highlight `BulkModal` applies via `accentColor` —
+ * one inactive cell per car colour (`car-palette.ts`), instead of the plain
+ * `bg-bg-soft`/`text-fg-3` blocked-day chrome.
+ */
+export const AccentedCells: Story = {
+  render: () => (
+    <div className="flex gap-2" style={{ width: 240 }}>
+      <ToggleTile shape="cell" selectable={false} accentColor="var(--color-car-1)">
+        12
+      </ToggleTile>
+      <ToggleTile shape="cell" selectable={false} accentColor="var(--color-car-2)">
+        13
+      </ToggleTile>
+      <ToggleTile shape="cell" selectable={false} accentColor="var(--color-car-3)">
+        14
+      </ToggleTile>
+    </div>
+  ),
+};
+
 /** A full week row, the way `BulkModal`'s calendar renders one. */
 export const CalendarWeek: Story = {
   render: () => (

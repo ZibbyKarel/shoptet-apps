@@ -1,4 +1,4 @@
-import { forwardRef, type ButtonHTMLAttributes } from 'react';
+import { forwardRef, type ButtonHTMLAttributes, type CSSProperties } from 'react';
 
 import { FOCUS_RING } from '../control-size';
 import { cx } from '../cx';
@@ -41,6 +41,18 @@ const CELL_SELECTED = 'cursor-pointer border-brand-blue bg-brand-blue text-fg-on
 const CELL_UNSELECTED = 'cursor-pointer border-border bg-bg text-fg hover:bg-bg-muted';
 /** The blocked-day state: no border, no pointer, dimmed onto `--bg-soft`. */
 const CELL_INACTIVE = 'cursor-default border-transparent bg-bg-soft text-fg-3';
+/**
+ * The blocked-day state with an `accentColor` background (`BulkModal`'s
+ * already-reserved highlight). `--fg` — the primary body-text colour, not
+ * `--fg-3` — is the one existing foreground token that clears the 3:1
+ * disabled-control floor against all three car colours
+ * (`libs/shared/design-system/src/tokens/lib/car-palette.ts`): 5.21:1 on the
+ * worst of the three (`--color-car-3`, #3b88ff), 9.54:1 and 10.18:1 on the
+ * other two — recomputed in `contrast.spec.tsx`. `text-fg-3` measures as low
+ * as 1.42:1 on `--color-car-3`, which is why this is a distinct class rather
+ * than `CELL_INACTIVE` plus an inline background.
+ */
+const CELL_INACTIVE_ACCENT = 'cursor-default border-transparent text-fg';
 
 const PILL_BASE = 'inline-flex h-11 items-center rounded-cta border px-5 text-sm';
 const PILL_SELECTED = 'cursor-pointer border-transparent bg-brand-blue font-bold text-fg-on-blue';
@@ -69,6 +81,20 @@ export interface ToggleTileProps extends ButtonHTMLAttributes<HTMLButtonElement>
   selectable?: boolean | undefined;
   /** Motion, or none. Defaults to `'none'` — see `ToggleTileTransition`. */
   transition?: ToggleTileTransition | undefined;
+  /**
+   * A per-subject accent colour (a CSS colour or `var(...)` reference) for an
+   * inactive `shape="cell"` tile — `BulkModal`'s already-reserved-day
+   * highlight, one per car colour. Has no effect on a `pill`, nor on an
+   * active cell: the whole point is a distinct *inactive* look, not a new
+   * selected state. Ignored when `undefined` (the tile keeps `CELL_INACTIVE`).
+   *
+   * Deliberately a prop here rather than an inline `style=` at the call site
+   * (`doc/decision/0311-*` — the application layer carries no styling of its
+   * own): the pairing this needs (a caller-supplied background against a
+   * foreground that stays readable) is exactly the kind of decision this
+   * primitive already owns for every other state.
+   */
+  accentColor?: string | undefined;
 }
 
 /**
@@ -90,6 +116,8 @@ export const ToggleTile = forwardRef<HTMLButtonElement, ToggleTileProps>(functio
     disabled = false,
     type = 'button',
     className,
+    style,
+    accentColor,
     children,
     ...rest
   },
@@ -99,11 +127,14 @@ export const ToggleTile = forwardRef<HTMLButtonElement, ToggleTileProps>(functio
   // only knows "selectable" (the calendars) and one that only knows
   // "disabled" (the segmented control) both land on the same inactive state.
   const isInactive = disabled || !selectable;
+  const isAccentedCell = shape === 'cell' && isInactive && accentColor !== undefined;
 
   const stateClasses =
     shape === 'cell'
       ? isInactive
-        ? CELL_INACTIVE
+        ? isAccentedCell
+          ? CELL_INACTIVE_ACCENT
+          : CELL_INACTIVE
         : selected
           ? CELL_SELECTED
           : CELL_UNSELECTED
@@ -113,6 +144,10 @@ export const ToggleTile = forwardRef<HTMLButtonElement, ToggleTileProps>(functio
           ? PILL_SELECTED
           : PILL_UNSELECTED;
 
+  const mergedStyle: CSSProperties | undefined = isAccentedCell
+    ? { ...style, backgroundColor: accentColor }
+    : style;
+
   return (
     <button
       {...rest}
@@ -120,6 +155,7 @@ export const ToggleTile = forwardRef<HTMLButtonElement, ToggleTileProps>(functio
       type={type}
       disabled={isInactive}
       aria-disabled={isInactive || undefined}
+      style={mergedStyle}
       className={cx(
         shape === 'cell' ? CELL_BASE : PILL_BASE,
         TRANSITION_CLASSES[transition],

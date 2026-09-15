@@ -516,6 +516,34 @@ describe('colour contrast of the pairings this lib chooses', () => {
         expect(isExempt(tile)).toBe(true);
       }
     );
+
+    /**
+     * `BulkModal`'s already-reserved-day highlight (`accentColor`): the tile
+     * carries its own inline background, so `colorsOf`/`ratioFor` (which read
+     * `bg-*`/`text-*` classes) cannot see it — this measures the actual pairing
+     * directly, the same `contrastRatio` helper everything above resolves to.
+     * All three car colours (`car-palette.ts`) must clear the same 3:1 disabled
+     * floor `CELL_INACTIVE`'s `--fg-3` clears for the plain blocked-day chrome,
+     * so a future car-colour change cannot silently reintroduce I2/I3's failure
+     * (raw `--fg-3` on `--color-car-3` measured 1.42:1).
+     */
+    it.each<[string, string]>([
+      ['car-1', '#fcaf00'],
+      ['car-2', '#00e25a'],
+      ['car-3', '#3b88ff'],
+    ])('shape=cell, inactive with accentColor=%s clears the disabled floor', (_name, hex) => {
+      render(
+        <ToggleTile shape="cell" selectable={false} accentColor={hex}>
+          1
+        </ToggleTile>
+      );
+      const tile = screen.getByRole('button', { name: '1' });
+
+      expect(tile.style.backgroundColor).not.toBe('');
+      // `--fg` — asserted here as the literal hex it resolves to, matching how
+      // every other test in this file reads a foreground token.
+      expect(contrastRatio(hexOf('fg'), hex)).toBeGreaterThanOrEqual(DISABLED_FLOOR);
+    });
   });
 
   describe('Link', () => {
