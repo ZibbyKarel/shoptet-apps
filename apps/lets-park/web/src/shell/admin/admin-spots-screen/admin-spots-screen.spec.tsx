@@ -5,6 +5,7 @@ import type { ParkingSpot, SpotListOutput } from '@lets-park/contract';
 import { IntlProvider } from '@lets-park/i18n';
 import cs from '../../../../messages/cs.json';
 import { failureWithCode } from '../../../testing/contract-failure';
+import { ToastProvider } from '../../notifications/toast-provider';
 import type { ScreenData } from '../../screen-state/screen-state';
 import type { AdminWrite } from '../admin-errors';
 import { AdminSpotsScreen, type SpotToday } from './admin-spots-screen';
@@ -77,7 +78,9 @@ function renderScreen(overrides: Overrides = {}) {
 
   render(
     <IntlProvider locale="cs" messages={cs}>
-      <AdminSpotsScreen {...props} />
+      <ToastProvider>
+        <AdminSpotsScreen {...props} />
+      </ToastProvider>
     </IntlProvider>
   );
 
@@ -118,7 +121,9 @@ function renderFailingWrites(failure: unknown) {
 
   render(
     <IntlProvider locale="cs" messages={cs}>
-      <Harness />
+      <ToastProvider>
+        <Harness />
+      </ToastProvider>
     </IntlProvider>
   );
 
@@ -425,7 +430,10 @@ describe('AdminSpotsScreen', () => {
       await user.click(screen.getByRole('button', { name: 'spotsDeleteConfirm' }));
 
       expect(await screen.findByRole('dialog')).toBeInTheDocument();
-      expect(inDialog().getByText('spotsDeleteConflict')).toBeInTheDocument();
+      // Rendered through the global `ToastProvider`, not inside the dialog —
+      // `useNotify` publishes it to the app-wide toast region, not as the
+      // dialog's own children.
+      expect(screen.getByText('spotsDeleteConflict')).toBeInTheDocument();
       // Wrong on this procedure — that is the create/rename sentence.
       expect(screen.queryByText('spotsDuplicateLabel')).not.toBeInTheDocument();
       expect(screen.queryByText(cs.errors.CONFLICT)).not.toBeInTheDocument();
@@ -517,7 +525,8 @@ describe('AdminSpotsScreen', () => {
       await user.click(within(rowOf(TAKEN)).getByRole('button', { name: 'spotsDelete' }));
       const confirm = inDialog().getByRole('button', { name: 'spotsDeleteConfirm' });
       await user.click(confirm);
-      expect(await inDialog().findByText(RETIRE_REFUSED)).toBeInTheDocument();
+      // Rendered through the global `ToastProvider`, not inside the dialog.
+      expect(await screen.findByText(RETIRE_REFUSED)).toBeInTheDocument();
 
       await user.click(inDialog().getByRole('button', { name: 'spotsCancel' }));
       await user.click(screen.getByRole('button', { name: 'spotsAdd' }));

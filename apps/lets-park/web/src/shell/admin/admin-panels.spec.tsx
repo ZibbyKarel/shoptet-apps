@@ -8,6 +8,7 @@ import { failureWithCode } from '../../testing/contract-failure';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { createQueryClient } from '../query/query-client';
 import { LOT_ROUTE } from '../../routes';
+import { ToastProvider } from '../notifications/toast-provider';
 import { AdminDayPanel } from './admin-day-panel';
 import { AdminSpotsPanel } from './admin-spots-panel';
 import { AdminUsersPanel } from './admin-users-panel';
@@ -161,7 +162,9 @@ function makeApi(responders: Record<string, Responder>) {
 function renderPanel(node: ReactNode) {
   render(
     <IntlProvider locale="cs" messages={cs}>
-      <QueryClientProvider client={createQueryClient()}>{node}</QueryClientProvider>
+      <QueryClientProvider client={createQueryClient()}>
+        <ToastProvider>{node}</ToastProvider>
+      </QueryClientProvider>
     </IntlProvider>
   );
   return userEvent.setup();

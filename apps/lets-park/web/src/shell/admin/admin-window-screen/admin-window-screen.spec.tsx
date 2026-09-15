@@ -4,6 +4,7 @@ import type { MonthWindowOverview, ReservationLockMode } from '@lets-park/contra
 import { IntlProvider } from '@lets-park/i18n';
 import cs from '../../../../messages/cs.json';
 import { failureWithCode } from '../../../testing/contract-failure';
+import { ToastProvider } from '../../notifications/toast-provider';
 import { AdminWindowScreen, BADGE_STATE_TONE } from './admin-window-screen';
 import type { AdminWindowScreenProps } from './admin-window-screen';
 
@@ -82,7 +83,9 @@ function renderScreen({
 
   render(
     <IntlProvider locale="cs" messages={cs}>
-      <AdminWindowScreen {...props} />
+      <ToastProvider>
+        <AdminWindowScreen {...props} />
+      </ToastProvider>
     </IntlProvider>
   );
 

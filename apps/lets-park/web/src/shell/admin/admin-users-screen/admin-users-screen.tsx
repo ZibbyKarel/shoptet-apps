@@ -42,12 +42,12 @@
 
 import { useMemo, useState } from 'react';
 import type { AdminListUsersOutput, AdminUser } from '@lets-park/contract';
-import { Avatar, Input, Stack, Switch, Text, Toast } from '@lets-park/design-system/primitives';
+import { Avatar, Input, Stack, Switch, Text } from '@lets-park/design-system/primitives';
 import { ConfirmDialog, DataTable } from '@lets-park/design-system/compounds';
 import type { DataTableColumn } from '@lets-park/design-system/compounds';
 import { useTranslations } from '@lets-park/i18n';
 import { initialsOf } from '../../initials';
-import { AppToastRegion } from '../../notifications/toast-region';
+import { useNotify } from '../../notifications/toast-provider';
 import { ScreenDataGuard } from '../../screen-state/screen-state';
 import type { ScreenData } from '../../screen-state/screen-state';
 import { useAdminWriteError } from '../admin-errors';
@@ -128,6 +128,8 @@ export function AdminUsersScreen({
   );
 
   const updateErrorMessage = describeWriteError('userUpdate', updateError);
+
+  useNotify(updateErrorMessage, 'danger');
 
   const columns: DataTableColumn<AdminUser>[] = [
     {
@@ -231,12 +233,6 @@ export function AdminUsersScreen({
     <ScreenDataGuard state={users} onRetry={onRetry} headingLevel={3}>
       {() => (
         <Stack spacing={4}>
-          {updateErrorMessage ? (
-            <AppToastRegion>
-              <Toast tone="danger">{updateErrorMessage}</Toast>
-            </AppToastRegion>
-          ) : null}
-
           <DataTable
             columns={columns}
             data={visible}

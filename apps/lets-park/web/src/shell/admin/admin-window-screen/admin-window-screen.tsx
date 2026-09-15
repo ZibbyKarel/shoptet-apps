@@ -40,7 +40,6 @@ import {
   Stack,
   Stepper,
   Text,
-  Toast,
 } from '@lets-park/design-system/primitives';
 import type { BadgeTone } from '@lets-park/design-system/primitives';
 import {
@@ -52,7 +51,7 @@ import {
   useTranslations,
 } from '@lets-park/i18n';
 import type { DateOnly, MonthLockState } from '@lets-park/i18n';
-import { AppToastRegion } from '../../notifications/toast-region';
+import { useNotify } from '../../notifications/toast-provider';
 import { ScreenDataGuard } from '../../screen-state/screen-state';
 import type { ScreenData } from '../../screen-state/screen-state';
 import { useAdminWriteError } from '../admin-errors';
@@ -112,6 +111,9 @@ export function AdminWindowScreen({
 
   const saveErrorMessage = describeWriteError('windowUpdate', saveError);
 
+  useNotify(saveErrorMessage, 'danger');
+  useNotify(saveErrorMessage === null && isSaved ? t('windowSaved') : null, 'success');
+
   return (
     <ScreenDataGuard state={reservationWindow} onRetry={onRetry} headingLevel={3}>
       {({ settings: { openDaysBefore, lockMode }, months }) => (
@@ -168,17 +170,6 @@ export function AdminWindowScreen({
                   }))}
                   onValueChange={(next) => onChange({ openDaysBefore, lockMode: next })}
                 />
-
-                {saveErrorMessage ? (
-                  <AppToastRegion>
-                    <Toast tone="danger">{saveErrorMessage}</Toast>
-                  </AppToastRegion>
-                ) : null}
-                {saveErrorMessage === null && isSaved ? (
-                  <AppToastRegion>
-                    <Toast tone="success">{t('windowSaved')}</Toast>
-                  </AppToastRegion>
-                ) : null}
               </Stack>
             </Card>
           </section>

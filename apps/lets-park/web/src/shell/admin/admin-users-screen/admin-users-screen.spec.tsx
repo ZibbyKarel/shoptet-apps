@@ -4,6 +4,7 @@ import type { AdminUser } from '@lets-park/contract';
 import { IntlProvider } from '@lets-park/i18n';
 import cs from '../../../../messages/cs.json';
 import { failureWithCode } from '../../../testing/contract-failure';
+import { ToastProvider } from '../../notifications/toast-provider';
 import { AdminUsersScreen, matchesUserSearch } from './admin-users-screen';
 import type { AdminUsersScreenProps } from './admin-users-screen';
 
@@ -55,7 +56,9 @@ function renderScreen(overrides: Partial<AdminUsersScreenProps> = {}) {
 
   render(
     <IntlProvider locale="cs" messages={cs}>
-      <AdminUsersScreen {...props} />
+      <ToastProvider>
+        <AdminUsersScreen {...props} />
+      </ToastProvider>
     </IntlProvider>
   );
 

@@ -42,13 +42,12 @@ import {
   Stack,
   Switch,
   Text,
-  Toast,
   VisuallyHidden,
 } from '@lets-park/design-system/primitives';
 import { ConfirmDialog, DataTable } from '@lets-park/design-system/compounds';
 import type { DataTableColumn } from '@lets-park/design-system/compounds';
 import { PARKING_GROUPS, useTranslations } from '@lets-park/i18n';
-import { AppToastRegion } from '../../notifications/toast-region';
+import { useNotify } from '../../notifications/toast-provider';
 import { ScreenDataGuard, type ScreenData } from '../../screen-state/screen-state';
 import { useAdminWriteError, type AdminWriteFailure } from '../admin-errors';
 import {
@@ -276,16 +275,13 @@ export function AdminSpotsScreen({
   // takes the same value through its own `errorMessage` prop.
   const deleteError = dialog?.kind === 'delete' ? failureShownIn('dialog') : null;
 
+  useNotify(tableError, 'danger');
+  useNotify(deleteError, 'danger');
+
   return (
     <ScreenDataGuard state={spots} onRetry={onRetry} headingLevel={3}>
       {(loaded) => (
         <Stack spacing={4}>
-          {tableError ? (
-            <AppToastRegion>
-              <Toast tone="danger">{tableError}</Toast>
-            </AppToastRegion>
-          ) : null}
-
           <DataTable
             columns={columns}
             data={[...loaded.spots]}
@@ -347,13 +343,7 @@ export function AdminSpotsScreen({
               );
             }}
             onCancel={() => changeDialog(null)}
-          >
-            {deleteError === null ? null : (
-              <AppToastRegion>
-                <Toast tone="danger">{deleteError}</Toast>
-              </AppToastRegion>
-            )}
-          </ConfirmDialog>
+          />
         </Stack>
       )}
     </ScreenDataGuard>
