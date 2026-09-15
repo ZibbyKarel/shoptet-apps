@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Container } from '@lets-park/design-system/primitives';
 import { AppTopBar } from '../../shell/app-top-bar';
+import { ToastProvider } from '../../shell/notifications/toast-provider';
 
 /**
  * Everything a signed-in visitor sees sits under the top bar; the login screen
@@ -22,11 +23,11 @@ import { AppTopBar } from '../../shell/app-top-bar';
  */
 export default function AppLayout({ children }: { readonly children: ReactNode }) {
   return (
-    <>
+    <ToastProvider>
       <AppTopBar />
       <main>
         <Container>{children}</Container>
       </main>
-    </>
+    </ToastProvider>
   );
 }

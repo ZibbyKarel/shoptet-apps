@@ -19,6 +19,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { IntlProvider } from '@lets-park/i18n';
 import cs from '../../messages/cs.json';
 import { ApiProvider } from '../shell/api-provider/api-provider';
+import { ToastProvider } from '../shell/notifications/toast-provider';
 
 /** The URL the specs use. Never fetched from: every transport is stubbed. */
 const API_URL = 'http://localhost:3000/api';
@@ -31,7 +32,7 @@ export function createProviderWrapper(
       <QueryClientProvider client={client}>
         <ApiProvider url={API_URL}>
           <IntlProvider locale="cs" messages={cs}>
-            {children}
+            <ToastProvider>{children}</ToastProvider>
           </IntlProvider>
         </ApiProvider>
       </QueryClientProvider>
