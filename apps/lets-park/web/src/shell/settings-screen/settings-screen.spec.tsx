@@ -563,6 +563,25 @@ describe('SettingsScreen — the ICS section', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('clears the regenerate-failure toast on cancel, not just the dialog', async () => {
+    // The toast is gated on `confirmOpen`, not just on `regenerateError` being
+    // non-null (`ics.regenerateError` is caller-owned mutation state and is
+    // not cleared by Cancel) — precisely so a stale error does not linger on
+    // the settings screen once the confirmation that showed it is gone.
+    const error = await failureFrom(
+      transportAnswering(403, rpcPayload(contractErrorBody('FORBIDDEN', 403, 'nope')))
+    );
+    const { user } = renderScreen({ regenerateError: error });
+
+    await user.click(screen.getByRole('button', { name: 'icsRegenerate' }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('FORBIDDEN'));
+
+    const dialog = screen.getByRole('dialog', { name: 'icsRegenerateConfirmTitle' });
+    await user.click(within(dialog).getByRole('button', { name: 'cancel' }));
+
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+  });
+
   it('regenerates the token and closes the dialog on success', async () => {
     const { onRegenerateToken, user } = renderScreen();
 
@@ -593,19 +612,20 @@ describe('SettingsScreen — the ICS section', () => {
   it('shows a translated toast while the confirmation is open after a previous regeneration failed', async () => {
     // The error toast now renders through the global `ToastProvider` — a
     // sibling of the confirmation dialog's DOM subtree, not a descendant of
-    // it — so this asserts it is on screen while the dialog is open rather
-    // than scoping the query to `within(dialog)`.
+    // it — so this asserts it is on screen (via its `role="alert"`, which
+    // only the danger toast has — see `Toast`) while the dialog is open,
+    // rather than scoping the query to `within(dialog)`.
     const error = await failureFrom(
       transportAnswering(403, rpcPayload(contractErrorBody('FORBIDDEN', 403, 'nope')))
     );
     const { user } = renderScreen({ regenerateError: error });
 
-    expect(screen.queryByText('FORBIDDEN')).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'icsRegenerate' }));
     expect(screen.getByRole('dialog', { name: 'icsRegenerateConfirmTitle' })).toBeInTheDocument();
 
-    await waitFor(() => expect(screen.getByText('FORBIDDEN')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('FORBIDDEN'));
   });
 
   it('shows the confirm button as loading once a regeneration is in flight', async () => {
