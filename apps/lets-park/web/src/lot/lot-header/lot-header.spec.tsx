@@ -87,19 +87,19 @@ describe('LotHeader — the accessible title and the date pill', () => {
 describe('LotHeader — controls report parsed values, not raw events', () => {
   it('calls onPreviousDay from the left arrow', async () => {
     const { onPreviousDay, user } = renderHeader();
-    await user.click(screen.getByRole('button', { name: 'Předchozí den' }));
+    await user.click(screen.getByRole('button', { name: 'previousDay' }));
     expect(onPreviousDay).toHaveBeenCalledTimes(1);
   });
 
   it('calls onNextDay from the right arrow', async () => {
     const { onNextDay, user } = renderHeader();
-    await user.click(screen.getByRole('button', { name: 'Následující den' }));
+    await user.click(screen.getByRole('button', { name: 'nextDay' }));
     expect(onNextDay).toHaveBeenCalledTimes(1);
   });
 
   it('calls onToday from the "Dnes" button', async () => {
     const { onToday, user } = renderHeader();
-    await user.click(screen.getByRole('button', { name: 'Dnes' }));
+    await user.click(screen.getByRole('button', { name: 'today' }));
     expect(onToday).toHaveBeenCalledTimes(1);
   });
 
@@ -113,39 +113,39 @@ describe('LotHeader — controls report parsed values, not raw events', () => {
 describe('LotHeader — the holiday/weekend note', () => {
   it('names it a working day, on an ordinary weekday', () => {
     renderHeader({ note: workdayNote() });
-    expect(screen.getByText('Pracovní den')).toBeInTheDocument();
+    expect(screen.getByText('workday: name=')).toBeInTheDocument();
   });
 
   it('names the holiday on a public holiday', () => {
     renderHeader({ note: holidayNote('Den české státnosti') });
-    expect(screen.getByText('Státní svátek · Den české státnosti')).toBeInTheDocument();
+    expect(screen.getByText('holiday: name=Den české státnosti')).toBeInTheDocument();
   });
 
   it('names it a weekend, with no holiday name to show', () => {
     renderHeader({ note: weekendNote() });
-    expect(screen.getByText('Víkend')).toBeInTheDocument();
+    expect(screen.getByText('weekend: name=')).toBeInTheDocument();
   });
 });
 
 describe('LotHeader — the occupancy pill and the bulk button', () => {
   it('reads the taken and total counts off one combined pill', () => {
     renderHeader({ counts: { free: 4, taken: 5 } });
-    expect(screen.getByText('5 z 9 obsazeno')).toBeInTheDocument();
+    expect(screen.getByText('occupiedCount: taken=5,total=9')).toBeInTheDocument();
   });
 
   it('shows the bulk-reservation button when the month allows it', () => {
     renderHeader({ showBulk: true });
-    expect(screen.getByRole('button', { name: 'Hromadná rezervace' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'bulkReservation' })).toBeInTheDocument();
   });
 
   it('hides the bulk-reservation button — absent, not disabled — otherwise', () => {
     renderHeader({ showBulk: false });
-    expect(screen.queryByRole('button', { name: 'Hromadná rezervace' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'bulkReservation' })).not.toBeInTheDocument();
   });
 
   it('calls onBulk when the button is clicked', async () => {
     const { onBulk, user } = renderHeader({ showBulk: true });
-    await user.click(screen.getByRole('button', { name: 'Hromadná rezervace' }));
+    await user.click(screen.getByRole('button', { name: 'bulkReservation' }));
     expect(onBulk).toHaveBeenCalledTimes(1);
   });
 });

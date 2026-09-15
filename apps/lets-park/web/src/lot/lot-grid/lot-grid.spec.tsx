@@ -63,7 +63,7 @@ describe('LotGrid', () => {
     ]);
 
     expect(screen.getByRole('heading', { level: 2, name: 'IT' })).toBeInTheDocument();
-    expect(screen.getByText('1 z 4 volných')).toBeInTheDocument();
+    expect(screen.getByText('groupFree: free=1,total=4')).toBeInTheDocument();
   });
 
   it('renders the groups it is given, in the order it is given them', () => {
@@ -79,8 +79,8 @@ describe('LotGrid', () => {
   it('draws a free bay as bookable and reports the click', async () => {
     const { onOpenSpot, user } = renderGrid([group([spot()])]);
 
-    expect(screen.getByText('Volné')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Rezervovat místo E2.92, Volné' }));
+    expect(screen.getByText('free')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'reserveSpotAction: label=E2.92, free' }));
     expect(onOpenSpot).toHaveBeenCalledWith('spot-a');
   });
 
@@ -100,7 +100,7 @@ describe('LotGrid', () => {
     expect(screen.getByText('Petr Novák')).toBeInTheDocument();
     expect(screen.getByText('8SC 9012')).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Otevřít místo E2.92, Petr Novák, 8SC 9012' })
+      screen.getByRole('button', { name: 'openSpotAction: label=E2.92, Petr Novák, 8SC 9012' })
     ).toBeEnabled();
   });
 
@@ -119,7 +119,9 @@ describe('LotGrid', () => {
 
     expect(screen.getByText('Petr Novák')).toBeInTheDocument();
     expect(screen.queryByText('SPZ neuvedena')).not.toBeInTheDocument();
-    expect(screen.getByRole('button')).toHaveAccessibleName('Otevřít místo E2.92, Petr Novák');
+    expect(screen.getByRole('button')).toHaveAccessibleName(
+      'openSpotAction: label=E2.92, Petr Novák'
+    );
   });
 
   it('draws a window-locked bay and still lets it be opened for the explanation', async () => {
@@ -127,9 +129,9 @@ describe('LotGrid', () => {
       group([spot({ appearance: 'window-locked', action: 'info' })]),
     ]);
 
-    expect(screen.getByText('rezervace uzamčeny')).toBeInTheDocument();
+    expect(screen.getByText('tileLocked')).toBeInTheDocument();
     await user.click(
-      screen.getByRole('button', { name: 'Otevřít místo E2.92, rezervace uzamčeny' })
+      screen.getByRole('button', { name: 'openSpotAction: label=E2.92, tileLocked' })
     );
     expect(onOpenSpot).toHaveBeenCalledWith('spot-a');
   });
@@ -143,10 +145,10 @@ describe('LotGrid', () => {
     ]);
 
     const tile = screen.getByRole('button', {
-      name: 'Otevřít místo E2.92, právě upravuje Jana Dvořáková',
+      name: 'openSpotAction: label=E2.92, tileEditing Jana Dvořáková',
     });
     expect(tile).toBeDisabled();
-    expect(screen.getByText('právě upravuje')).toBeInTheDocument();
+    expect(screen.getByText('tileEditing')).toBeInTheDocument();
     expect(screen.getByText('Jana Dvořáková')).toBeInTheDocument();
 
     await user.click(tile);
@@ -173,7 +175,9 @@ describe('LotGrid', () => {
   describe('what a screen reader is told about a bay', () => {
     it('announces a free bay as free and bookable', () => {
       renderGrid([group([spot()])]);
-      expect(screen.getByRole('button')).toHaveAccessibleName('Rezervovat místo E2.92, Volné');
+      expect(screen.getByRole('button')).toHaveAccessibleName(
+        'reserveSpotAction: label=E2.92, free'
+      );
     });
 
     it('announces who holds a taken bay, and in what', () => {
@@ -189,14 +193,14 @@ describe('LotGrid', () => {
         ]),
       ]);
       expect(screen.getByRole('button')).toHaveAccessibleName(
-        'Otevřít místo E2.92, Petr Novák, 8SC 9012'
+        'openSpotAction: label=E2.92, Petr Novák, 8SC 9012'
       );
     });
 
     it('announces that a window-locked bay is locked rather than merely openable', () => {
       renderGrid([group([spot({ appearance: 'window-locked', action: 'info' })])]);
       expect(screen.getByRole('button')).toHaveAccessibleName(
-        'Otevřít místo E2.92, rezervace uzamčeny'
+        'openSpotAction: label=E2.92, tileLocked'
       );
     });
 
@@ -205,7 +209,7 @@ describe('LotGrid', () => {
         group([spot({ appearance: 'editing', action: 'none', editorName: 'Jana Dvořáková' })]),
       ]);
       expect(screen.getByRole('button')).toHaveAccessibleName(
-        'Otevřít místo E2.92, právě upravuje Jana Dvořáková'
+        'openSpotAction: label=E2.92, tileEditing Jana Dvořáková'
       );
     });
 
@@ -243,10 +247,10 @@ describe('LotGrid', () => {
         .map((node) => node.getAttribute('aria-label') ?? '');
 
       expect(names).toEqual([
-        'Rezervovat místo E2.90, Volné',
-        'Otevřít místo E2.91, Petr Novák, 8SC 9012',
-        'Otevřít místo E2.92, rezervace uzamčeny',
-        'Otevřít místo E2.93, právě upravuje Jana Dvořáková',
+        'reserveSpotAction: label=E2.90, free',
+        'openSpotAction: label=E2.91, Petr Novák, 8SC 9012',
+        'openSpotAction: label=E2.92, tileLocked',
+        'openSpotAction: label=E2.93, tileEditing Jana Dvořáková',
       ]);
       expect(new Set(names).size).toBe(4);
     });
@@ -254,7 +258,7 @@ describe('LotGrid', () => {
 
   it('shows the waitlist pill when somebody is queued', () => {
     renderGrid([group([spot({ waitlistCount: 2 })])]);
-    expect(screen.getByText('2 ve frontě')).toBeInTheDocument();
+    expect(screen.getByText('waiting: count=2')).toBeInTheDocument();
   });
 
   it('draws no waitlist pill for an empty queue', () => {
@@ -277,7 +281,7 @@ describe('LotGrid', () => {
       ]),
     ]);
 
-    await user.click(screen.getByRole('button', { name: 'Možnosti místa E2.92' }));
+    await user.click(screen.getByRole('button', { name: 'spotMenu: label=E2.92' }));
     expect(onAdminOpenSpot).toHaveBeenCalledWith('spot-a');
     expect(onOpenSpot).not.toHaveBeenCalled();
   });
@@ -295,14 +299,14 @@ describe('LotGrid', () => {
       ]),
     ]);
 
-    expect(screen.queryByRole('button', { name: 'Možnosti místa E2.92' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'spotMenu: label=E2.92' })).not.toBeInTheDocument();
   });
 
   it('draws the legend once, below the groups', () => {
     renderGrid([group([spot()]), group([spot({ spotId: 'b' })], { group: 'SHARED' })]);
 
-    expect(screen.getByText('obsazeno')).toBeInTheDocument();
-    expect(screen.getByText('volné')).toBeInTheDocument();
-    expect(screen.getByText('waitlist / editace')).toBeInTheDocument();
+    expect(screen.getByText('legendTaken')).toBeInTheDocument();
+    expect(screen.getByText('legendFree')).toBeInTheDocument();
+    expect(screen.getByText('legendWaitlist')).toBeInTheDocument();
   });
 });

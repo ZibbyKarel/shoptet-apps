@@ -350,26 +350,26 @@ describe('LotScreen — the session gate on the day query', () => {
 describe('LotScreen — loading, error and empty', () => {
   it('shows the loading state while the day has not arrived', () => {
     setup({ seedDay: false });
-    expect(screen.getByRole('status')).toHaveTextContent('Načítá se…');
+    expect(screen.getByRole('status')).toHaveTextContent('loading');
   });
 
   it('shows a retry-capable error, and retry goes through the same query', async () => {
     const { user } = setup({ seedDay: false, dayImpl: () => Promise.reject(new Error('boom')) });
 
-    await screen.findByRole('button', { name: 'Zkusit znovu' });
-    expect(screen.getByText('Zkuste to prosím znovu za chvíli.')).toBeInTheDocument();
+    await screen.findByRole('button', { name: 'retry' });
+    expect(screen.getByText('errorUnknown')).toBeInTheDocument();
 
     apiMocks.overviewDay.mockImplementation(() => Promise.resolve(dayOverview()));
-    await user.click(screen.getByRole('button', { name: 'Zkusit znovu' }));
+    await user.click(screen.getByRole('button', { name: 'retry' }));
 
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: /^Rezervovat místo E2\.93,/u })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /^reserveSpotAction: label=E2\.93,/u })).toBeInTheDocument()
     );
   });
 
   it('shows the empty state when the lot has no active spots', () => {
     setup({ day: dayOverview({ spots: [] }) });
-    expect(screen.getByText('Na parkovišti nejsou žádná aktivní místa.')).toBeInTheDocument();
+    expect(screen.getByText('emptyTitle')).toBeInTheDocument();
   });
 });
 
@@ -377,12 +377,12 @@ describe('LotScreen — the bulk modal', () => {
   it('opens on the header button, anchored to the day on screen', async () => {
     const { user } = setup();
 
-    await user.click(screen.getByRole('button', { name: 'Hromadná rezervace' }));
+    await user.click(screen.getByRole('button', { name: 'bulkReservation' }));
 
-    expect(await screen.findByRole('dialog', { name: 'Hromadná rezervace' })).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: 'title' })).toBeInTheDocument();
     // The month of `FIXED_TODAY` (2026-01-31), in the locative — proof the
     // grid is anchored to the screen's day rather than to "now".
-    expect(screen.getByText(/Vyberte dny v lednu\./)).toBeInTheDocument();
+    expect(screen.getByText(/description: month=/)).toBeInTheDocument();
   });
 
   it('hands the modal the backend’s own canReserveMonth, so a window closing under it is refused', async () => {
@@ -392,16 +392,14 @@ describe('LotScreen — the bulk modal', () => {
     // `true` would keep offering the flow here.
     const { user, client } = setup();
 
-    await user.click(screen.getByRole('button', { name: 'Hromadná rezervace' }));
-    expect(await screen.findByRole('dialog', { name: 'Hromadná rezervace' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'bulkReservation' }));
+    expect(await screen.findByRole('dialog', { name: 'title' })).toBeInTheDocument();
 
     act(() => {
       client.setQueryData(dayKey(DATE), dayOverview({ canReserveMonth: false }));
     });
 
-    expect(
-      await screen.findByRole('dialog', { name: 'Rezervace jsou uzamčené' })
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: 'lockedTitle' })).toBeInTheDocument();
   });
 
   it('offers bulk reservation on a day that is itself unbookable, when the month is open', async () => {
@@ -414,9 +412,9 @@ describe('LotScreen — the bulk modal', () => {
       day: dayOverview({ canReserve: false, canReserveMonth: true }),
     });
 
-    await user.click(screen.getByRole('button', { name: 'Hromadná rezervace' }));
+    await user.click(screen.getByRole('button', { name: 'bulkReservation' }));
 
-    expect(await screen.findByRole('dialog', { name: 'Hromadná rezervace' })).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: 'title' })).toBeInTheDocument();
   });
 
   it('closes again when the day changes', async () => {
@@ -424,13 +422,13 @@ describe('LotScreen — the bulk modal', () => {
     // would be a batch the contract refuses.
     const { user } = setup();
 
-    await user.click(screen.getByRole('button', { name: 'Hromadná rezervace' }));
-    expect(await screen.findByRole('dialog', { name: 'Hromadná rezervace' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'bulkReservation' }));
+    expect(await screen.findByRole('dialog', { name: 'title' })).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Následující den' }));
+    await user.click(screen.getByRole('button', { name: 'nextDay' }));
 
     await waitFor(() =>
-      expect(screen.queryByRole('dialog', { name: 'Hromadná rezervace' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('dialog', { name: 'title' })).not.toBeInTheDocument()
     );
   });
 });
@@ -438,7 +436,7 @@ describe('LotScreen — the bulk modal', () => {
 describe('LotScreen — showBulk reads canReserveMonth, not the window state and not canReserve', () => {
   it('shows the button when canReserveMonth is true', () => {
     setup({ day: dayOverview({ canReserveMonth: true }) });
-    expect(screen.getByRole('button', { name: 'Hromadná rezervace' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'bulkReservation' })).toBeInTheDocument();
   });
 
   it('hides the button when canReserveMonth is false, even though the window is OPEN', () => {
@@ -458,12 +456,12 @@ describe('LotScreen — showBulk reads canReserveMonth, not the window state and
         },
       }),
     });
-    expect(screen.queryByRole('button', { name: 'Hromadná rezervace' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'bulkReservation' })).not.toBeInTheDocument();
   });
 
   it('keeps the button on a weekend or holiday of an open month, where canReserve is false', () => {
     setup({ day: dayOverview({ canReserve: false, canReserveMonth: true }) });
-    expect(screen.getByRole('button', { name: 'Hromadná rezervace' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'bulkReservation' })).toBeInTheDocument();
   });
 });
 
@@ -471,8 +469,8 @@ describe('LotScreen — every write closes the dialog and invalidates the day', 
   it('reserving a free spot', async () => {
     const { user, invalidate } = setup();
 
-    await user.click(screen.getByRole('button', { name: /^Rezervovat místo E2\.93,/u }));
-    await user.click(await screen.findByRole('button', { name: 'Rezervovat' }));
+    await user.click(screen.getByRole('button', { name: /^reserveSpotAction: label=E2\.93,/u }));
+    await user.click(await screen.findByRole('button', { name: 'ctaReserve' }));
 
     await waitFor(() =>
       expect(apiMocks.reservationCreate.mock.calls[0]?.[0]).toEqual({
@@ -487,32 +485,32 @@ describe('LotScreen — every write closes the dialog and invalidates the day', 
   it('explains rather than reserving a free spot when the viewer already holds a reservation elsewhere that day', async () => {
     const { user } = setup({ day: dayOverview({ viewerReservationId: 'res-mine' }) });
 
-    await user.click(screen.getByRole('button', { name: /^Rezervovat místo E2\.93,/u }));
+    await user.click(screen.getByRole('button', { name: /^reserveSpotAction: label=E2\.93,/u }));
 
     expect(
-      await screen.findByRole('heading', { name: 'Na tento den už máte místo' })
+      await screen.findByRole('heading', { name: 'titleInfoAlreadyReserved' })
     ).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Rezervovat' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'ctaReserve' })).not.toBeInTheDocument();
     expect(apiMocks.reservationCreate).not.toHaveBeenCalled();
   });
 
   it('explains rather than queueing on a taken spot when the viewer already holds a reservation elsewhere that day', async () => {
     const { user } = setup({ day: dayOverview({ viewerReservationId: 'res-mine' }) });
 
-    await user.click(screen.getByRole('button', { name: /^Otevřít místo E2\.92,/u }));
+    await user.click(screen.getByRole('button', { name: /^openSpotAction: label=E2\.92,/u }));
 
     expect(
-      await screen.findByRole('heading', { name: 'Na tento den už máte místo' })
+      await screen.findByRole('heading', { name: 'titleInfoAlreadyReserved' })
     ).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Přidat se do fronty' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'ctaQueue' })).not.toBeInTheDocument();
     expect(apiMocks.waitlistJoin).not.toHaveBeenCalled();
   });
 
   it('joining the waitlist on a spot somebody else holds', async () => {
     const { user, invalidate } = setup();
 
-    await user.click(screen.getByRole('button', { name: /^Otevřít místo E2\.92,/u }));
-    await user.click(await screen.findByRole('button', { name: 'Přidat se do fronty' }));
+    await user.click(screen.getByRole('button', { name: /^openSpotAction: label=E2\.92,/u }));
+    await user.click(await screen.findByRole('button', { name: 'ctaQueue' }));
 
     await waitFor(() =>
       expect(apiMocks.waitlistJoin.mock.calls[0]?.[0]).toEqual({
@@ -535,8 +533,8 @@ describe('LotScreen — every write closes the dialog and invalidates the day', 
       }),
     });
 
-    await user.click(screen.getByRole('button', { name: /^Otevřít místo E2\.92,/u }));
-    await user.click(await screen.findByRole('button', { name: 'Odejít z fronty' }));
+    await user.click(screen.getByRole('button', { name: /^openSpotAction: label=E2\.92,/u }));
+    await user.click(await screen.findByRole('button', { name: 'leaveQueue' }));
 
     await waitFor(() =>
       expect(apiMocks.waitlistLeave.mock.calls[0]?.[0]).toEqual({ waitlistEntryId: 'entry-1' })
@@ -551,8 +549,8 @@ describe('LotScreen — every write closes the dialog and invalidates the day', 
     // this up first would just be discarded by `setup()`'s own reset.
     apiMocks.reservationCreate.mockRejectedValue(new Error('boom'));
 
-    await user.click(screen.getByRole('button', { name: /^Rezervovat místo E2\.93,/u }));
-    await user.click(await screen.findByRole('button', { name: 'Rezervovat' }));
+    await user.click(screen.getByRole('button', { name: /^reserveSpotAction: label=E2\.93,/u }));
+    await user.click(await screen.findByRole('button', { name: 'ctaReserve' }));
 
     await waitFor(() => expect(apiMocks.reservationCreate).toHaveBeenCalled());
     // onError, not onSettled: the dialog stays open so the caller can see why.
@@ -566,17 +564,11 @@ describe('LotScreen — every write closes the dialog and invalidates the day', 
       await failureWithCode('RESERVATION_LIMIT_REACHED')
     );
 
-    await user.click(screen.getByRole('button', { name: /^Rezervovat místo E2\.93,/u }));
-    await user.click(await screen.findByRole('button', { name: 'Rezervovat' }));
+    await user.click(screen.getByRole('button', { name: /^reserveSpotAction: label=E2\.93,/u }));
+    await user.click(await screen.findByRole('button', { name: 'ctaReserve' }));
 
-    expect(
-      await screen.findByText('Na tento den už máte rezervaci — na den je povolená jen jedna.')
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText(
-        'Tento uživatel už na vybraný den rezervaci má — na den je povolená jen jedna.'
-      )
-    ).not.toBeInTheDocument();
+    expect(await screen.findByText('RESERVATION_LIMIT_REACHED')).toBeInTheDocument();
+    expect(screen.queryByText('errHolderLimitReached')).not.toBeInTheDocument();
   });
 
   it('shows the plain self-facing copy — never the holder-scoped one — when waitlist.join hits RESERVATION_LIMIT_REACHED', async () => {
@@ -589,17 +581,11 @@ describe('LotScreen — every write closes the dialog and invalidates the day', 
     const { user } = setup();
     apiMocks.waitlistJoin.mockRejectedValue(await failureWithCode('RESERVATION_LIMIT_REACHED'));
 
-    await user.click(screen.getByRole('button', { name: /^Otevřít místo E2\.92,/u }));
-    await user.click(await screen.findByRole('button', { name: 'Přidat se do fronty' }));
+    await user.click(screen.getByRole('button', { name: /^openSpotAction: label=E2\.92,/u }));
+    await user.click(await screen.findByRole('button', { name: 'ctaQueue' }));
 
-    expect(
-      await screen.findByText('Na tento den už máte rezervaci — na den je povolená jen jedna.')
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText(
-        'Tento uživatel už na vybraný den rezervaci má — na den je povolená jen jedna.'
-      )
-    ).not.toBeInTheDocument();
+    expect(await screen.findByText('RESERVATION_LIMIT_REACHED')).toBeInTheDocument();
+    expect(screen.queryByText('errHolderLimitReached')).not.toBeInTheDocument();
   });
 
   it('does not carry a holder-scoped message over from an earlier failed create into a later waitlist.join failure', async () => {
@@ -654,29 +640,19 @@ describe('LotScreen — every write closes the dialog and invalidates the day', 
       await failureWithCode('RESERVATION_LIMIT_REACHED')
     );
 
-    await user.click(screen.getByRole('button', { name: /^Rezervovat místo E2\.93,/u }));
-    await user.selectOptions(await screen.findByLabelText('Rezervovat pro'), OTHER_USER);
-    await user.click(screen.getByRole('button', { name: 'Rezervovat' }));
-    expect(
-      await screen.findByText(
-        'Tento uživatel už na vybraný den rezervaci má — na den je povolená jen jedna.'
-      )
-    ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^reserveSpotAction: label=E2\.93,/u }));
+    await user.selectOptions(await screen.findByLabelText('holderField'), OTHER_USER);
+    await user.click(screen.getByRole('button', { name: 'ctaReserve' }));
+    expect(await screen.findByText('errHolderLimitReached')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Zavřít' }));
+    await user.click(screen.getByRole('button', { name: 'close' }));
     apiMocks.waitlistJoin.mockRejectedValue(await failureWithCode('RESERVATION_LIMIT_REACHED'));
 
-    await user.click(screen.getByRole('button', { name: /^Otevřít místo E2\.92,/u }));
-    await user.click(await screen.findByRole('button', { name: 'Přidat se do fronty' }));
+    await user.click(screen.getByRole('button', { name: /^openSpotAction: label=E2\.92,/u }));
+    await user.click(await screen.findByRole('button', { name: 'ctaQueue' }));
 
-    expect(
-      await screen.findByText('Na tento den už máte rezervaci — na den je povolená jen jedna.')
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText(
-        'Tento uživatel už na vybraný den rezervaci má — na den je povolená jen jedna.'
-      )
-    ).not.toBeInTheDocument();
+    expect(await screen.findByText('RESERVATION_LIMIT_REACHED')).toBeInTheDocument();
+    expect(screen.queryByText('errHolderLimitReached')).not.toBeInTheDocument();
   });
 
   it('invalidates the day now on screen, not the one it left, after a day change', async () => {
@@ -691,9 +667,9 @@ describe('LotScreen — every write closes the dialog and invalidates the day', 
       Promise.resolve(dayOverview({ date: input.date, spots: [freeSpot()] }))
     );
 
-    await user.click(screen.getByRole('button', { name: 'Následující den' }));
-    await user.click(await screen.findByRole('button', { name: /^Rezervovat místo E2\.93,/u }));
-    await user.click(await screen.findByRole('button', { name: 'Rezervovat' }));
+    await user.click(screen.getByRole('button', { name: 'nextDay' }));
+    await user.click(await screen.findByRole('button', { name: /^reserveSpotAction: label=E2\.93,/u }));
+    await user.click(await screen.findByRole('button', { name: 'ctaReserve' }));
 
     await waitFor(() =>
       expect(apiMocks.reservationCreate.mock.calls[0]?.[0]).toEqual({
@@ -721,7 +697,7 @@ describe('LotScreen — day navigation skips weekends', () => {
     const { user } = setup();
 
     // Saturday 2026-01-31 -> Friday 2026-01-30 (an ordinary one-day step back).
-    await user.click(screen.getByRole('button', { name: 'Předchozí den' }));
+    await user.click(screen.getByRole('button', { name: 'previousDay' }));
     await waitFor(() => {
       expect(apiMocks.overviewDay).toHaveBeenCalledWith(
         expect.objectContaining({ date: '2026-01-30' }),
@@ -730,7 +706,7 @@ describe('LotScreen — day navigation skips weekends', () => {
     });
 
     // Friday 2026-01-30 -> the actual skip, straight to Monday 2026-02-02.
-    await user.click(screen.getByRole('button', { name: 'Následující den' }));
+    await user.click(screen.getByRole('button', { name: 'nextDay' }));
     await waitFor(() => {
       expect(apiMocks.overviewDay).toHaveBeenCalledWith(
         expect.objectContaining({ date: '2026-02-02' }),
@@ -748,7 +724,7 @@ describe('LotScreen — day navigation skips weekends', () => {
     // Saturday 2026-01-31 -> Monday 2026-02-02 (already the skip, since the
     // starting Saturday itself is a weekend — asserted here only as a stepping
     // stone to reach the Monday, not as this test's point).
-    await user.click(screen.getByRole('button', { name: 'Následující den' }));
+    await user.click(screen.getByRole('button', { name: 'nextDay' }));
     await waitFor(() => {
       expect(apiMocks.overviewDay).toHaveBeenCalledWith(
         expect.objectContaining({ date: '2026-02-02' }),
@@ -757,7 +733,7 @@ describe('LotScreen — day navigation skips weekends', () => {
     });
 
     // Monday 2026-02-02 -> the actual skip, straight back to Friday 2026-01-30.
-    await user.click(screen.getByRole('button', { name: 'Předchozí den' }));
+    await user.click(screen.getByRole('button', { name: 'previousDay' }));
     await waitFor(() => {
       expect(apiMocks.overviewDay).toHaveBeenCalledWith(
         expect.objectContaining({ date: '2026-01-30' }),
@@ -771,8 +747,8 @@ describe('LotScreen — onCancelReservation looks the id up off day.spots', () =
   it('cancels the reservation on the spot whose dialog is open — an admin, on someone else’s', async () => {
     const { user } = setup({ profile: profile({ role: 'ADMIN' }) });
 
-    await user.click(screen.getByRole('button', { name: /^Otevřít místo E2\.92,/u }));
-    await user.click(await screen.findByRole('button', { name: 'Zrušit rezervaci' }));
+    await user.click(screen.getByRole('button', { name: /^openSpotAction: label=E2\.92,/u }));
+    await user.click(await screen.findByRole('button', { name: 'cancelReservation' }));
 
     await waitFor(() =>
       expect(apiMocks.reservationCancel.mock.calls[0]?.[0]).toEqual({ reservationId: 'res-other' })
@@ -782,8 +758,8 @@ describe('LotScreen — onCancelReservation looks the id up off day.spots', () =
   it('cancels the reservation on the spot whose dialog is open — a caller, on their own', async () => {
     const { user } = setup();
 
-    await user.click(screen.getByRole('button', { name: /^Otevřít místo E2\.94,/u }));
-    await user.click(await screen.findByRole('button', { name: 'Zrušit rezervaci' }));
+    await user.click(screen.getByRole('button', { name: /^openSpotAction: label=E2\.94,/u }));
+    await user.click(await screen.findByRole('button', { name: 'cancelReservation' }));
 
     await waitFor(() =>
       expect(apiMocks.reservationCancel.mock.calls[0]?.[0]).toEqual({ reservationId: 'res-mine' })
@@ -801,11 +777,13 @@ describe('LotScreen — the header date picker', () => {
     const { user } = setup();
 
     await user.click(screen.getByRole('button', { name: cs.fullDate(DATE) }));
-    const dialog = screen.getByRole('dialog', { name: 'Vybrat datum' });
-    await user.selectOptions(within(dialog).getByRole('combobox', { name: 'Měsíc' }), '2');
-    await user.click(within(dialog).getByRole('button', { name: cs.fullDate('2026-02-27') }));
+    const dialog = screen.getByRole('dialog', { name: 'datePickerTitle' });
+    await user.selectOptions(within(dialog).getByRole('combobox', { name: 'monthLabel' }), '2');
+    await user.click(
+      within(dialog).getByRole('button', { name: `dayCell: date=${cs.fullDate('2026-02-27')}` })
+    );
 
-    expect(screen.queryByRole('dialog', { name: 'Vybrat datum' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'datePickerTitle' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: cs.fullDate('2026-02-27') })).toBeInTheDocument();
   });
 
@@ -813,9 +791,11 @@ describe('LotScreen — the header date picker', () => {
     const { user } = setup();
 
     await user.click(screen.getByRole('button', { name: cs.fullDate(DATE) }));
-    const dialog = screen.getByRole('dialog', { name: 'Vybrat datum' });
-    await user.selectOptions(within(dialog).getByRole('combobox', { name: 'Rok' }), '2027');
-    await user.click(within(dialog).getByRole('button', { name: cs.fullDate('2027-01-29') }));
+    const dialog = screen.getByRole('dialog', { name: 'datePickerTitle' });
+    await user.selectOptions(within(dialog).getByRole('combobox', { name: 'yearLabel' }), '2027');
+    await user.click(
+      within(dialog).getByRole('button', { name: `dayCell: date=${cs.fullDate('2027-01-29')}` })
+    );
 
     expect(screen.getByRole('button', { name: cs.fullDate('2027-01-29') })).toBeInTheDocument();
   });
@@ -830,7 +810,7 @@ describe('LotScreen — the cell lock is not held for a dialog that cannot write
   it('takes the hold when opening a free spot to reserve it', async () => {
     const { user } = setup();
 
-    await user.click(screen.getByRole('button', { name: /^Rezervovat místo E2\.93,/u }));
+    await user.click(screen.getByRole('button', { name: /^reserveSpotAction: label=E2\.93,/u }));
 
     expect(lastCellLockEnabled()).toBe(true);
   });
@@ -838,7 +818,7 @@ describe('LotScreen — the cell lock is not held for a dialog that cannot write
   it('does not take the hold for the read-only explanation on a window-locked spot', async () => {
     const { user } = setup({ day: dayOverview({ canReserve: false }) });
 
-    await user.click(screen.getByRole('button', { name: /^Otevřít místo E2\.93,/u }));
+    await user.click(screen.getByRole('button', { name: /^openSpotAction: label=E2\.93,/u }));
 
     expect(lastCellLockEnabled()).toBe(false);
   });
@@ -860,8 +840,8 @@ describe('LotScreen — the cell lock is not held for a dialog that cannot write
  * nothing.
  */
 describe('LotScreen — telling the user the board has stopped updating', () => {
-  const NOTICE = 'Živé aktualizace jsou odpojené — přehled se nemusí sám obnovovat.';
-  const RECONNECT = 'Připojit znovu';
+  const NOTICE = 'realtimeRejected';
+  const RECONNECT = 'realtimeReconnect';
 
   it('says nothing while the board is live', () => {
     setup();
@@ -959,8 +939,8 @@ describe('LotScreen — an admin naming a holder', () => {
     });
 
     await user.click(await screen.findByRole('button', { name: /E2\.93/ }));
-    await user.selectOptions(await screen.findByLabelText('Rezervovat pro'), OTHER_USER);
-    await user.click(screen.getByRole('button', { name: 'Rezervovat' }));
+    await user.selectOptions(await screen.findByLabelText('holderField'), OTHER_USER);
+    await user.click(screen.getByRole('button', { name: 'ctaReserve' }));
 
     await waitFor(() =>
       expect(apiMocks.reservationCreate.mock.calls[0]?.[0]).toEqual({
@@ -998,17 +978,11 @@ describe('LotScreen — an admin naming a holder', () => {
     );
 
     await user.click(await screen.findByRole('button', { name: /E2\.93/ }));
-    await user.selectOptions(await screen.findByLabelText('Rezervovat pro'), OTHER_USER);
-    await user.click(screen.getByRole('button', { name: 'Rezervovat' }));
+    await user.selectOptions(await screen.findByLabelText('holderField'), OTHER_USER);
+    await user.click(screen.getByRole('button', { name: 'ctaReserve' }));
 
-    expect(
-      await screen.findByText(
-        'Tento uživatel už na vybraný den rezervaci má — na den je povolená jen jedna.'
-      )
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText('Na tento den už máte rezervaci — na den je povolená jen jedna.')
-    ).not.toBeInTheDocument();
+    expect(await screen.findByText('errHolderLimitReached')).toBeInTheDocument();
+    expect(screen.queryByText('RESERVATION_LIMIT_REACHED')).not.toBeInTheDocument();
   });
 
   it('shows the holder-scoped copy — never the plain self-facing one — when naming a colleague who is at their monthly cap hits MONTHLY_RESERVATION_LIMIT_REACHED', async () => {
@@ -1038,19 +1012,11 @@ describe('LotScreen — an admin naming a holder', () => {
     );
 
     await user.click(await screen.findByRole('button', { name: /E2\.93/ }));
-    await user.selectOptions(await screen.findByLabelText('Rezervovat pro'), OTHER_USER);
-    await user.click(screen.getByRole('button', { name: 'Rezervovat' }));
+    await user.selectOptions(await screen.findByLabelText('holderField'), OTHER_USER);
+    await user.click(screen.getByRole('button', { name: 'ctaReserve' }));
 
-    expect(
-      await screen.findByText(
-        'Tento uživatel už v tomto měsíci má 5 rezervovaných míst — víc jich v jednom měsíci mít nemůže.'
-      )
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText(
-        'V tomto měsíci už máte 5 rezervovaných míst — víc jich v jednom měsíci mít nemůžete.'
-      )
-    ).not.toBeInTheDocument();
+    expect(await screen.findByText('errHolderMonthlyLimitReached')).toBeInTheDocument();
+    expect(screen.queryByText('MONTHLY_RESERVATION_LIMIT_REACHED')).not.toBeInTheDocument();
   });
 
   it('switches back to the plain copy on a retry that renames the holder to the admin themselves', async () => {
@@ -1095,25 +1061,15 @@ describe('LotScreen — an admin naming a holder', () => {
     );
 
     await user.click(await screen.findByRole('button', { name: /E2\.93/ }));
-    await user.selectOptions(await screen.findByLabelText('Rezervovat pro'), OTHER_USER);
-    await user.click(screen.getByRole('button', { name: 'Rezervovat' }));
-    expect(
-      await screen.findByText(
-        'Tento uživatel už na vybraný den rezervaci má — na den je povolená jen jedna.'
-      )
-    ).toBeInTheDocument();
+    await user.selectOptions(await screen.findByLabelText('holderField'), OTHER_USER);
+    await user.click(screen.getByRole('button', { name: 'ctaReserve' }));
+    expect(await screen.findByText('errHolderLimitReached')).toBeInTheDocument();
 
-    await user.selectOptions(screen.getByLabelText('Rezervovat pro'), VIEWER);
-    await user.click(screen.getByRole('button', { name: 'Rezervovat' }));
+    await user.selectOptions(screen.getByLabelText('holderField'), VIEWER);
+    await user.click(screen.getByRole('button', { name: 'ctaReserve' }));
 
-    expect(
-      await screen.findByText('Na tento den už máte rezervaci — na den je povolená jen jedna.')
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText(
-        'Tento uživatel už na vybraný den rezervaci má — na den je povolená jen jedna.'
-      )
-    ).not.toBeInTheDocument();
+    expect(await screen.findByText('RESERVATION_LIMIT_REACHED')).toBeInTheDocument();
+    expect(screen.queryByText('errHolderLimitReached')).not.toBeInTheDocument();
   });
 
   it('disables the reserve button while admin.user.list is still in flight, instead of letting one click book for the admin unnoticed', async () => {
@@ -1127,7 +1083,7 @@ describe('LotScreen — an admin naming a holder', () => {
 
     await user.click(await screen.findByRole('button', { name: /E2\.93/ }));
 
-    expect(screen.getByRole('button', { name: 'Rezervovat' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'ctaReserve' })).toBeDisabled();
   });
 
   it('shows why the holder selector is missing when admin.user.list fails', async () => {
@@ -1139,7 +1095,7 @@ describe('LotScreen — an admin naming a holder', () => {
 
     await user.click(await screen.findByRole('button', { name: /E2\.93/ }));
 
-    expect(await screen.findByText('Zkuste to prosím znovu za chvíli.')).toBeInTheDocument();
+    expect(await screen.findByText('errorUnknown')).toBeInTheDocument();
   });
 });
 
@@ -1153,9 +1109,9 @@ describe('LotScreen — an admin adding somebody to the queue', () => {
 
     // `/E2\.92/` alone is ambiguous here: an admin viewing a taken spot also
     // gets the `⋯` admin-menu button (`Možnosti místa E2.92`) — the same
-    // `/^Otevřít místo E2\.92,/u` disambiguation the other describe blocks
+    // `/^openSpotAction: label=E2\.92,/u` disambiguation the other describe blocks
     // in this file already use.
-    await user.click(await screen.findByRole('button', { name: /^Otevřít místo E2\.92,/u }));
+    await user.click(await screen.findByRole('button', { name: /^openSpotAction: label=E2\.92,/u }));
 
     await waitFor(() => {
       const call = apiMocks.adminUserList.mock.calls.find(
@@ -1194,9 +1150,9 @@ describe('LotScreen — an admin adding somebody to the queue', () => {
       adminUsersImpl: () => new Promise(() => undefined),
     });
 
-    await user.click(await screen.findByRole('button', { name: /^Otevřít místo E2\.92,/u }));
+    await user.click(await screen.findByRole('button', { name: /^openSpotAction: label=E2\.92,/u }));
 
-    expect(await screen.findByRole('button', { name: 'Přidat se do fronty' })).toBeDisabled();
+    expect(await screen.findByRole('button', { name: 'ctaQueue' })).toBeDisabled();
   });
 
   it('shows why the queue-target selector is missing when the filtered admin.user.list fails', async () => {
@@ -1218,8 +1174,8 @@ describe('LotScreen — an admin adding somebody to the queue', () => {
           : Promise.reject(new Error('boom'))
     );
 
-    await user.click(await screen.findByRole('button', { name: /^Otevřít místo E2\.92,/u }));
+    await user.click(await screen.findByRole('button', { name: /^openSpotAction: label=E2\.92,/u }));
 
-    expect(await screen.findByText('Zkuste to prosím znovu za chvíli.')).toBeInTheDocument();
+    expect(await screen.findByText('errorUnknown')).toBeInTheDocument();
   });
 });

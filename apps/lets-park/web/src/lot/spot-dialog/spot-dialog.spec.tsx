@@ -18,7 +18,7 @@ describe('SpotDialog', () => {
 
   it('names the bay in the eyebrow', () => {
     renderDialog();
-    expect(screen.getByText('Místo E2.92')).toBeInTheDocument();
+    expect(screen.getByText('modalEyebrow: label=E2.92')).toBeInTheDocument();
   });
 
   /**
@@ -35,7 +35,7 @@ describe('SpotDialog', () => {
    */
   it('does not offer cancelling on a free bay, even to an admin', () => {
     renderDialog({ spot: spot({ appearance: 'free', action: 'reserve' }), isAdmin: true });
-    expect(screen.queryByRole('button', { name: 'Zrušit rezervaci' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'cancelReservation' })).not.toBeInTheDocument();
   });
 
   it('never offers reserving from the explanatory dialog, whatever canReserve says', () => {
@@ -43,7 +43,7 @@ describe('SpotDialog', () => {
       spot: spot({ appearance: 'window-locked', action: 'info' }),
       canReserve: true,
     });
-    expect(screen.queryByRole('button', { name: 'Rezervovat' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'ctaReserve' })).not.toBeInTheDocument();
   });
 });
 
@@ -51,8 +51,8 @@ describe('SpotDialog — a free bay', () => {
   it('offers reserving it', async () => {
     const { onReserve, user } = renderDialog();
 
-    expect(screen.getByRole('heading', { name: 'Rezervovat místo' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Rezervovat' }));
+    expect(screen.getByRole('heading', { name: 'titleReserve' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'ctaReserve' }));
     expect(onReserve).toHaveBeenCalledTimes(1);
   });
 
@@ -62,9 +62,9 @@ describe('SpotDialog — a free bay', () => {
       canReserve: false,
     });
 
-    expect(screen.getByRole('heading', { name: 'Rezervace uzamčeny' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Rezervovat' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Zavřít' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'titleInfo' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'ctaReserve' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'close' })).toBeInTheDocument();
   });
 
   it('explains that the viewer already holds a reservation elsewhere that day, distinctly from a locked month', () => {
@@ -73,13 +73,9 @@ describe('SpotDialog — a free bay', () => {
       canReserve: true,
     });
 
-    expect(screen.getByRole('heading', { name: 'Na tento den už máte místo' })).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Na tento den už máte rezervované jiné místo. Nejdřív ji zrušte, teprve pak si můžete zapsat nebo se zařadit do fronty na jiné místo.'
-      )
-    ).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Rezervovat' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'titleInfoAlreadyReserved' })).toBeInTheDocument();
+    expect(screen.getByText('subInfoAlreadyReserved')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'ctaReserve' })).not.toBeInTheDocument();
   });
 });
 
@@ -90,18 +86,18 @@ describe('SpotDialog — a bay somebody else holds', () => {
     });
 
     expect(screen.getByText('Petr Novák')).toBeInTheDocument();
-    expect(screen.getByText('obsazeno · 8SC 9012')).toBeInTheDocument();
-    expect(screen.getByText('Fronta')).toBeInTheDocument();
-    expect(screen.getByText('2 ve frontě')).toBeInTheDocument();
+    expect(screen.getByText('occupiedBy: plate=8SC 9012')).toBeInTheDocument();
+    expect(screen.getByText('queueHeading')).toBeInTheDocument();
+    expect(screen.getByText('waiting: count=2')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Přidat se do fronty' }));
+    await user.click(screen.getByRole('button', { name: 'ctaQueue' }));
     expect(onJoinWaitlist).toHaveBeenCalledTimes(1);
   });
 
   it('hides the queue section from a normal user when nobody is waiting', () => {
     renderDialog({ spot: takenByOther });
-    expect(screen.queryByText('Fronta')).not.toBeInTheDocument();
-    expect(screen.queryByText('Nikdo nečeká — budete první v řadě.')).not.toBeInTheDocument();
+    expect(screen.queryByText('queueHeading')).not.toBeInTheDocument();
+    expect(screen.queryByText('queueEmpty')).not.toBeInTheDocument();
   });
 
   it('tells a queued caller where they stand, and offers leaving', async () => {
@@ -114,12 +110,12 @@ describe('SpotDialog — a bay somebody else holds', () => {
       },
     });
 
-    expect(screen.getByText('Ve frontě jste 2. v pořadí.')).toBeInTheDocument();
+    expect(screen.getByText('queuePosition: position=2')).toBeInTheDocument();
     // Joining a queue you are already in is `ALREADY_IN_WAITLIST`, so the two
     // actions are alternatives rather than both being offered.
-    expect(screen.queryByRole('button', { name: 'Přidat se do fronty' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'ctaQueue' })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Odejít z fronty' }));
+    await user.click(screen.getByRole('button', { name: 'leaveQueue' }));
     expect(onLeaveWaitlist).toHaveBeenCalledTimes(1);
   });
 
@@ -130,13 +126,9 @@ describe('SpotDialog — a bay somebody else holds', () => {
       spot: { ...takenByOther, waitlistCount: 1, viewerWaitlistEntryId: 'wait-7' },
     });
 
-    expect(screen.getByRole('heading', { name: 'Jste ve frontě' })).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Až se místo uvolní, dostane ho první v řadě. Z fronty můžete kdykoliv odejít.'
-      )
-    ).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Přidat se do fronty' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'titleQueued' })).toBeInTheDocument();
+    expect(screen.getByText('subQueued')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'titleQueue' })).not.toBeInTheDocument();
   });
 
   it('says the same to a queued admin, whose cancel button is unaffected', () => {
@@ -145,33 +137,31 @@ describe('SpotDialog — a bay somebody else holds', () => {
       isAdmin: true,
     });
 
-    expect(screen.getByRole('heading', { name: 'Jste ve frontě' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Zrušit rezervaci' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'titleQueued' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'cancelReservation' })).toBeInTheDocument();
   });
 
   it('still invites a caller who is not queued to join', () => {
     renderDialog({ spot: takenByOther });
-    expect(screen.getByRole('heading', { name: 'Přidat se do fronty' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'titleQueue' })).toBeInTheDocument();
   });
 
   it('hides joining, and shows the yellow note, in a locked month', () => {
     renderDialog({ spot: takenByOther, canReserve: false });
 
-    expect(screen.queryByRole('button', { name: 'Přidat se do fronty' })).not.toBeInTheDocument();
-    expect(
-      screen.getByText('Rezervace na září jsou uzamčené — nové zápisy ani frontu už nelze měnit.')
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'ctaQueue' })).not.toBeInTheDocument();
+    expect(screen.getByText('lockNote: month=září')).toBeInTheDocument();
   });
 
   it('does not offer a normal user the cancel button on somebody else’s spot', () => {
     renderDialog({ spot: takenByOther });
-    expect(screen.queryByRole('button', { name: 'Zrušit rezervaci' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'cancelReservation' })).not.toBeInTheDocument();
   });
 
   it('does offer an admin the cancel button on somebody else’s spot', async () => {
     const { onCancelReservation, user } = renderDialog({ spot: takenByOther, isAdmin: true });
 
-    await user.click(screen.getByRole('button', { name: 'Zrušit rezervaci' }));
+    await user.click(screen.getByRole('button', { name: 'cancelReservation' }));
     expect(onCancelReservation).toHaveBeenCalledTimes(1);
   });
 
@@ -179,7 +169,7 @@ describe('SpotDialog — a bay somebody else holds', () => {
     // `reservation.cancel` declares no window errors at all: "a locked window
     // stops people from taking spots, not from giving them back."
     renderDialog({ spot: takenByOther, isAdmin: true, canReserve: false });
-    expect(screen.getByRole('button', { name: 'Zrušit rezervaci' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'cancelReservation' })).toBeInTheDocument();
   });
 });
 
@@ -187,10 +177,10 @@ describe('SpotDialog — the caller’s own reservation', () => {
   it('offers cancelling and nothing else', async () => {
     const { onCancelReservation, onJoinWaitlist, user } = renderDialog({ spot: mine });
 
-    expect(screen.getByRole('heading', { name: 'Vaše rezervace' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Přidat se do fronty' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'titleMine' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'ctaQueue' })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Zrušit rezervaci' }));
+    await user.click(screen.getByRole('button', { name: 'cancelReservation' }));
     expect(onCancelReservation).toHaveBeenCalledTimes(1);
     expect(onJoinWaitlist).not.toHaveBeenCalled();
   });
@@ -200,12 +190,8 @@ describe('SpotDialog — the caller’s own reservation', () => {
     // to the holder whatever the window is doing.
     renderDialog({ spot: mine, canReserve: false });
 
-    expect(screen.getByRole('button', { name: 'Zrušit rezervaci' })).toBeEnabled();
-    expect(
-      screen.getByText(
-        'Měsíc je uzamčený — novou rezervaci už nezaložíte, tuhle ale můžete kdykoliv zrušit.'
-      )
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'cancelReservation' })).toBeEnabled();
+    expect(screen.getByText('subMineLocked')).toBeInTheDocument();
   });
 });
 
@@ -227,9 +213,9 @@ describe('SpotDialog — an admin reserving a free bay', () => {
   it('offers the holder selector, with the admin themselves preselected', async () => {
     renderAdmin();
 
-    const select = screen.getByLabelText('Rezervovat pro');
+    const select = screen.getByLabelText('holderField');
     expect(select).toHaveValue('admin-1');
-    expect(screen.getByRole('option', { name: 'Hosta' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'holderGuestOption' })).toBeInTheDocument();
     // With a plate on file, the option label carries it too — the whole point
     // of a selector that was meant to show "jméno i spz". Without one (Jana
     // Nováková, below), the label is the bare name.
@@ -243,7 +229,7 @@ describe('SpotDialog — an admin reserving a free bay', () => {
     // form that needed a selection first would take that journey red.
     const { onReserve, user } = renderAdmin();
 
-    await user.click(screen.getByRole('button', { name: 'Rezervovat' }));
+    await user.click(screen.getByRole('button', { name: 'ctaReserve' }));
 
     expect(onReserve).toHaveBeenCalledTimes(1);
     expect(onReserve).toHaveBeenCalledWith({
@@ -256,9 +242,9 @@ describe('SpotDialog — an admin reserving a free bay', () => {
   it('reserves for another user, with the plate the admin typed', async () => {
     const { onReserve, user } = renderAdmin();
 
-    await user.selectOptions(screen.getByLabelText('Rezervovat pro'), 'user-2');
-    await user.type(screen.getByLabelText('SPZ'), '9XY 8765');
-    await user.click(screen.getByRole('button', { name: 'Rezervovat' }));
+    await user.selectOptions(screen.getByLabelText('holderField'), 'user-2');
+    await user.type(screen.getByLabelText('plateField'), '9XY 8765');
+    await user.click(screen.getByRole('button', { name: 'ctaReserve' }));
 
     expect(onReserve).toHaveBeenCalledWith({
       kind: 'USER',
@@ -269,24 +255,24 @@ describe('SpotDialog — an admin reserving a free bay', () => {
 
   it('hints the chosen holder’s stored plate, so blank is not a blank plate', async () => {
     const { user } = renderAdmin();
-    const plate = screen.getByLabelText('SPZ');
+    const plate = screen.getByLabelText('plateField');
 
     expect(plate).toHaveAttribute('placeholder', '1AA 1111');
-    await user.selectOptions(screen.getByLabelText('Rezervovat pro'), 'user-2');
-    expect(plate).toHaveAttribute('placeholder', 'SPZ neuvedena');
+    await user.selectOptions(screen.getByLabelText('holderField'), 'user-2');
+    expect(plate).toHaveAttribute('placeholder', 'noPlate');
   });
 
   it('asks for a guest’s name, and refuses to submit without one', async () => {
     const { onReserve, user } = renderAdmin();
 
-    await user.selectOptions(screen.getByLabelText('Rezervovat pro'), 'GUEST');
-    await user.click(screen.getByRole('button', { name: 'Rezervovat' }));
+    await user.selectOptions(screen.getByLabelText('holderField'), 'GUEST');
+    await user.click(screen.getByRole('button', { name: 'ctaReserve' }));
 
     expect(onReserve).not.toHaveBeenCalled();
-    expect(await screen.findByText('Zadejte jméno hosta.')).toBeInTheDocument();
+    expect(await screen.findByText('guestNameRequired')).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText('Jméno hosta'), 'Jan Host');
-    await user.click(screen.getByRole('button', { name: 'Rezervovat' }));
+    await user.type(screen.getByLabelText('guestNameField'), 'Jan Host');
+    await user.click(screen.getByRole('button', { name: 'ctaReserve' }));
 
     expect(onReserve).toHaveBeenCalledWith({
       kind: 'GUEST',
@@ -305,12 +291,12 @@ describe('SpotDialog — an admin reserving a free bay', () => {
     const { onReserve, user, rerender } = renderAdmin({ viewerUserId: null });
 
     // No `viewerUserId` yet, so the plain self-book path is on screen.
-    expect(screen.queryByLabelText('Rezervovat pro')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('holderField')).not.toBeInTheDocument();
 
     rerender({ viewerUserId: 'admin-1' });
 
-    expect(screen.getByLabelText('Rezervovat pro')).toHaveValue('admin-1');
-    await user.click(screen.getByRole('button', { name: 'Rezervovat' }));
+    expect(screen.getByLabelText('holderField')).toHaveValue('admin-1');
+    await user.click(screen.getByRole('button', { name: 'ctaReserve' }));
     expect(onReserve).toHaveBeenCalledWith({
       kind: 'USER',
       userId: 'admin-1',
@@ -321,13 +307,13 @@ describe('SpotDialog — an admin reserving a free bay', () => {
   it('does not carry a guest name from one bay into the next', async () => {
     const { user, rerender } = renderAdmin();
 
-    await user.selectOptions(screen.getByLabelText('Rezervovat pro'), 'GUEST');
-    await user.type(screen.getByLabelText('Jméno hosta'), 'Jan Host');
+    await user.selectOptions(screen.getByLabelText('holderField'), 'GUEST');
+    await user.type(screen.getByLabelText('guestNameField'), 'Jan Host');
 
     rerender({ spot: spot({ spotId: 'spot-b', label: 'E2.93' }) });
 
-    expect(screen.getByLabelText('Rezervovat pro')).toHaveValue('admin-1');
-    expect(screen.queryByLabelText('Jméno hosta')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('holderField')).toHaveValue('admin-1');
+    expect(screen.queryByLabelText('guestNameField')).not.toBeInTheDocument();
   });
 
   it('disables Rezervovat while the holder list is still loading, instead of silently booking for the admin', () => {
@@ -337,7 +323,7 @@ describe('SpotDialog — an admin reserving a free bay', () => {
     // argument and book the bay for the admin, with no selector ever shown.
     renderAdmin({ holderOptions: [], holderPending: true });
 
-    expect(screen.getByRole('button', { name: 'Rezervovat' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'ctaReserve' })).toBeDisabled();
   });
 });
 
@@ -345,8 +331,8 @@ describe('SpotDialog — a normal user reserving a free bay', () => {
   it('sees no holder selector and reserves for themselves', async () => {
     const { onReserve, user } = renderDialog({ viewerUserId: 'user-2', holderOptions: [] });
 
-    expect(screen.queryByLabelText('Rezervovat pro')).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Rezervovat' }));
+    expect(screen.queryByLabelText('holderField')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'ctaReserve' }));
 
     // No argument at all: an omitted holder is "the caller", which is what the
     // contract's optional `holder` was shaped for.
@@ -368,7 +354,7 @@ describe('SpotDialog — a bay a guest holds', () => {
     });
 
     expect(screen.getByText('Jan Novotný')).toBeInTheDocument();
-    expect(screen.getByText('Host')).toBeInTheDocument();
+    expect(screen.getByText('guestHolder')).toBeInTheDocument();
   });
 });
 
@@ -385,7 +371,7 @@ describe('SpotDialog — a taken bay whose holder has no plate on file', () => {
     });
 
     expect(screen.getByText('Petr Novák')).toBeInTheDocument();
-    expect(screen.queryByText('SPZ neuvedena')).not.toBeInTheDocument();
+    expect(screen.queryByText('noPlate')).not.toBeInTheDocument();
     expect(screen.queryByText(/obsazeno/)).not.toBeInTheDocument();
   });
 });
@@ -409,16 +395,16 @@ describe('SpotDialog — an admin adding somebody to the queue', () => {
   it('still shows the queue heading to an admin when nobody is waiting, with a selector', () => {
     renderAdminQueue();
 
-    expect(screen.getByText('Fronta')).toBeInTheDocument();
-    expect(screen.getByText('Nikdo nečeká — budete první v řadě.')).toBeInTheDocument();
-    expect(screen.getByLabelText('Přidat do fronty')).toHaveValue('admin-1');
+    expect(screen.getByText('queueHeading')).toBeInTheDocument();
+    expect(screen.getByText('queueEmpty')).toBeInTheDocument();
+    expect(screen.getByLabelText('queueHolderField')).toHaveValue('admin-1');
     expect(screen.getByRole('option', { name: 'Jana Nováková' })).toBeInTheDocument();
   });
 
   it('joins the admin themselves on a single click, with no selection required', async () => {
     const { onJoinWaitlist, user } = renderAdminQueue();
 
-    await user.click(screen.getByRole('button', { name: 'Přidat se do fronty' }));
+    await user.click(screen.getByRole('button', { name: 'ctaQueue' }));
 
     expect(onJoinWaitlist).toHaveBeenCalledTimes(1);
     expect(onJoinWaitlist).toHaveBeenCalledWith('admin-1');
@@ -427,8 +413,8 @@ describe('SpotDialog — an admin adding somebody to the queue', () => {
   it('adds the selected user instead, when the admin picks somebody else', async () => {
     const { onJoinWaitlist, user } = renderAdminQueue();
 
-    await user.selectOptions(screen.getByLabelText('Přidat do fronty'), 'user-2');
-    await user.click(screen.getByRole('button', { name: 'Přidat se do fronty' }));
+    await user.selectOptions(screen.getByLabelText('queueHolderField'), 'user-2');
+    await user.click(screen.getByRole('button', { name: 'ctaQueue' }));
 
     expect(onJoinWaitlist).toHaveBeenCalledWith('user-2');
   });
@@ -438,7 +424,7 @@ describe('SpotDialog — an admin adding somebody to the queue', () => {
       spot: { ...takenByOther, viewerWaitlistEntryId: 'wait-7' },
     });
 
-    expect(screen.queryByLabelText('Přidat do fronty')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('queueHolderField')).not.toBeInTheDocument();
   });
 
   it('defaults to the first eligible user instead of the admin themselves, when the admin already holds a reservation that day and is excluded from the filtered list', async () => {
@@ -452,9 +438,9 @@ describe('SpotDialog — an admin adding somebody to the queue', () => {
     // filtered list exists to prevent up front.
     const { onJoinWaitlist, user } = renderAdminQueue({ viewerUserId: 'admin-9' });
 
-    expect(screen.getByLabelText('Přidat do fronty')).toHaveValue('admin-1');
+    expect(screen.getByLabelText('queueHolderField')).toHaveValue('admin-1');
 
-    await user.click(screen.getByRole('button', { name: 'Přidat se do fronty' }));
+    await user.click(screen.getByRole('button', { name: 'ctaQueue' }));
     expect(onJoinWaitlist).toHaveBeenCalledWith('admin-1');
   });
 
@@ -464,7 +450,7 @@ describe('SpotDialog — an admin adding somebody to the queue', () => {
     // spot for the admin, with no selector ever shown.
     renderAdminQueue({ queueTargetOptions: [], queueTargetPending: true });
 
-    expect(screen.getByRole('button', { name: 'Přidat se do fronty' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'ctaQueue' })).toBeDisabled();
   });
 
   it('offers no selector to a normal user, who still joins for themselves', async () => {
@@ -474,8 +460,8 @@ describe('SpotDialog — an admin adding somebody to the queue', () => {
       queueTargetOptions: [],
     });
 
-    expect(screen.queryByLabelText('Přidat do fronty')).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Přidat se do fronty' }));
+    expect(screen.queryByLabelText('queueHolderField')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'ctaQueue' }));
     expect(onJoinWaitlist).toHaveBeenCalledWith();
   });
 });

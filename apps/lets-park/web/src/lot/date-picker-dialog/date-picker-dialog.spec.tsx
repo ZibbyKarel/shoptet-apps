@@ -44,36 +44,35 @@ describe('DatePickerDialog — opening', () => {
 
   it('opens on the month of selectedDate, with that day marked', () => {
     renderDialog();
-    const dialog = screen.getByRole('dialog', { name: 'Vybrat datum' });
-    expect(within(dialog).getByRole('button', { name: cs.fullDate(SELECTED) })).toHaveAttribute(
-      'aria-pressed',
-      'true'
-    );
+    const dialog = screen.getByRole('dialog', { name: 'datePickerTitle' });
+    expect(
+      within(dialog).getByRole('button', { name: `dayCell: date=${cs.fullDate(SELECTED)}` })
+    ).toHaveAttribute('aria-pressed', 'true');
   });
 });
 
 describe('DatePickerDialog — browsing does not select', () => {
   it('moves the grid a month forward without calling onSelect', async () => {
     const { onSelect, user } = renderDialog();
-    const dialog = screen.getByRole('dialog', { name: 'Vybrat datum' });
+    const dialog = screen.getByRole('dialog', { name: 'datePickerTitle' });
 
-    await user.click(within(dialog).getByRole('button', { name: 'Následující den' }));
+    await user.click(within(dialog).getByRole('button', { name: 'nextDay' }));
 
     expect(
-      within(dialog).getByRole('button', { name: cs.fullDate('2026-10-01') })
+      within(dialog).getByRole('button', { name: `dayCell: date=${cs.fullDate('2026-10-01')}` })
     ).toBeInTheDocument();
     expect(onSelect).not.toHaveBeenCalled();
   });
 
   it('jumps the grid to a chosen month and year', async () => {
     const { user } = renderDialog();
-    const dialog = screen.getByRole('dialog', { name: 'Vybrat datum' });
+    const dialog = screen.getByRole('dialog', { name: 'datePickerTitle' });
 
-    await user.selectOptions(within(dialog).getByRole('combobox', { name: 'Měsíc' }), '1');
-    await user.selectOptions(within(dialog).getByRole('combobox', { name: 'Rok' }), '2027');
+    await user.selectOptions(within(dialog).getByRole('combobox', { name: 'monthLabel' }), '1');
+    await user.selectOptions(within(dialog).getByRole('combobox', { name: 'yearLabel' }), '2027');
 
     expect(
-      within(dialog).getByRole('button', { name: cs.fullDate('2027-01-01') })
+      within(dialog).getByRole('button', { name: `dayCell: date=${cs.fullDate('2027-01-01')}` })
     ).toBeInTheDocument();
   });
 });
@@ -81,22 +80,24 @@ describe('DatePickerDialog — browsing does not select', () => {
 describe('DatePickerDialog — picking a day', () => {
   it('calls onSelect with the parsed date of the clicked cell', async () => {
     const { onSelect, user } = renderDialog();
-    const dialog = screen.getByRole('dialog', { name: 'Vybrat datum' });
+    const dialog = screen.getByRole('dialog', { name: 'datePickerTitle' });
 
-    await user.click(within(dialog).getByRole('button', { name: cs.fullDate('2026-09-21') }));
+    await user.click(
+      within(dialog).getByRole('button', { name: `dayCell: date=${cs.fullDate('2026-09-21')}` })
+    );
 
     expect(onSelect).toHaveBeenCalledWith('2026-09-21');
   });
 
   it('disables a weekend day and does not call onSelect when clicked', async () => {
     const { onSelect, user } = renderDialog();
-    const dialog = screen.getByRole('dialog', { name: 'Vybrat datum' });
+    const dialog = screen.getByRole('dialog', { name: 'datePickerTitle' });
 
     // 2026-09-20 is a Sunday. The accessible name for a blocked cell is
     // `t('dayCellBlocked', { date: f.fullDate(day.date) })` — the same
     // formatted date `cs.fullDate` produces, not the raw ISO string.
     const weekendButton = within(dialog).getByRole('button', {
-      name: `${cs.fullDate('2026-09-20')} — nelze vybrat`,
+      name: `dayCellBlocked: date=${cs.fullDate('2026-09-20')}`,
     });
     expect(weekendButton).toBeDisabled();
 

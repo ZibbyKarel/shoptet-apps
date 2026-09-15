@@ -257,17 +257,25 @@ function setup(options: SetupOptions = {}) {
 
 /** Selects two working days and moves on to the proposal. */
 async function reachSchedule(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole('button', { name: 'úterý 1. září 2026' }));
-  await user.click(screen.getByRole('button', { name: 'středa 2. září 2026' }));
-  await user.click(screen.getByRole('button', { name: 'Vygenerovat rozvrh (2 dny)' }));
-  return screen.findByRole('button', { name: 'Potvrdit rozvrh' });
+  await user.click(screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' }));
+  await user.click(screen.getByRole('button', { name: 'dayCell: date=středa 2. září 2026' }));
+  await user.click(screen.getByRole('button', { name: 'ctaGenerate: count=2' }));
+  return screen.findByRole('button', { name: 'ctaConfirm' });
 }
 
 describe('BulkReservationModal — step 1, choosing the days', () => {
   it('draws the month grid with Czech column heads, Monday first', () => {
     setup();
     const heads = screen.getAllByRole('columnheader').map((cell) => cell.textContent);
-    expect(heads).toEqual(['PO', 'ÚT', 'ST', 'ČT', 'PÁ', 'SO', 'NE']);
+    expect(heads).toEqual([
+      'weekdayMon',
+      'weekdayTue',
+      'weekdayWed',
+      'weekdayThu',
+      'weekdayFri',
+      'weekdaySat',
+      'weekdaySun',
+    ]);
   });
 
   it('recesses the SO and NE column heads, and only those', () => {
@@ -292,35 +300,31 @@ describe('BulkReservationModal — step 1, choosing the days', () => {
 
   it('names the month in the locative in its own description', () => {
     setup();
-    expect(
-      screen.getByText(
-        'Vyberte dny v září. Místo přiřadíme automaticky — kde nebude volno, zařadíme vás do fronty.'
-      )
-    ).toBeInTheDocument();
+    expect(screen.getByText('description: month=září')).toBeInTheDocument();
   });
 
   it('leaves weekends and Czech public holidays unselectable, and says so', () => {
     setup();
     expect(
-      screen.getByRole('button', { name: 'sobota 5. září 2026 — nelze vybrat' })
+      screen.getByRole('button', { name: 'dayCellBlocked: date=sobota 5. září 2026' })
     ).toBeDisabled();
     expect(
-      screen.getByRole('button', { name: 'neděle 6. září 2026 — nelze vybrat' })
+      screen.getByRole('button', { name: 'dayCellBlocked: date=neděle 6. září 2026' })
     ).toBeDisabled();
     // 28 September — Den české státnosti, a Monday in 2026.
     expect(
-      screen.getByRole('button', { name: 'pondělí 28. září 2026 — nelze vybrat' })
+      screen.getByRole('button', { name: 'dayCellBlocked: date=pondělí 28. září 2026' })
     ).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'úterý 1. září 2026' })).toBeEnabled();
-    expect(screen.getByText('Víkendy a svátky nelze vybrat.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' })).toBeEnabled();
+    expect(screen.getByText('nonSelectableNote')).toBeInTheDocument();
   });
 
   it('names the preferred spot under the grid', async () => {
     setup();
     // The label needs `spot.list`, so it says "načítá se…" until that lands —
     // never a blank, and never the raw id.
-    expect(screen.getByText('Preferované místo: načítá se…')).toBeInTheDocument();
-    expect(await screen.findByText('Preferované místo: E2.92')).toBeInTheDocument();
+    expect(screen.getByText('preferredSpotLoading: label=')).toBeInTheDocument();
+    expect(await screen.findByText('preferredSpot: label=E2.92')).toBeInTheDocument();
   });
 
   it('says the preferred spot is gone rather than rendering a blank label', async () => {
@@ -328,13 +332,13 @@ describe('BulkReservationModal — step 1, choosing the days', () => {
     // the user chose it. A blank would let the display and the stored value
     // disagree without the user ever seeing it.
     setup({ spots: [spot('spot-other', 'E2.93')] });
-    expect(await screen.findByText('Preferované místo: už není k dispozici')).toBeInTheDocument();
+    expect(await screen.findByText('preferredSpotUnavailable: label=')).toBeInTheDocument();
     expect(screen.queryByText(/Preferované místo: E2\.92/)).not.toBeInTheDocument();
   });
 
   it('says there is no preference when the profile stores none', () => {
     setup({ profile: profile({ preferredParkingSpotId: null }) });
-    expect(screen.getByText('Preferované místo: nemáte nastavené')).toBeInTheDocument();
+    expect(screen.getByText('preferredSpotNone: label=')).toBeInTheDocument();
   });
 
   it('stops promising a resolution when the spot list fails to load', async () => {
@@ -343,38 +347,38 @@ describe('BulkReservationModal — step 1, choosing the days', () => {
     // would never learn the allocator ran without a preference.
     const { user } = setup({ spotListFails: true });
 
-    expect(await screen.findByText('Preferované místo: nepodařilo se zjistit')).toBeInTheDocument();
-    expect(screen.queryByText('Preferované místo: načítá se…')).not.toBeInTheDocument();
+    expect(await screen.findByText('preferredSpotUnknown: label=')).toBeInTheDocument();
+    expect(screen.queryByText('preferredSpotLoading: label=')).not.toBeInTheDocument();
 
     // And the flow is still usable — a missing preference is not a blocker.
-    await user.click(screen.getByRole('button', { name: 'úterý 1. září 2026' }));
-    expect(screen.getByRole('button', { name: 'Vygenerovat rozvrh (1 den)' })).toBeEnabled();
+    await user.click(screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' }));
+    expect(screen.getByRole('button', { name: 'ctaGenerate: count=1' })).toBeEnabled();
   });
 
   it('offers no way forward until a day is picked', () => {
     setup();
-    expect(screen.getByRole('button', { name: 'Vyberte dny' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'ctaSelectDays' })).toBeDisabled();
   });
 
   it('counts the selection into the call to action', async () => {
     const { user } = setup();
-    await user.click(screen.getByRole('button', { name: 'úterý 1. září 2026' }));
-    expect(screen.getByRole('button', { name: 'Vygenerovat rozvrh (1 den)' })).toBeEnabled();
+    await user.click(screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' }));
+    expect(screen.getByRole('button', { name: 'ctaGenerate: count=1' })).toBeEnabled();
 
-    await user.click(screen.getByRole('button', { name: 'středa 2. září 2026' }));
-    expect(screen.getByRole('button', { name: 'Vygenerovat rozvrh (2 dny)' })).toBeEnabled();
+    await user.click(screen.getByRole('button', { name: 'dayCell: date=středa 2. září 2026' }));
+    expect(screen.getByRole('button', { name: 'ctaGenerate: count=2' })).toBeEnabled();
   });
 
   it('un-picks a day that is picked again', async () => {
     const { user } = setup();
-    const first = screen.getByRole('button', { name: 'úterý 1. září 2026' });
+    const first = screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' });
 
     await user.click(first);
     expect(first).toHaveAttribute('aria-pressed', 'true');
 
     await user.click(first);
     expect(first).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getByRole('button', { name: 'Vyberte dny' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'ctaSelectDays' })).toBeDisabled();
   });
 
   it('forgets the selection between two openings', async () => {
@@ -382,8 +386,8 @@ describe('BulkReservationModal — step 1, choosing the days', () => {
     // null), so nothing resets this for us — and a selection carried into
     // another month would be a batch the contract refuses.
     const { user, rerender, onClose } = setup();
-    await user.click(screen.getByRole('button', { name: 'úterý 1. září 2026' }));
-    expect(screen.getByRole('button', { name: 'Vygenerovat rozvrh (1 den)' })).toBeEnabled();
+    await user.click(screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' }));
+    expect(screen.getByRole('button', { name: 'ctaGenerate: count=1' })).toBeEnabled();
 
     rerender(
       <BulkReservationModal
@@ -410,11 +414,10 @@ describe('BulkReservationModal — step 1, choosing the days', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: 'Vyberte dny' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'úterý 1. září 2026' })).toHaveAttribute(
-      'aria-pressed',
-      'false'
-    );
+    expect(screen.getByRole('button', { name: 'ctaSelectDays' })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' })
+    ).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('does not carry an in-flight proposal request into the next opening', async () => {
@@ -431,10 +434,10 @@ describe('BulkReservationModal — step 1, choosing the days', () => {
     const { user, rerender, onClose } = setup();
     apiMocks.previewBulk.mockReturnValue(new Promise(() => undefined));
 
-    await user.click(screen.getByRole('button', { name: 'úterý 1. září 2026' }));
-    await user.click(screen.getByRole('button', { name: 'Vygenerovat rozvrh (1 den)' }));
+    await user.click(screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' }));
+    await user.click(screen.getByRole('button', { name: 'ctaGenerate: count=1' }));
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Vygenerovat rozvrh (1 den)' })).toHaveAttribute(
+      expect(screen.getByRole('button', { name: 'ctaGenerate: count=1' })).toHaveAttribute(
         'aria-busy',
         'true'
       );
@@ -465,21 +468,21 @@ describe('BulkReservationModal — step 1, choosing the days', () => {
       />
     );
 
-    const primary = screen.getByRole('button', { name: 'Vyberte dny' });
+    const primary = screen.getByRole('button', { name: 'ctaSelectDays' });
     expect(primary).not.toHaveAttribute('aria-busy');
     // Disabled because nothing is selected yet, which is step 1's resting
     // state — not because a request from the previous opening is still out.
     expect(primary).toBeDisabled();
-    await user.click(screen.getByRole('button', { name: 'úterý 1. září 2026' }));
-    expect(screen.getByRole('button', { name: 'Vygenerovat rozvrh (1 den)' })).toBeEnabled();
+    await user.click(screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' }));
+    expect(screen.getByRole('button', { name: 'ctaGenerate: count=1' })).toBeEnabled();
   });
 
   it('asks for the proposal with the picked days in ascending order', async () => {
     const { user } = setup();
     // Picked out of order on purpose.
-    await user.click(screen.getByRole('button', { name: 'čtvrtek 3. září 2026' }));
-    await user.click(screen.getByRole('button', { name: 'úterý 1. září 2026' }));
-    await user.click(screen.getByRole('button', { name: 'Vygenerovat rozvrh (2 dny)' }));
+    await user.click(screen.getByRole('button', { name: 'dayCell: date=čtvrtek 3. září 2026' }));
+    await user.click(screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' }));
+    await user.click(screen.getByRole('button', { name: 'ctaGenerate: count=2' }));
 
     await waitFor(() => {
       expect(apiMocks.previewBulk).toHaveBeenCalledWith(
@@ -498,12 +501,12 @@ describe('BulkReservationModal — the admin holder selector', () => {
 
   it('shows no holder selector for a normal user', () => {
     setup();
-    expect(screen.queryByLabelText('Rezervovat pro')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('holderField')).not.toBeInTheDocument();
   });
 
   it('offers a holder selector for an admin, defaulting to the admin themselves', () => {
     setup({ isAdmin: true, viewerUserId: 'admin-1', holderOptions: ADMIN_OPTIONS });
-    expect(screen.getByLabelText('Rezervovat pro')).toHaveValue('admin-1');
+    expect(screen.getByLabelText('holderField')).toHaveValue('admin-1');
   });
 
   it('previews for the selected holder, not the admin', async () => {
@@ -513,9 +516,9 @@ describe('BulkReservationModal — the admin holder selector', () => {
       holderOptions: ADMIN_OPTIONS,
     });
 
-    await user.selectOptions(screen.getByLabelText('Rezervovat pro'), 'user-1');
-    await user.click(screen.getByRole('button', { name: 'úterý 1. září 2026' }));
-    await user.click(screen.getByRole('button', { name: 'Vygenerovat rozvrh (1 den)' }));
+    await user.selectOptions(screen.getByLabelText('holderField'), 'user-1');
+    await user.click(screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' }));
+    await user.click(screen.getByRole('button', { name: 'ctaGenerate: count=1' }));
 
     await waitFor(() => {
       expect(apiMocks.previewBulk).toHaveBeenCalledWith(
@@ -548,10 +551,10 @@ describe('BulkReservationModal — the admin holder selector', () => {
       }),
     });
 
-    await user.selectOptions(screen.getByLabelText('Rezervovat pro'), 'user-1');
-    await user.click(screen.getByRole('button', { name: 'úterý 1. září 2026' }));
-    await user.click(screen.getByRole('button', { name: 'Vygenerovat rozvrh (1 den)' }));
-    await user.click(await screen.findByRole('button', { name: 'Potvrdit rozvrh' }));
+    await user.selectOptions(screen.getByLabelText('holderField'), 'user-1');
+    await user.click(screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' }));
+    await user.click(screen.getByRole('button', { name: 'ctaGenerate: count=1' }));
+    await user.click(await screen.findByRole('button', { name: 'ctaConfirm' }));
 
     await waitFor(() => {
       expect(apiMocks.confirmBulk).toHaveBeenCalledWith(
@@ -564,8 +567,8 @@ describe('BulkReservationModal — the admin holder selector', () => {
   it('omits holderId entirely for a normal user', async () => {
     const { user } = setup();
 
-    await user.click(screen.getByRole('button', { name: 'úterý 1. září 2026' }));
-    await user.click(screen.getByRole('button', { name: 'Vygenerovat rozvrh (1 den)' }));
+    await user.click(screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' }));
+    await user.click(screen.getByRole('button', { name: 'ctaGenerate: count=1' }));
 
     await waitFor(() => {
       expect(apiMocks.previewBulk).toHaveBeenCalledWith(
@@ -583,8 +586,8 @@ describe('BulkReservationModal — step 2, the proposed schedule', () => {
 
     expect(screen.getByText('1. září · úterý')).toBeInTheDocument();
     expect(screen.getByText('2. září · středa')).toBeInTheDocument();
-    expect(screen.getByText('Rezervováno · preferované')).toBeInTheDocument();
-    expect(screen.getByText('Rezervováno')).toBeInTheDocument();
+    expect(screen.getByText('badgeAssignedPreferred: position=0')).toBeInTheDocument();
+    expect(screen.getByText('badgeAssigned: position=0')).toBeInTheDocument();
     expect(screen.getByText('E2.92')).toBeInTheDocument();
     expect(screen.getByText('E2.93')).toBeInTheDocument();
   });
@@ -607,8 +610,8 @@ describe('BulkReservationModal — step 2, the proposed schedule', () => {
     });
     await reachSchedule(user);
 
-    expect(screen.getByText('3. ve frontě')).toBeInTheDocument();
-    expect(screen.getByText('Už máte rezervaci')).toBeInTheDocument();
+    expect(screen.getByText('badgeQueued: position=3')).toBeInTheDocument();
+    expect(screen.getByText('badgeAlreadyReserved: position=0')).toBeInTheDocument();
   });
 
   it('summarises the proposal in days with a spot and days in a queue', async () => {
@@ -635,7 +638,7 @@ describe('BulkReservationModal — step 2, the proposed schedule', () => {
     });
     await reachSchedule(user);
 
-    expect(screen.getByText('1 den s místem, 1 den ve frontě.')).toBeInTheDocument();
+    expect(screen.getByText('scheduleSummary: assigned=1,queued=1')).toBeInTheDocument();
   });
 
   it('quotes the server’s summary rather than counting the rows itself', async () => {
@@ -667,8 +670,8 @@ describe('BulkReservationModal — step 2, the proposed schedule', () => {
     });
     await reachSchedule(user);
 
-    expect(screen.getByText('7 dní s místem, 3 dny ve frontě.')).toBeInTheDocument();
-    expect(screen.queryByText('2 dny s místem, 0 dní ve frontě.')).not.toBeInTheDocument();
+    expect(screen.getByText('scheduleSummary: assigned=7,queued=3')).toBeInTheDocument();
+    expect(screen.queryByText('scheduleSummary: assigned=2,queued=0')).not.toBeInTheDocument();
   });
 
   it('paints each badge in the tone the brief names — green, blue, yellow', async () => {
@@ -705,22 +708,23 @@ describe('BulkReservationModal — step 2, the proposed schedule', () => {
     });
     await reachSchedule(user);
 
-    expect(screen.getByText('Rezervováno · preferované')).toHaveClass('bg-brand-green-100');
-    expect(screen.getByText('Rezervováno')).toHaveClass('bg-brand-blue-100');
-    expect(screen.getByText('1. ve frontě')).toHaveClass('bg-brand-yellow-100');
+    expect(screen.getByText('badgeAssignedPreferred: position=0')).toHaveClass(
+      'bg-brand-green-100'
+    );
+    expect(screen.getByText('badgeAssigned: position=0')).toHaveClass('bg-brand-blue-100');
+    expect(screen.getByText('badgeQueued: position=1')).toHaveClass('bg-brand-yellow-100');
   });
 
   it('goes back to the grid with the selection intact', async () => {
     const { user } = setup();
     await reachSchedule(user);
 
-    await user.click(screen.getByRole('button', { name: 'Zpět na výběr' }));
+    await user.click(screen.getByRole('button', { name: 'ctaBack' }));
 
-    expect(await screen.findByRole('button', { name: 'Vygenerovat rozvrh (2 dny)' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'úterý 1. září 2026' })).toHaveAttribute(
-      'aria-pressed',
-      'true'
-    );
+    expect(await screen.findByRole('button', { name: 'ctaGenerate: count=2' })).toBeEnabled();
+    expect(
+      screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' })
+    ).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('confirms with the same days it previewed', async () => {
@@ -771,8 +775,8 @@ describe('BulkReservationModal — the confirmed result against the proposal', (
     const { user } = setup();
     await user.click(await reachSchedule(user));
 
-    expect(await screen.findByText('Zapsali jsme vás přesně podle návrhu.')).toBeInTheDocument();
-    expect(screen.queryByText('Rozvrh se od návrhu liší')).not.toBeInTheDocument();
+    expect(await screen.findByText('resultUnchanged')).toBeInTheDocument();
+    expect(screen.queryByText('resultChangedTitle')).not.toBeInTheDocument();
   });
 
   it('floats a success toast top-right once the batch is confirmed', async () => {
@@ -785,9 +789,9 @@ describe('BulkReservationModal — the confirmed result against the proposal', (
     // (rather than plain text) confirms this is a success/status toast and
     // not a `danger` one, which renders `role="alert"` instead; the exact
     // text is checked on top of that.
-    const region = await screen.findByRole('region', { name: 'Oznámení' });
+    const region = await screen.findByRole('region', { name: 'notificationsRegion' });
     const toast = await within(region).findByRole('status');
-    expect(toast).toHaveTextContent('Hromadná rezervace byla úspěšně vytvořena.');
+    expect(toast).toHaveTextContent('resultSuccessToast');
   });
 
   it('shows the difference when a promised spot turned into a queue place', async () => {
@@ -820,22 +824,24 @@ describe('BulkReservationModal — the confirmed result against the proposal', (
     await user.click(await reachSchedule(user));
 
     const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('Rozvrh se od návrhu liší');
+    expect(alert).toHaveTextContent('resultChangedTitle');
     expect(alert).toHaveTextContent('1. září · úterý');
-    expect(alert).toHaveTextContent('Návrh: Rezervováno · preferované · E2.92');
-    expect(alert).toHaveTextContent('Skutečnost: 2. ve frontě · E2.92');
+    expect(alert).toHaveTextContent(
+      'resultChangedProposed: badgeAssignedPreferred: position=0 · E2.92'
+    );
+    expect(alert).toHaveTextContent('resultChangedActual: badgeQueued: position=2 · E2.92');
     // The day that did not move stays out of the difference list.
     expect(alert).not.toHaveTextContent('2. září');
-    expect(screen.queryByText('Zapsali jsme vás přesně podle návrhu.')).not.toBeInTheDocument();
+    expect(screen.queryByText('resultUnchanged')).not.toBeInTheDocument();
   });
 
   it('does not close itself on a successful confirmation, so the comparison cannot be skipped', async () => {
     const { user, onClose } = setup();
     await user.click(await reachSchedule(user));
 
-    await screen.findByText('Zapsali jsme vás přesně podle návrhu.');
+    await screen.findByText('resultUnchanged');
     expect(onClose).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Hotovo' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ctaDone' })).toBeInTheDocument();
   });
 
   it('invalidates the day overview for every day in the batch', async () => {
@@ -878,13 +884,9 @@ describe('BulkReservationModal — what each typed failure says', () => {
 
     await user.click(confirm);
 
-    expect(
-      await screen.findByText(
-        'Někdo jiný mezitím obsadil místa, se kterými rozvrh počítal. Nezapsali jsme nic — vygenerujte rozvrh znovu.'
-      )
-    ).toBeInTheDocument();
+    expect(await screen.findByText('errorConflict')).toBeInTheDocument();
     // Still on the proposal — there is no result to show.
-    expect(screen.getByRole('button', { name: 'Potvrdit rozvrh' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ctaConfirm' })).toBeInTheDocument();
   });
 
   it('does not reuse the single-day reservation copy for a rejected batch', async () => {
@@ -895,14 +897,10 @@ describe('BulkReservationModal — what each typed failure says', () => {
       previewFailure: await contractFailure('VALIDATION_FAILED'),
     });
 
-    await user.click(screen.getByRole('button', { name: 'úterý 1. září 2026' }));
-    await user.click(screen.getByRole('button', { name: 'Vygenerovat rozvrh (1 den)' }));
+    await user.click(screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' }));
+    await user.click(screen.getByRole('button', { name: 'ctaGenerate: count=1' }));
 
-    expect(
-      await screen.findByText(
-        'Výběr dní neprošel kontrolou — vyberte alespoň jeden den a všechny v jednom měsíci.'
-      )
-    ).toBeInTheDocument();
+    expect(await screen.findByText('errorValidation')).toBeInTheDocument();
     expect(
       screen.queryByText('Požadavek porušuje pravidlo rezervací (např. víkend nebo svátek).')
     ).not.toBeInTheDocument();
@@ -913,8 +911,8 @@ describe('BulkReservationModal — what each typed failure says', () => {
       previewFailure: await contractFailure('VALIDATION_FAILED'),
     });
 
-    await user.click(screen.getByRole('button', { name: 'úterý 1. září 2026' }));
-    await user.click(screen.getByRole('button', { name: 'Vygenerovat rozvrh (1 den)' }));
+    await user.click(screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' }));
+    await user.click(screen.getByRole('button', { name: 'ctaGenerate: count=1' }));
 
     // A `Toast` wraps its message in a `<div role="alert">`; the bare `<p
     // role="alert">` it replaces would fail this on tag name alone.
@@ -929,11 +927,7 @@ describe('BulkReservationModal — what each typed failure says', () => {
 
     await user.click(confirm);
 
-    expect(
-      await screen.findByText(
-        'Rezervace na tento měsíc jsou uzamčené — hromadnou rezervaci už založit nelze.'
-      )
-    ).toBeInTheDocument();
+    expect(await screen.findByText('errorLocked')).toBeInTheDocument();
   });
 
   it('falls back to the generic sentence for a failure that carries no contract code', async () => {
@@ -943,11 +937,7 @@ describe('BulkReservationModal — what each typed failure says', () => {
 
     await user.click(confirm);
 
-    expect(
-      await screen.findByText(
-        'Hromadnou rezervaci se nepodařilo dokončit. Zkuste to prosím znovu za chvíli.'
-      )
-    ).toBeInTheDocument();
+    expect(await screen.findByText('errorUnknown')).toBeInTheDocument();
   });
 });
 
@@ -957,14 +947,10 @@ describe('BulkReservationModal — the locked month is blocked, not merely hidde
     // enforcement: this is the modal refusing on its own.
     setup({ canReserveMonth: false });
 
-    expect(screen.getByRole('dialog', { name: 'Rezervace jsou uzamčené' })).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Rezervace na tento měsíc jsou uzamčené — hromadnou rezervaci teď založit nelze.'
-      )
-    ).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'lockedTitle' })).toBeInTheDocument();
+    expect(screen.getByText('lockedDescription')).toBeInTheDocument();
     expect(screen.queryByRole('columnheader')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Vyberte dny' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'ctaSelectDays' })).not.toBeInTheDocument();
     expect(apiMocks.previewBulk).not.toHaveBeenCalled();
   });
 
@@ -989,11 +975,11 @@ describe('BulkReservationModal — the locked month is blocked, not merely hidde
       />
     );
 
-    const dialog = screen.getByRole('dialog', { name: 'Rezervace jsou uzamčené' });
+    const dialog = screen.getByRole('dialog', { name: 'lockedTitle' });
     await user.click(dialog.parentElement as HTMLElement);
 
     expect(onClose).not.toHaveBeenCalled();
-    expect(screen.getByRole('dialog', { name: 'Rezervace jsou uzamčené' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'lockedTitle' })).toBeInTheDocument();
   });
 
   it('stops a confirmation whose window closed while the modal was open', async () => {
@@ -1015,8 +1001,8 @@ describe('BulkReservationModal — the locked month is blocked, not merely hidde
       />
     );
 
-    expect(screen.getByRole('dialog', { name: 'Rezervace jsou uzamčené' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Potvrdit rozvrh' })).not.toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'lockedTitle' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'ctaConfirm' })).not.toBeInTheDocument();
     expect(apiMocks.confirmBulk).not.toHaveBeenCalled();
   });
 
@@ -1067,19 +1053,15 @@ describe('BulkReservationModal — the locked month is blocked, not merely hidde
       />
     );
 
-    expect(screen.getByRole('dialog', { name: 'Rozvrh potvrzen' })).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent('Rozvrh se od návrhu liší');
-    expect(
-      screen.queryByText(
-        'Rezervace na tento měsíc jsou uzamčené — hromadnou rezervaci teď založit nelze.'
-      )
-    ).not.toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'resultTitle' })).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('resultChangedTitle');
+    expect(screen.queryByText('lockedDescription')).not.toBeInTheDocument();
   });
 
   it('keeps an unchanged result on screen too, not only a differing one', async () => {
     const { user, rerender, onClose } = setup();
     await user.click(await reachSchedule(user));
-    await screen.findByText('Zapsali jsme vás přesně podle návrhu.');
+    await screen.findByText('resultUnchanged');
 
     rerender(
       <BulkReservationModal
@@ -1094,7 +1076,7 @@ describe('BulkReservationModal — the locked month is blocked, not merely hidde
       />
     );
 
-    expect(screen.getByRole('dialog', { name: 'Rozvrh potvrzen' })).toBeInTheDocument();
-    expect(screen.getByText('Zapsali jsme vás přesně podle návrhu.')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'resultTitle' })).toBeInTheDocument();
+    expect(screen.getByText('resultUnchanged')).toBeInTheDocument();
   });
 });
