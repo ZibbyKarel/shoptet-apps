@@ -4,6 +4,7 @@ import { createApiClient } from '@lets-park/api-client';
 import { IntlProvider } from '@lets-park/i18n';
 import type { MyProfile, ParkingSpot } from '@lets-park/contract';
 import cs from '../../../messages/cs.json';
+import { ToastProvider } from '../notifications/toast-provider';
 import { SettingsScreen } from './settings-screen';
 import type { SettingsScreenProps } from './settings-screen';
 
@@ -139,14 +140,18 @@ function renderScreen(overrides: ScreenOverrides = {}) {
 
   const view = render(
     <IntlProvider locale="cs" messages={cs}>
-      <SettingsScreen {...propsFrom({})} />
+      <ToastProvider>
+        <SettingsScreen {...propsFrom({})} />
+      </ToastProvider>
     </IntlProvider>
   );
 
   function rerenderWith(next: ScreenOverrides) {
     view.rerender(
       <IntlProvider locale="cs" messages={cs}>
-        <SettingsScreen {...propsFrom(next)} />
+        <ToastProvider>
+          <SettingsScreen {...propsFrom(next)} />
+        </ToastProvider>
       </IntlProvider>
     );
   }
@@ -585,16 +590,22 @@ describe('SettingsScreen — the ICS section', () => {
     expect(screen.getByRole('dialog', { name: 'icsRegenerateConfirmTitle' })).toBeInTheDocument();
   });
 
-  it('shows a translated message inside the dialog when a previous regeneration failed', async () => {
+  it('shows a translated toast while the confirmation is open after a previous regeneration failed', async () => {
+    // The error toast now renders through the global `ToastProvider` — a
+    // sibling of the confirmation dialog's DOM subtree, not a descendant of
+    // it — so this asserts it is on screen while the dialog is open rather
+    // than scoping the query to `within(dialog)`.
     const error = await failureFrom(
       transportAnswering(403, rpcPayload(contractErrorBody('FORBIDDEN', 403, 'nope')))
     );
     const { user } = renderScreen({ regenerateError: error });
 
-    await user.click(screen.getByRole('button', { name: 'icsRegenerate' }));
-    const dialog = screen.getByRole('dialog', { name: 'icsRegenerateConfirmTitle' });
+    expect(screen.queryByText('FORBIDDEN')).not.toBeInTheDocument();
 
-    expect(within(dialog).getByText('FORBIDDEN')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'icsRegenerate' }));
+    expect(screen.getByRole('dialog', { name: 'icsRegenerateConfirmTitle' })).toBeInTheDocument();
+
+    await waitFor(() => expect(screen.getByText('FORBIDDEN')).toBeInTheDocument());
   });
 
   it('shows the confirm button as loading once a regeneration is in flight', async () => {

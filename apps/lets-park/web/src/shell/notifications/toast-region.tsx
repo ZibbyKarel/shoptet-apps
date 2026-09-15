@@ -10,6 +10,10 @@
  * so this wrapper fixes that placement and the shared `notificationsRegion`
  * label once, instead of the three-line `<ToastRegion placement="top-right"
  * label={…}>` being copy-pasted at each call site.
+ *
+ * As of the global `ToastProvider` (`./toast-provider.tsx`), this component is
+ * only ever rendered from there — feature code calls `useNotify` instead of
+ * importing `AppToastRegion` directly.
  */
 
 import type { ReactNode } from 'react';

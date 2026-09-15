@@ -22,18 +22,10 @@ import * as z from 'zod';
 import type { MyProfile, ParkingSpot, UpdateMySettingsInput } from '@lets-park/contract';
 import { toContractError } from '@lets-park/api-client';
 import { FormField, FormProvider, useAppForm } from '@lets-park/form';
-import {
-  Button,
-  Input,
-  Modal,
-  Select,
-  Stack,
-  Text,
-  Toast,
-} from '@lets-park/design-system/primitives';
+import { Button, Input, Modal, Select, Stack, Text } from '@lets-park/design-system/primitives';
 import { ConfirmDialog } from '@lets-park/design-system/compounds';
 import { useTranslations } from '@lets-park/i18n';
-import { AppToastRegion } from '../notifications/toast-region';
+import { useNotify } from '../notifications/toast-provider';
 import { ScreenError, ScreenLoading } from '../screen-state/screen-state';
 import { NO_PREFERRED_SPOT, shouldClearPreferredSpot, toIcsFeedView } from './settings-view';
 import { IcsSection } from './ics-section';
@@ -237,6 +229,18 @@ export function SettingsScreen({
   const saveErrorMessage = describeError(saveError);
   const regenerateErrorMessage = describeError(ics.regenerateError);
 
+  // Each toast used to be gated by the JSX branch it rendered in — the first
+  // two by the `{ready ? … : null}` form section, the third by `ConfirmDialog`
+  // itself, whose `Modal` renders no children at all while `open` is `false`
+  // (`libs/shared/design-system/.../modal.tsx`). `useNotify` calls are
+  // unconditional (rules of hooks), so the same gating has to move into the
+  // `message` argument instead — otherwise e.g. a stale `regenerateError`
+  // would keep showing a toast on the settings screen after the confirmation
+  // dialog that used to contain it has been cancelled and closed.
+  useNotify(ready && spotsError ? t('preferredSpotLoadError') : null, 'danger');
+  useNotify(ready ? saveErrorMessage : null, 'danger');
+  useNotify(confirmOpen ? regenerateErrorMessage : null, 'danger');
+
   async function handleCopy() {
     if (icsFeed.kind === 'unavailable') {
       return;
@@ -256,7 +260,8 @@ export function SettingsScreen({
       setCopyState('idle');
     } catch {
       // `regenerateErrorMessage` (derived from the caller's mutation state)
-      // renders inside the still-open dialog — that is the retry affordance.
+      // shows as a toast while `confirmOpen` stays `true` — that is the retry
+      // affordance.
     }
   }
 
@@ -342,17 +347,6 @@ export function SettingsScreen({
                       {t('preferredSpotLoading')}
                     </Text>
                   ) : null}
-                  {spotsError ? (
-                    <AppToastRegion>
-                      <Toast tone="danger">{t('preferredSpotLoadError')}</Toast>
-                    </AppToastRegion>
-                  ) : null}
-
-                  {saveErrorMessage ? (
-                    <AppToastRegion>
-                      <Toast tone="danger">{saveErrorMessage}</Toast>
-                    </AppToastRegion>
-                  ) : null}
                 </Stack>
               </form>
 
@@ -384,13 +378,7 @@ export function SettingsScreen({
         loading={ics.isRegenerating}
         onConfirm={() => void handleConfirmRegenerate()}
         onCancel={() => setConfirmOpen(false)}
-      >
-        {regenerateErrorMessage ? (
-          <AppToastRegion>
-            <Toast tone="danger">{regenerateErrorMessage}</Toast>
-          </AppToastRegion>
-        ) : null}
-      </ConfirmDialog>
+      />
     </>
   );
 }
