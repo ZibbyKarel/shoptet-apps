@@ -274,7 +274,7 @@ describe('AdminDayPanel', () => {
 
     renderPanel(<AdminDayPanel />);
 
-    expect(await screen.findByText(`Obsazeno — ${OTHER_USER.name}`)).toBeInTheDocument();
+    expect(await screen.findByText(`dayStatusTaken: name=${OTHER_USER.name}`)).toBeInTheDocument();
     expect(fake.inputsTo('overview.day')).toEqual([{ date: todayInPrague() }]);
   });
 
@@ -283,7 +283,7 @@ describe('AdminDayPanel', () => {
     mockApi = fake.api;
 
     const user = renderPanel(<AdminDayPanel />);
-    await user.click(await screen.findByRole('button', { name: 'Otevřít parkoviště' }));
+    await user.click(await screen.findByRole('button', { name: 'dayOpenLot' }));
 
     expect(mockRouterPush).toHaveBeenCalledWith(LOT_ROUTE);
   });
@@ -314,12 +314,12 @@ describe('AdminUsersPanel', () => {
     renderPanel(<AdminUsersPanel />);
 
     const ownSwitch = await screen.findByRole('switch', {
-      name: cs.admin.usersSelfActiveToggleLabel.replace('{name}', VIEWER.name),
+      name: `usersSelfActiveToggleLabel: name=${VIEWER.name}`,
     });
     expect(ownSwitch).toBeDisabled();
 
     const otherSwitch = screen.getByRole('switch', {
-      name: cs.admin.usersActiveToggleLabel.replace('{name}', OTHER_USER.name),
+      name: `usersActiveToggleLabel: name=${OTHER_USER.name}`,
     });
     expect(otherSwitch).toBeEnabled();
   });
@@ -338,7 +338,7 @@ describe('AdminUsersPanel', () => {
 
     await user.click(
       screen.getByRole('switch', {
-        name: cs.admin.usersAdminToggleLabel.replace('{name}', OTHER_USER.name),
+        name: `usersAdminToggleLabel: name=${OTHER_USER.name}`,
       })
     );
 
@@ -365,11 +365,11 @@ describe('AdminUsersPanel', () => {
 
     await user.click(
       screen.getByRole('switch', {
-        name: cs.admin.usersAdminToggleLabel.replace('{name}', OTHER_USER.name),
+        name: `usersAdminToggleLabel: name=${OTHER_USER.name}`,
       })
     );
 
-    expect(await screen.findByText(cs.admin.errUserConflict)).toBeInTheDocument();
+    expect(await screen.findByText('errUserConflict')).toBeInTheDocument();
   });
 });
 
@@ -403,11 +403,11 @@ describe('AdminSpotsPanel', () => {
     renderPanel(<AdminSpotsPanel />);
 
     const held = within(await findRow(SPOT.id));
-    expect(held.getByText(`Obsazeno — ${OTHER_USER.name}`)).toBeInTheDocument();
+    expect(held.getByText(`dayStatusTaken: name=${OTHER_USER.name}`)).toBeInTheDocument();
     // A retired spot is not in the day overview at all, so there is nothing
     // true to say about it — and "Volné" would be a claim.
     const retired = within(await findRow(RETIRED.id));
-    expect(retired.getByText(cs.admin.spotsTodayUnknown)).toBeInTheDocument();
+    expect(retired.getByText('spotsTodayUnknown')).toBeInTheDocument();
   });
 
   describe('which failure sentence a row switch earns', () => {
@@ -429,7 +429,7 @@ describe('AdminSpotsPanel', () => {
       await screen.findByText(spot.label);
       await user.click(
         within(await findRow(spot.id)).getByRole('switch', {
-          name: cs.admin.spotsActiveToggleLabel.replace('{label}', spot.label),
+          name: `spotsActiveToggleLabel: label=${spot.label}`,
         })
       );
     }
@@ -437,8 +437,8 @@ describe('AdminSpotsPanel', () => {
     it('reads switching a spot off as a live reservation', async () => {
       await failSwitch(SPOT);
 
-      expect(await screen.findByText(cs.admin.spotsDeleteConflict)).toBeInTheDocument();
-      expect(screen.queryByText(cs.admin.spotsDuplicateLabel)).not.toBeInTheDocument();
+      expect(await screen.findByText('spotsDeleteConflict')).toBeInTheDocument();
+      expect(screen.queryByText('spotsDuplicateLabel')).not.toBeInTheDocument();
     });
 
     it('refuses to name a cause for switching one back on', async () => {
@@ -446,8 +446,8 @@ describe('AdminSpotsPanel', () => {
       // save", never a duplicate label and never a live reservation.
       await failSwitch(RETIRED);
 
-      expect(await screen.findByText(cs.admin.errFallbackSpot)).toBeInTheDocument();
-      expect(screen.queryByText(cs.admin.spotsDeleteConflict)).not.toBeInTheDocument();
+      expect(await screen.findByText('errFallbackSpot')).toBeInTheDocument();
+      expect(screen.queryByText('spotsDeleteConflict')).not.toBeInTheDocument();
     });
   });
 
@@ -465,12 +465,12 @@ describe('AdminSpotsPanel', () => {
 
     await user.selectOptions(
       within(await findRow(SPOT.id)).getByRole('combobox', {
-        name: cs.admin.spotsGroupSelectLabel.replace('{label}', SPOT.label),
+        name: `spotsGroupSelectLabel: label=${SPOT.label}`,
       }),
       'SHARED'
     );
 
-    expect(await screen.findByText(cs.admin.spotsDuplicateLabel)).toBeInTheDocument();
+    expect(await screen.findByText('spotsDuplicateLabel')).toBeInTheDocument();
     // The label is sent unchanged: `admin.spot.update` replaces the fields it
     // is given, so omitting it would be a rename to nothing.
     expect(fake.inputsTo('admin.spot.update')).toEqual([
@@ -503,15 +503,17 @@ describe('AdminSpotsPanel', () => {
     const user = renderPanel(<AdminSpotsPanel />);
     await screen.findByText(SPOT.label);
 
-    await user.click(screen.getByRole('button', { name: 'Přidat místo' }));
-    await user.type(within(screen.getByRole('dialog')).getByLabelText('Štítek'), 'E2.93');
-    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Uložit' }));
-    expect(await screen.findByText(cs.admin.spotsDuplicateLabel)).toBeInTheDocument();
-    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Zrušit' }));
+    await user.click(screen.getByRole('button', { name: 'spotsAdd' }));
+    await user.type(within(screen.getByRole('dialog')).getByLabelText('spotsLabelField'), 'E2.93');
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'spotsSave' }));
+    expect(await screen.findByText('spotsDuplicateLabel')).toBeInTheDocument();
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'spotsCancel' })
+    );
 
     await user.click(
       within(await findRow(SPOT.id)).getByRole('switch', {
-        name: cs.admin.spotsActiveToggleLabel.replace('{label}', SPOT.label),
+        name: `spotsActiveToggleLabel: label=${SPOT.label}`,
       })
     );
     await waitFor(() =>
@@ -520,8 +522,8 @@ describe('AdminSpotsPanel', () => {
 
     // "Na tomto místě jsou rezervace ode dneška dál." over a retire that
     // worked is the sentence this test exists to keep off the screen.
-    expect(screen.queryByText(cs.admin.spotsDeleteConflict)).not.toBeInTheDocument();
-    expect(screen.queryByText(cs.admin.spotsDuplicateLabel)).not.toBeInTheDocument();
+    expect(screen.queryByText('spotsDeleteConflict')).not.toBeInTheDocument();
+    expect(screen.queryByText('spotsDuplicateLabel')).not.toBeInTheDocument();
   });
 
   it('forgets a failure rather than hiding it, so the same dialog reopens clean', async () => {
@@ -539,15 +541,17 @@ describe('AdminSpotsPanel', () => {
     const user = renderPanel(<AdminSpotsPanel />);
     await screen.findByText(SPOT.label);
 
-    await user.click(screen.getByRole('button', { name: 'Přidat místo' }));
-    await user.type(within(screen.getByRole('dialog')).getByLabelText('Štítek'), 'E2.93');
-    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Uložit' }));
-    expect(await screen.findByText(cs.admin.spotsDuplicateLabel)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'spotsAdd' }));
+    await user.type(within(screen.getByRole('dialog')).getByLabelText('spotsLabelField'), 'E2.93');
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'spotsSave' }));
+    expect(await screen.findByText('spotsDuplicateLabel')).toBeInTheDocument();
 
-    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Zrušit' }));
-    await user.click(screen.getByRole('button', { name: 'Přidat místo' }));
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'spotsCancel' })
+    );
+    await user.click(screen.getByRole('button', { name: 'spotsAdd' }));
 
-    expect(screen.queryByText(cs.admin.spotsDuplicateLabel)).not.toBeInTheDocument();
+    expect(screen.queryByText('spotsDuplicateLabel')).not.toBeInTheDocument();
   });
 
   it('forgets a failure when the admin opens a dialog', async () => {
@@ -566,14 +570,14 @@ describe('AdminSpotsPanel', () => {
     await screen.findByText(SPOT.label);
     await user.click(
       within(await findRow(SPOT.id)).getByRole('switch', {
-        name: cs.admin.spotsActiveToggleLabel.replace('{label}', SPOT.label),
+        name: `spotsActiveToggleLabel: label=${SPOT.label}`,
       })
     );
-    expect(await screen.findByText(cs.admin.spotsDeleteConflict)).toBeInTheDocument();
+    expect(await screen.findByText('spotsDeleteConflict')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Přidat místo' }));
+    await user.click(screen.getByRole('button', { name: 'spotsAdd' }));
 
-    expect(screen.queryByText(cs.admin.spotsDeleteConflict)).not.toBeInTheDocument();
+    expect(screen.queryByText('spotsDeleteConflict')).not.toBeInTheDocument();
   });
 
   it('refetches the table and today’s overview after a spot is retired', async () => {
@@ -585,9 +589,10 @@ describe('AdminSpotsPanel', () => {
     const spotsBefore = fake.countOf('admin.spot.list');
     const dayBefore = fake.countOf('overview.day');
 
-    await user.click(within(await findRow(SPOT.id)).getByRole('button', { name: 'Smazat' }));
-    const buttons = within(screen.getByRole('dialog')).getAllByRole('button', { name: 'Smazat' });
-    await user.click(buttons[buttons.length - 1] as HTMLElement);
+    await user.click(within(await findRow(SPOT.id)).getByRole('button', { name: 'spotsDelete' }));
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'spotsDeleteConfirm' })
+    );
 
     await waitFor(() => expect(fake.inputsTo('admin.spot.deactivate')).toEqual([{ id: SPOT.id }]));
     await waitFor(() => expect(fake.countOf('admin.spot.list')).toBeGreaterThan(spotsBefore));
@@ -616,7 +621,7 @@ describe('AdminWindowPanel', () => {
     expect(span).toBe(3);
     // Both cards, one request: the stepper's value comes from the same response
     // as the month rows, so the form and the list cannot disagree.
-    expect(screen.getByText('7 dní')).toBeInTheDocument();
+    expect(screen.getByText('windowDaysValue: count=7')).toBeInTheDocument();
   });
 
   it('sends both fields on a change, because the contract replaces rather than patches', async () => {
@@ -627,9 +632,9 @@ describe('AdminWindowPanel', () => {
     mockApi = fake.api;
 
     const user = renderPanel(<AdminWindowPanel />);
-    await screen.findByText('7 dní');
+    await screen.findByText('windowDaysValue: count=7');
 
-    await user.click(screen.getByRole('radio', { name: 'Vynutit otevřeno' }));
+    await user.click(screen.getByRole('radio', { name: 'windowLockFORCE_OPEN' }));
 
     await waitFor(() =>
       expect(fake.inputsTo('admin.window.update')).toEqual([
@@ -653,18 +658,18 @@ describe('AdminWindowPanel', () => {
     mockApi = fake.api;
 
     const user = renderPanel(<AdminWindowPanel />);
-    await screen.findByText('7 dní');
+    await screen.findByText('windowDaysValue: count=7');
 
-    await user.click(screen.getByRole('radio', { name: 'Vynutit otevřeno' }));
+    await user.click(screen.getByRole('radio', { name: 'windowLockFORCE_OPEN' }));
     await waitFor(() => expect(fake.inputsTo('admin.window.update')).toHaveLength(1));
 
-    expect(screen.queryByText(cs.admin.windowSaved)).not.toBeInTheDocument();
+    expect(screen.queryByText('windowSaved')).not.toBeInTheDocument();
 
     await act(async () => {
       settle();
     });
 
-    expect(await screen.findByText(cs.admin.windowSaved)).toBeInTheDocument();
+    expect(await screen.findByText('windowSaved')).toBeInTheDocument();
   });
 
   it('confirms a save only once it has actually happened, and refetches the months', async () => {
@@ -675,13 +680,13 @@ describe('AdminWindowPanel', () => {
     mockApi = fake.api;
 
     const user = renderPanel(<AdminWindowPanel />);
-    await screen.findByText('7 dní');
+    await screen.findByText('windowDaysValue: count=7');
     const before = fake.countOf('admin.window.months');
-    expect(screen.queryByText(cs.admin.windowSaved)).not.toBeInTheDocument();
+    expect(screen.queryByText('windowSaved')).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('radio', { name: 'Vynutit otevřeno' }));
+    await user.click(screen.getByRole('radio', { name: 'windowLockFORCE_OPEN' }));
 
-    expect(await screen.findByText(cs.admin.windowSaved)).toBeInTheDocument();
+    expect(await screen.findByText('windowSaved')).toBeInTheDocument();
     await waitFor(() => expect(fake.countOf('admin.window.months')).toBeGreaterThan(before));
   });
 
@@ -696,12 +701,12 @@ describe('AdminWindowPanel', () => {
     mockApi = fake.api;
 
     const user = renderPanel(<AdminWindowPanel />);
-    await screen.findByText('7 dní');
+    await screen.findByText('windowDaysValue: count=7');
 
-    await user.click(screen.getByRole('radio', { name: 'Vynutit uzamčeno' }));
+    await user.click(screen.getByRole('radio', { name: 'windowLockFORCE_LOCKED' }));
 
-    expect(await screen.findByText(cs.admin.errWindowValidation)).toBeInTheDocument();
-    expect(screen.queryByText(cs.admin.windowSaved)).not.toBeInTheDocument();
+    expect(await screen.findByText('errWindowValidation')).toBeInTheDocument();
+    expect(screen.queryByText('windowSaved')).not.toBeInTheDocument();
   });
 });
 

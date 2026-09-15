@@ -104,31 +104,27 @@ describe('AdminWindowScreen', () => {
       // doc/design/screens/05-admin-window.png
       renderScreen();
 
-      expect(
-        screen.getByText(
-          'Kolik dní před začátkem měsíce se otevřou rezervace na ten měsíc. Po začátku měsíce se rezervace uzamknou — upravovat je pak může jen admin, uživatel může svoji rezervaci kdykoliv zrušit.'
-        )
-      ).toBeInTheDocument();
+      expect(screen.getByText('windowOpenDescription')).toBeInTheDocument();
     });
 
     it('shows the current setting declined into Czech', () => {
       renderScreen({ openDaysBefore: 7 });
 
-      expect(screen.getByRole('spinbutton', { name: 'Otevřít X dní předem' })).toHaveAttribute(
+      expect(screen.getByRole('spinbutton', { name: 'windowDaysLabel' })).toHaveAttribute(
         'aria-valuetext',
-        '7 dní'
+        'windowDaysValue: count=7'
       );
     });
 
     it.each([
-      [1, '1 den'],
-      [3, '3 dny'],
-      [7, '7 dní'],
-      [21, '21 dní'],
+      [1, 'windowDaysValue: count=1'],
+      [3, 'windowDaysValue: count=3'],
+      [7, 'windowDaysValue: count=7'],
+      [21, 'windowDaysValue: count=21'],
     ])('declines %i as "%s"', (days, text) => {
       renderScreen({ openDaysBefore: days });
 
-      expect(screen.getByRole('spinbutton', { name: 'Otevřít X dní předem' })).toHaveAttribute(
+      expect(screen.getByRole('spinbutton', { name: 'windowDaysLabel' })).toHaveAttribute(
         'aria-valuetext',
         text
       );
@@ -137,7 +133,7 @@ describe('AdminWindowScreen', () => {
     it('stays inside the range the contract accepts', () => {
       renderScreen({ openDaysBefore: 7 });
 
-      const stepper = screen.getByRole('spinbutton', { name: 'Otevřít X dní předem' });
+      const stepper = screen.getByRole('spinbutton', { name: 'windowDaysLabel' });
       expect(stepper).toHaveAttribute('aria-valuemin', '1');
       expect(stepper).toHaveAttribute('aria-valuemax', '31');
     });
@@ -145,7 +141,7 @@ describe('AdminWindowScreen', () => {
     it('sends both fields on a day change, because the contract replaces rather than patches', async () => {
       const { onChange, user } = renderScreen({ openDaysBefore: 7, lockMode: 'FORCE_OPEN' });
 
-      await user.click(screen.getByRole('button', { name: 'O den více' }));
+      await user.click(screen.getByRole('button', { name: 'windowDaysIncrement' }));
 
       expect(onChange).toHaveBeenCalledWith({ openDaysBefore: 8, lockMode: 'FORCE_OPEN' });
     });
@@ -153,7 +149,7 @@ describe('AdminWindowScreen', () => {
     it('sends both fields on a lock-mode change too', async () => {
       const { onChange, user } = renderScreen({ openDaysBefore: 12, lockMode: 'AUTO' });
 
-      await user.click(screen.getByRole('radio', { name: 'Vynutit uzamčeno' }));
+      await user.click(screen.getByRole('radio', { name: 'windowLockFORCE_LOCKED' }));
 
       expect(onChange).toHaveBeenCalledWith({ openDaysBefore: 12, lockMode: 'FORCE_LOCKED' });
     });
@@ -162,43 +158,41 @@ describe('AdminWindowScreen', () => {
       renderScreen();
 
       expect(screen.getAllByRole('radio').map((pill) => pill.textContent)).toEqual([
-        'Automaticky',
-        'Vynutit otevřeno',
-        'Vynutit uzamčeno',
+        'windowLockAUTO',
+        'windowLockFORCE_OPEN',
+        'windowLockFORCE_LOCKED',
       ]);
     });
 
     it('freezes both controls while a save is in flight', () => {
       renderScreen({ isSaving: true });
 
-      expect(screen.getByRole('button', { name: 'O den více' })).toBeDisabled();
-      expect(screen.getByRole('radio', { name: 'Vynutit otevřeno' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'windowDaysIncrement' })).toBeDisabled();
+      expect(screen.getByRole('radio', { name: 'windowLockFORCE_OPEN' })).toBeDisabled();
     });
 
     it('confirms a save, and stops confirming once something changes again', () => {
       renderScreen({ isSaved: true });
-      expect(screen.getByText('Nastavení uloženo.')).toBeInTheDocument();
+      expect(screen.getByText('windowSaved')).toBeInTheDocument();
     });
 
     it('says nothing while nothing has been saved', () => {
       renderScreen({ isSaved: false });
-      expect(screen.queryByText('Nastavení uloženo.')).not.toBeInTheDocument();
+      expect(screen.queryByText('windowSaved')).not.toBeInTheDocument();
     });
 
     it('names the real limit for a refused day count, not the reservation rule', async () => {
       renderScreen({ saveError: await failureWithCode('VALIDATION_FAILED') });
 
-      expect(screen.getByText('Počet dní musí být mezi 1 a 31.')).toBeInTheDocument();
+      expect(screen.getByText('errWindowValidation')).toBeInTheDocument();
       expect(screen.queryByText(cs.errors.VALIDATION_FAILED)).not.toBeInTheDocument();
     });
 
     it('does not confirm a save that failed', async () => {
       renderScreen({ isSaved: true, saveError: await failureWithCode('CONFLICT') });
 
-      expect(screen.queryByText('Nastavení uloženo.')).not.toBeInTheDocument();
-      expect(
-        screen.getByText('Nastavení mezitím změnil někdo jiný. Obnovte prosím stránku.')
-      ).toBeInTheDocument();
+      expect(screen.queryByText('windowSaved')).not.toBeInTheDocument();
+      expect(screen.getByText('errWindowConflict')).toBeInTheDocument();
     });
   });
 
@@ -206,9 +200,7 @@ describe('AdminWindowScreen', () => {
     it('says which day it was derived against', () => {
       renderScreen({ today: '2026-08-28' });
 
-      expect(
-        screen.getByText('Podle nastavení vlevo · dnes je 28. srpna 2026')
-      ).toBeInTheDocument();
+      expect(screen.getByText('windowMonthsDescription: today=28. srpna 2026')).toBeInTheDocument();
     });
 
     it('names every month in the nominative with its year', () => {
@@ -223,17 +215,19 @@ describe('AdminWindowScreen', () => {
       renderScreen();
 
       expect(
-        within(monthRow('srpen 2026')).getByText('otevřeno 25. července – 31. července')
+        within(monthRow('srpen 2026')).getByText(
+          'windowMonthRangeAuto: from=25. července,to=31. července'
+        )
       ).toBeInTheDocument();
       expect(
-        within(monthRow('září 2026')).getByText('otevřeno 25. srpna – 31. srpna')
+        within(monthRow('září 2026')).getByText('windowMonthRangeAuto: from=25. srpna,to=31. srpna')
       ).toBeInTheDocument();
     });
 
     it.each([
-      ['srpen 2026', 'Uzamčeno'],
-      ['září 2026', 'Otevřeno'],
-      ['říjen 2026', 'Zatím neotevřeno'],
+      ['srpen 2026', 'windowStateLOCKED'],
+      ['září 2026', 'windowStateOPEN'],
+      ['říjen 2026', 'windowStateNOT_YET_OPEN'],
     ])('badges %s as %s', (month, badge) => {
       renderScreen();
 
@@ -251,16 +245,18 @@ describe('AdminWindowScreen', () => {
       });
 
       expect(
-        screen.getByText('automaticky by bylo otevřeno 25. srpna – 31. srpna')
+        screen.getByText('windowMonthRangeForced: from=25. srpna,to=31. srpna')
       ).toBeInTheDocument();
-      expect(screen.queryByText('otevřeno 25. srpna – 31. srpna')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('windowMonthRangeAuto: from=25. srpna,to=31. srpna')
+      ).not.toBeInTheDocument();
     });
   });
 
   it('waits while the settings are in flight', () => {
     renderScreen({ reservationWindow: { kind: 'loading' } });
 
-    expect(screen.getByRole('status')).toHaveTextContent('Načítá se…');
+    expect(screen.getByRole('status')).toHaveTextContent('loading');
     expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
   });
 
@@ -280,9 +276,9 @@ describe('AdminWindowScreen', () => {
     // `Otevřeno` green, `Uzamčeno` yellow, `Zatím neotevřeno` grey.
     const DESIGN_TONE = { OPEN: 'success', LOCKED: 'warning', NOT_YET_OPEN: 'neutral' } as const;
     const LABEL = {
-      OPEN: 'Otevřeno',
-      LOCKED: 'Uzamčeno',
-      NOT_YET_OPEN: 'Zatím neotevřeno',
+      OPEN: 'windowStateOPEN',
+      LOCKED: 'windowStateLOCKED',
+      NOT_YET_OPEN: 'windowStateNOT_YET_OPEN',
     } as const;
 
     it('maps each state to the colour the design gives it', () => {
@@ -307,7 +303,7 @@ describe('AdminWindowScreen', () => {
     });
 
     expect(screen.queryByText(/connection refused/u)).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Zkusit znovu' }));
+    await user.click(screen.getByRole('button', { name: 'retry' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 });

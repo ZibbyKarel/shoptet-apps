@@ -150,21 +150,23 @@ describe('AdminSpotsScreen', () => {
 
     expect(within(rowOf(TAKEN)).getByText('E2.92')).toBeInTheDocument();
     expect(within(rowOf(RETIRED)).getByText('E2.99')).toBeInTheDocument();
-    expect(within(rowOf(RETIRED)).getByText('Neaktivní')).toBeInTheDocument();
-    expect(within(rowOf(TAKEN)).queryByText('Neaktivní')).not.toBeInTheDocument();
+    expect(within(rowOf(RETIRED)).getByText('spotsInactive')).toBeInTheDocument();
+    expect(within(rowOf(TAKEN)).queryByText('spotsInactive')).not.toBeInTheDocument();
   });
 
   describe('the "Stav dnes" column', () => {
     it('names the holder of a spot somebody parked on', () => {
       renderScreen();
 
-      expect(within(rowOf(TAKEN)).getByText('Obsazeno — Karel Zíbar')).toBeInTheDocument();
+      expect(
+        within(rowOf(TAKEN)).getByText('dayStatusTaken: name=Karel Zíbar')
+      ).toBeInTheDocument();
     });
 
     it('says a spot is free when the day overview says nobody holds it', () => {
       renderScreen();
 
-      expect(within(rowOf(FREE)).getByText('Volné')).toBeInTheDocument();
+      expect(within(rowOf(FREE)).getByText('dayStatusFree')).toBeInTheDocument();
     });
 
     it('says nothing about a spot the day overview does not carry', () => {
@@ -172,8 +174,8 @@ describe('AdminSpotsScreen', () => {
       // for it would be a claim about a spot nobody can book.
       renderScreen();
 
-      expect(within(rowOf(RETIRED)).getByText('—')).toBeInTheDocument();
-      expect(within(rowOf(RETIRED)).queryByText('Volné')).not.toBeInTheDocument();
+      expect(within(rowOf(RETIRED)).getByText('spotsTodayUnknown')).toBeInTheDocument();
+      expect(within(rowOf(RETIRED)).queryByText('dayStatusFree')).not.toBeInTheDocument();
     });
 
     it('badges a guest holder, so this table can tell one from an employee', () => {
@@ -184,9 +186,11 @@ describe('AdminSpotsScreen', () => {
         ]),
       });
 
-      expect(within(rowOf(TAKEN)).getByText('Obsazeno — Jan Novotný')).toBeInTheDocument();
-      expect(within(rowOf(TAKEN)).getByText('Host')).toBeInTheDocument();
-      expect(within(rowOf(FREE)).queryByText('Host')).not.toBeInTheDocument();
+      expect(
+        within(rowOf(TAKEN)).getByText('dayStatusTaken: name=Jan Novotný')
+      ).toBeInTheDocument();
+      expect(within(rowOf(TAKEN)).getByText('guestHolder')).toBeInTheDocument();
+      expect(within(rowOf(FREE)).queryByText('guestHolder')).not.toBeInTheDocument();
     });
   });
 
@@ -196,7 +200,7 @@ describe('AdminSpotsScreen', () => {
       // retired spot would disagree with the rows underneath it.
       renderScreen();
 
-      const band = screen.getByRole('group', { name: 'Kategorie' });
+      const band = screen.getByRole('group', { name: 'spotsCategories' });
       expect(within(band).getByText('3')).toBeInTheDocument();
       expect(within(band).getByText('1')).toBeInTheDocument();
     });
@@ -204,7 +208,7 @@ describe('AdminSpotsScreen', () => {
     it('says the list of categories is fixed, and offers no way to add one', () => {
       renderScreen();
 
-      expect(screen.getByText('Kategorie jsou pevně dané — IT a Shared.')).toBeInTheDocument();
+      expect(screen.getByText('spotsCategoriesFixed')).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /Přidat kategorii/u })).not.toBeInTheDocument();
       expect(screen.queryByPlaceholderText(/Nová kategorie/u)).not.toBeInTheDocument();
     });
@@ -215,14 +219,16 @@ describe('AdminSpotsScreen', () => {
       renderScreen();
 
       expect(
-        within(rowOf(SHARED)).getByRole('combobox', { name: 'Kategorie místa E2.96' })
+        within(rowOf(SHARED)).getByRole('combobox', { name: 'spotsGroupSelectLabel: label=E2.96' })
       ).toHaveValue('SHARED');
     });
 
     it('offers exactly the closed enum, no more', () => {
       renderScreen();
 
-      const select = within(rowOf(TAKEN)).getByRole('combobox', { name: 'Kategorie místa E2.92' });
+      const select = within(rowOf(TAKEN)).getByRole('combobox', {
+        name: 'spotsGroupSelectLabel: label=E2.92',
+      });
       expect(
         within(select)
           .getAllByRole('option')
@@ -234,7 +240,7 @@ describe('AdminSpotsScreen', () => {
       const { onSave, user } = renderScreen();
 
       await user.selectOptions(
-        within(rowOf(TAKEN)).getByRole('combobox', { name: 'Kategorie místa E2.92' }),
+        within(rowOf(TAKEN)).getByRole('combobox', { name: 'spotsGroupSelectLabel: label=E2.92' }),
         'SHARED'
       );
 
@@ -247,17 +253,21 @@ describe('AdminSpotsScreen', () => {
       const { onActiveChange, user } = renderScreen();
 
       expect(
-        within(rowOf(TAKEN)).getByRole('switch', { name: 'Aktivní místo E2.92' })
+        within(rowOf(TAKEN)).getByRole('switch', { name: 'spotsActiveToggleLabel: label=E2.92' })
       ).toBeChecked();
 
-      await user.click(within(rowOf(TAKEN)).getByRole('switch', { name: 'Aktivní místo E2.92' }));
+      await user.click(
+        within(rowOf(TAKEN)).getByRole('switch', { name: 'spotsActiveToggleLabel: label=E2.92' })
+      );
       expect(onActiveChange).toHaveBeenLastCalledWith(TAKEN.id, false);
     });
 
     it('brings a retired spot back', async () => {
       const { onActiveChange, user } = renderScreen();
 
-      await user.click(within(rowOf(RETIRED)).getByRole('switch', { name: 'Aktivní místo E2.99' }));
+      await user.click(
+        within(rowOf(RETIRED)).getByRole('switch', { name: 'spotsActiveToggleLabel: label=E2.99' })
+      );
 
       expect(onActiveChange).toHaveBeenLastCalledWith(RETIRED.id, true);
     });
@@ -266,10 +276,10 @@ describe('AdminSpotsScreen', () => {
       renderScreen({ pendingSpotId: TAKEN.id });
 
       expect(
-        within(rowOf(TAKEN)).getByRole('switch', { name: 'Aktivní místo E2.92' })
+        within(rowOf(TAKEN)).getByRole('switch', { name: 'spotsActiveToggleLabel: label=E2.92' })
       ).toBeDisabled();
       expect(
-        within(rowOf(FREE)).getByRole('switch', { name: 'Aktivní místo E2.93' })
+        within(rowOf(FREE)).getByRole('switch', { name: 'spotsActiveToggleLabel: label=E2.93' })
       ).toBeEnabled();
     });
   });
@@ -278,19 +288,19 @@ describe('AdminSpotsScreen', () => {
     it('opens a form with the label and the category', async () => {
       const { user } = renderScreen();
 
-      await user.click(screen.getByRole('button', { name: 'Přidat místo' }));
+      await user.click(screen.getByRole('button', { name: 'spotsAdd' }));
 
-      expect(screen.getByRole('dialog', { name: 'Nové parkovací místo' })).toBeInTheDocument();
-      expect(inDialog().getByLabelText('Štítek')).toHaveValue('');
+      expect(screen.getByRole('dialog', { name: 'spotsCreateTitle' })).toBeInTheDocument();
+      expect(inDialog().getByLabelText('spotsLabelField')).toHaveValue('');
     });
 
     it('sends the label and category that were typed', async () => {
       const { onCreate, user } = renderScreen();
 
-      await user.click(screen.getByRole('button', { name: 'Přidat místo' }));
-      await user.type(inDialog().getByLabelText('Štítek'), 'E2.10');
-      await user.selectOptions(inDialog().getByLabelText('Kategorie'), 'SHARED');
-      await user.click(inDialog().getByRole('button', { name: 'Uložit' }));
+      await user.click(screen.getByRole('button', { name: 'spotsAdd' }));
+      await user.type(inDialog().getByLabelText('spotsLabelField'), 'E2.10');
+      await user.selectOptions(inDialog().getByLabelText('spotsGroupField'), 'SHARED');
+      await user.click(inDialog().getByRole('button', { name: 'spotsSave' }));
 
       await waitFor(() =>
         expect(onCreate).toHaveBeenCalledWith({ label: 'E2.10', group: 'SHARED' })
@@ -300,19 +310,19 @@ describe('AdminSpotsScreen', () => {
     it('refuses an empty label without calling the API', async () => {
       const { onCreate, user } = renderScreen();
 
-      await user.click(screen.getByRole('button', { name: 'Přidat místo' }));
-      await user.click(screen.getByRole('button', { name: 'Uložit' }));
+      await user.click(screen.getByRole('button', { name: 'spotsAdd' }));
+      await user.click(screen.getByRole('button', { name: 'spotsSave' }));
 
-      expect(await screen.findByText('Zadejte štítek místa.')).toBeInTheDocument();
+      expect(await screen.findByText('spotsLabelRequired')).toBeInTheDocument();
       expect(onCreate).not.toHaveBeenCalled();
     });
 
     it('closes once the spot exists', async () => {
       const { user } = renderScreen();
 
-      await user.click(screen.getByRole('button', { name: 'Přidat místo' }));
-      await user.type(inDialog().getByLabelText('Štítek'), 'E2.10');
-      await user.click(inDialog().getByRole('button', { name: 'Uložit' }));
+      await user.click(screen.getByRole('button', { name: 'spotsAdd' }));
+      await user.type(inDialog().getByLabelText('spotsLabelField'), 'E2.10');
+      await user.click(inDialog().getByRole('button', { name: 'spotsSave' }));
 
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     });
@@ -324,15 +334,15 @@ describe('AdminSpotsScreen', () => {
         writeFailure: { error: conflict, from: 'spotCreate' },
       });
 
-      await user.click(screen.getByRole('button', { name: 'Přidat místo' }));
-      await user.type(inDialog().getByLabelText('Štítek'), 'E2.92');
-      await user.click(inDialog().getByRole('button', { name: 'Uložit' }));
+      await user.click(screen.getByRole('button', { name: 'spotsAdd' }));
+      await user.type(inDialog().getByLabelText('spotsLabelField'), 'E2.92');
+      await user.click(inDialog().getByRole('button', { name: 'spotsSave' }));
 
       // Scoped to the dialog on purpose. The dialog is a modal — it covers
       // the table — so a sentence rendered above the table would be present in
       // the DOM and invisible to the person who just pressed Save.
       expect(await screen.findByRole('dialog')).toBeInTheDocument();
-      expect(inDialog().getByText('Místo s tímto štítkem už existuje.')).toBeInTheDocument();
+      expect(inDialog().getByText('spotsDuplicateLabel')).toBeInTheDocument();
       expect(screen.queryByText(cs.errors.CONFLICT)).not.toBeInTheDocument();
     });
   });
@@ -341,20 +351,22 @@ describe('AdminSpotsScreen', () => {
     it('opens seeded with the spot’s current values', async () => {
       const { user } = renderScreen();
 
-      await user.click(within(rowOf(SHARED)).getByRole('button', { name: 'Upravit' }));
+      await user.click(within(rowOf(SHARED)).getByRole('button', { name: 'spotsEdit' }));
 
-      expect(screen.getByRole('dialog', { name: 'Upravit místo E2.96' })).toBeInTheDocument();
-      expect(inDialog().getByLabelText('Štítek')).toHaveValue('E2.96');
-      expect(inDialog().getByLabelText('Kategorie')).toHaveValue('SHARED');
+      expect(
+        screen.getByRole('dialog', { name: 'spotsEditTitle: label=E2.96' })
+      ).toBeInTheDocument();
+      expect(inDialog().getByLabelText('spotsLabelField')).toHaveValue('E2.96');
+      expect(inDialog().getByLabelText('spotsGroupField')).toHaveValue('SHARED');
     });
 
     it('sends the edited values with the spot’s id', async () => {
       const { onSave, user } = renderScreen();
 
-      await user.click(within(rowOf(SHARED)).getByRole('button', { name: 'Upravit' }));
-      await user.clear(inDialog().getByLabelText('Štítek'));
-      await user.type(inDialog().getByLabelText('Štítek'), 'E2.97');
-      await user.click(inDialog().getByRole('button', { name: 'Uložit' }));
+      await user.click(within(rowOf(SHARED)).getByRole('button', { name: 'spotsEdit' }));
+      await user.clear(inDialog().getByLabelText('spotsLabelField'));
+      await user.type(inDialog().getByLabelText('spotsLabelField'), 'E2.97');
+      await user.click(inDialog().getByRole('button', { name: 'spotsSave' }));
 
       await waitFor(() =>
         expect(onSave).toHaveBeenCalledWith({ id: SHARED.id, label: 'E2.97', group: 'SHARED' })
@@ -366,31 +378,27 @@ describe('AdminSpotsScreen', () => {
     it('asks first, and retires nothing until it is confirmed', async () => {
       const { onDeactivate, user } = renderScreen();
 
-      await user.click(within(rowOf(FREE)).getByRole('button', { name: 'Smazat' }));
+      await user.click(within(rowOf(FREE)).getByRole('button', { name: 'spotsDelete' }));
 
-      expect(screen.getByRole('dialog', { name: 'Smazat místo E2.93?' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('dialog', { name: 'spotsDeleteTitle: label=E2.93' })
+      ).toBeInTheDocument();
       expect(onDeactivate).not.toHaveBeenCalled();
     });
 
     it('says the history survives — the row is never actually deleted', async () => {
       const { user } = renderScreen();
 
-      await user.click(within(rowOf(FREE)).getByRole('button', { name: 'Smazat' }));
+      await user.click(within(rowOf(FREE)).getByRole('button', { name: 'spotsDelete' }));
 
-      expect(
-        screen.getByText(
-          'Místo zmizí z parkoviště, ale historie rezervací zůstane zachovaná. Smazat ho nelze, dokud na něj někdo má rezervaci ode dneška dál.'
-        )
-      ).toBeInTheDocument();
+      expect(screen.getByText('spotsDeleteDescription')).toBeInTheDocument();
     });
 
     it('retires the spot on confirmation and closes', async () => {
       const { onDeactivate, user } = renderScreen();
 
-      await user.click(within(rowOf(FREE)).getByRole('button', { name: 'Smazat' }));
-      // The last "Smazat" on the page is the dialog's confirming button; the
-      // earlier ones are the rows' own.
-      await user.click(screen.getAllByRole('button', { name: 'Smazat' }).at(-1) as HTMLElement);
+      await user.click(within(rowOf(FREE)).getByRole('button', { name: 'spotsDelete' }));
+      await user.click(screen.getByRole('button', { name: 'spotsDeleteConfirm' }));
 
       await waitFor(() => expect(onDeactivate).toHaveBeenCalledWith(FREE.id));
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
@@ -399,8 +407,8 @@ describe('AdminSpotsScreen', () => {
     it('changes nothing when it is cancelled', async () => {
       const { onDeactivate, user } = renderScreen();
 
-      await user.click(within(rowOf(FREE)).getByRole('button', { name: 'Smazat' }));
-      await user.click(screen.getByRole('button', { name: 'Zrušit' }));
+      await user.click(within(rowOf(FREE)).getByRole('button', { name: 'spotsDelete' }));
+      await user.click(screen.getByRole('button', { name: 'spotsCancel' }));
 
       expect(onDeactivate).not.toHaveBeenCalled();
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -413,15 +421,13 @@ describe('AdminSpotsScreen', () => {
         writeFailure: { error: conflict, from: 'spotRetire' },
       });
 
-      await user.click(within(rowOf(TAKEN)).getByRole('button', { name: 'Smazat' }));
-      await user.click(screen.getAllByRole('button', { name: 'Smazat' }).at(-1) as HTMLElement);
+      await user.click(within(rowOf(TAKEN)).getByRole('button', { name: 'spotsDelete' }));
+      await user.click(screen.getByRole('button', { name: 'spotsDeleteConfirm' }));
 
       expect(await screen.findByRole('dialog')).toBeInTheDocument();
-      expect(
-        inDialog().getByText('Na tomto místě jsou rezervace ode dneška dál. Nejdřív je zrušte.')
-      ).toBeInTheDocument();
+      expect(inDialog().getByText('spotsDeleteConflict')).toBeInTheDocument();
       // Wrong on this procedure — that is the create/rename sentence.
-      expect(screen.queryByText('Místo s tímto štítkem už existuje.')).not.toBeInTheDocument();
+      expect(screen.queryByText('spotsDuplicateLabel')).not.toBeInTheDocument();
       expect(screen.queryByText(cs.errors.CONFLICT)).not.toBeInTheDocument();
     });
 
@@ -432,8 +438,8 @@ describe('AdminSpotsScreen', () => {
         writeFailure: { error: conflict, from: 'spotRetire' },
       });
 
-      await user.click(within(rowOf(TAKEN)).getByRole('button', { name: 'Smazat' }));
-      await user.click(screen.getAllByRole('button', { name: 'Smazat' }).at(-1) as HTMLElement);
+      await user.click(within(rowOf(TAKEN)).getByRole('button', { name: 'spotsDelete' }));
+      await user.click(screen.getByRole('button', { name: 'spotsDeleteConfirm' }));
 
       expect(await screen.findByRole('dialog')).toBeInTheDocument();
     });
@@ -445,9 +451,7 @@ describe('AdminSpotsScreen', () => {
         writeFailure: { error: await failureWithCode('CONFLICT'), from: 'spotRetire' },
       });
 
-      expect(
-        screen.getByText('Na tomto místě jsou rezervace ode dneška dál. Nejdřív je zrušte.')
-      ).toBeInTheDocument();
+      expect(screen.getByText('spotsDeleteConflict')).toBeInTheDocument();
       // No dialog is open, so the notice belongs above the table.
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
       expect(screen.getByRole('table')).toBeInTheDocument();
@@ -458,10 +462,8 @@ describe('AdminSpotsScreen', () => {
         writeFailure: { error: await failureWithCode('CONFLICT'), from: 'spotRevive' },
       });
 
-      expect(
-        screen.getByText('Změnu místa se nepodařilo uložit. Zkuste to prosím znovu.')
-      ).toBeInTheDocument();
-      expect(screen.queryByText('Místo s tímto štítkem už existuje.')).not.toBeInTheDocument();
+      expect(screen.getByText('errFallbackSpot')).toBeInTheDocument();
+      expect(screen.queryByText('spotsDuplicateLabel')).not.toBeInTheDocument();
     });
 
     it('shows nothing when the last write succeeded', () => {
@@ -472,19 +474,19 @@ describe('AdminSpotsScreen', () => {
   });
 
   describe('a failure the admin has walked away from', () => {
-    const RETIRE_REFUSED = cs.admin.spotsDeleteConflict;
-    const DUPLICATE_LABEL = cs.admin.spotsDuplicateLabel;
+    const RETIRE_REFUSED = 'spotsDeleteConflict';
+    const DUPLICATE_LABEL = 'spotsDuplicateLabel';
 
     it('is discarded whenever the dialog changes, so it cannot outlive its own attempt', async () => {
       const { onDiscardFailure, user } = renderScreen();
 
-      await user.click(screen.getByRole('button', { name: 'Přidat místo' }));
+      await user.click(screen.getByRole('button', { name: 'spotsAdd' }));
       expect(onDiscardFailure).toHaveBeenCalledTimes(1);
 
-      await user.click(inDialog().getByRole('button', { name: 'Zrušit' }));
+      await user.click(inDialog().getByRole('button', { name: 'spotsCancel' }));
       expect(onDiscardFailure).toHaveBeenCalledTimes(2);
 
-      await user.click(within(rowOf(TAKEN)).getByRole('button', { name: 'Smazat' }));
+      await user.click(within(rowOf(TAKEN)).getByRole('button', { name: 'spotsDelete' }));
       expect(onDiscardFailure).toHaveBeenCalledTimes(3);
     });
 
@@ -494,13 +496,13 @@ describe('AdminSpotsScreen', () => {
       // Only actually forgetting the failure keeps the reopened form clean.
       const user = renderFailingWrites(await failureWithCode('CONFLICT'));
 
-      await user.click(screen.getByRole('button', { name: 'Přidat místo' }));
-      await user.type(inDialog().getByLabelText('Štítek'), 'E2.92');
-      await user.click(inDialog().getByRole('button', { name: 'Uložit' }));
+      await user.click(screen.getByRole('button', { name: 'spotsAdd' }));
+      await user.type(inDialog().getByLabelText('spotsLabelField'), 'E2.92');
+      await user.click(inDialog().getByRole('button', { name: 'spotsSave' }));
       expect(await inDialog().findByText(DUPLICATE_LABEL)).toBeInTheDocument();
 
-      await user.click(inDialog().getByRole('button', { name: 'Zrušit' }));
-      await user.click(screen.getByRole('button', { name: 'Přidat místo' }));
+      await user.click(inDialog().getByRole('button', { name: 'spotsCancel' }));
+      await user.click(screen.getByRole('button', { name: 'spotsAdd' }));
 
       expect(inDialog().queryByText(DUPLICATE_LABEL)).not.toBeInTheDocument();
       expect(screen.queryByText(DUPLICATE_LABEL)).not.toBeInTheDocument();
@@ -512,13 +514,13 @@ describe('AdminSpotsScreen', () => {
       // ode dneška dál." before a character was typed.
       const user = renderFailingWrites(await failureWithCode('CONFLICT'));
 
-      await user.click(within(rowOf(TAKEN)).getByRole('button', { name: 'Smazat' }));
-      const confirm = inDialog().getAllByRole('button', { name: 'Smazat' }).at(-1);
-      await user.click(confirm as HTMLElement);
+      await user.click(within(rowOf(TAKEN)).getByRole('button', { name: 'spotsDelete' }));
+      const confirm = inDialog().getByRole('button', { name: 'spotsDeleteConfirm' });
+      await user.click(confirm);
       expect(await inDialog().findByText(RETIRE_REFUSED)).toBeInTheDocument();
 
-      await user.click(inDialog().getByRole('button', { name: 'Zrušit' }));
-      await user.click(screen.getByRole('button', { name: 'Přidat místo' }));
+      await user.click(inDialog().getByRole('button', { name: 'spotsCancel' }));
+      await user.click(screen.getByRole('button', { name: 'spotsAdd' }));
 
       expect(inDialog().queryByText(RETIRE_REFUSED)).not.toBeInTheDocument();
       expect(screen.queryByText(RETIRE_REFUSED)).not.toBeInTheDocument();
@@ -534,7 +536,7 @@ describe('AdminSpotsScreen', () => {
 
       expect(await screen.findByText(RETIRE_REFUSED)).toBeInTheDocument();
 
-      await user.click(screen.getByRole('button', { name: 'Přidat místo' }));
+      await user.click(screen.getByRole('button', { name: 'spotsAdd' }));
 
       expect(inDialog().queryByText(RETIRE_REFUSED)).not.toBeInTheDocument();
       expect(screen.queryByText(RETIRE_REFUSED)).not.toBeInTheDocument();
@@ -549,7 +551,7 @@ describe('AdminSpotsScreen', () => {
       // outside the form can create a spot.
       expect(screen.queryByText(DUPLICATE_LABEL)).not.toBeInTheDocument();
 
-      await user.click(within(rowOf(TAKEN)).getByRole('button', { name: 'Smazat' }));
+      await user.click(within(rowOf(TAKEN)).getByRole('button', { name: 'spotsDelete' }));
 
       expect(inDialog().queryByText(DUPLICATE_LABEL)).not.toBeInTheDocument();
     });
@@ -561,8 +563,8 @@ describe('AdminSpotsScreen', () => {
     // the name stays and only the pixels go.
     renderScreen();
 
-    const header = screen.getByRole('columnheader', { name: 'Akce' });
-    expect(within(header).getByText('Akce')).toHaveClass('sr-only');
+    const header = screen.getByRole('columnheader', { name: 'spotsColumnActions' });
+    expect(within(header).getByText('spotsColumnActions')).toHaveClass('sr-only');
   });
 
   describe('what a write in flight freezes', () => {
@@ -570,44 +572,44 @@ describe('AdminSpotsScreen', () => {
       renderScreen({ pendingSpotId: TAKEN.id });
 
       const written = within(rowOf(TAKEN));
-      expect(written.getByRole('button', { name: 'Upravit' })).toBeDisabled();
-      expect(written.getByRole('button', { name: 'Smazat' })).toBeDisabled();
+      expect(written.getByRole('button', { name: 'spotsEdit' })).toBeDisabled();
+      expect(written.getByRole('button', { name: 'spotsDelete' })).toBeDisabled();
 
       const untouched = within(rowOf(FREE));
-      expect(untouched.getByRole('button', { name: 'Upravit' })).toBeEnabled();
-      expect(untouched.getByRole('button', { name: 'Smazat' })).toBeEnabled();
+      expect(untouched.getByRole('button', { name: 'spotsEdit' })).toBeEnabled();
+      expect(untouched.getByRole('button', { name: 'spotsDelete' })).toBeEnabled();
     });
 
     it('leaves a dialog alone while some other row is being written', async () => {
       const { user } = renderScreen({ isSaving: true, pendingSpotId: TAKEN.id });
 
-      await user.click(screen.getByRole('button', { name: 'Přidat místo' }));
+      await user.click(screen.getByRole('button', { name: 'spotsAdd' }));
 
       // "Zrušit" must stay live: an admin who cannot cancel a form they never
       // submitted is stuck on somebody else's request.
-      expect(inDialog().getByRole('button', { name: 'Zrušit' })).toBeEnabled();
+      expect(inDialog().getByRole('button', { name: 'spotsCancel' })).toBeEnabled();
     });
 
     it('does hold the dialog while the dialog’s own write is in flight', async () => {
       const { user } = renderScreen({ isSaving: true, pendingSpotId: null });
 
-      await user.click(screen.getByRole('button', { name: 'Přidat místo' }));
+      await user.click(screen.getByRole('button', { name: 'spotsAdd' }));
 
-      expect(inDialog().getByRole('button', { name: 'Zrušit' })).toBeDisabled();
+      expect(inDialog().getByRole('button', { name: 'spotsCancel' })).toBeDisabled();
     });
   });
 
   it('says the lot is empty rather than drawing a table of nothing', () => {
     renderScreen({ spots: [] });
 
-    expect(screen.getByText('Zatím tu nejsou žádná místa')).toBeInTheDocument();
-    expect(screen.getByText('Přidejte první parkovací místo.')).toBeInTheDocument();
+    expect(screen.getByText('spotsEmpty')).toBeInTheDocument();
+    expect(screen.getByText('spotsEmptyDescription')).toBeInTheDocument();
   });
 
   it('waits while the list is in flight', () => {
     renderScreen({ spotsState: { kind: 'loading' } });
 
-    expect(screen.getByRole('status')).toHaveTextContent('Načítá se…');
+    expect(screen.getByRole('status')).toHaveTextContent('loading');
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
   });
 
@@ -617,7 +619,7 @@ describe('AdminSpotsScreen', () => {
     });
 
     expect(screen.queryByText(/connection refused/u)).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Zkusit znovu' }));
+    await user.click(screen.getByRole('button', { name: 'retry' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 });

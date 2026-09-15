@@ -46,20 +46,24 @@ describe('WindowBanner', () => {
       renderBanner({ state: 'OPEN', lockMode: 'AUTO' });
 
       expect(
-        screen.getByText('Rezervace na září 2026 jsou otevřené — zapisovat lze do 31. srpna.')
+        screen.getByText('bannerOpenAuto: month=září 2026,until=31. srpna,from=25. srpna')
       ).toBeInTheDocument();
     });
 
     it('says when a month that has not opened yet will', () => {
       renderBanner({ state: 'NOT_YET_OPEN', lockMode: 'AUTO' });
 
-      expect(screen.getByText('Rezervace na září 2026 se otevřou 25. srpna.')).toBeInTheDocument();
+      expect(
+        screen.getByText('bannerNotYetOpenAuto: month=září 2026,until=31. srpna,from=25. srpna')
+      ).toBeInTheDocument();
     });
 
     it('says a month is locked, and names no date, because none applies', () => {
       renderBanner({ state: 'LOCKED', lockMode: 'AUTO' });
 
-      expect(screen.getByText('Rezervace na září 2026 jsou uzamčené.')).toBeInTheDocument();
+      expect(
+        screen.getByText('bannerLockedAuto: month=září 2026,until=31. srpna,from=25. srpna')
+      ).toBeInTheDocument();
     });
   });
 
@@ -72,7 +76,7 @@ describe('WindowBanner', () => {
       renderBanner({ state: 'OPEN', lockMode: 'FORCE_OPEN' });
 
       expect(
-        screen.getByText('Rezervace na září 2026 jsou otevřené — otevření vynutil admin.')
+        screen.getByText('bannerOpenForced: month=září 2026,until=,from=')
       ).toBeInTheDocument();
       expect(screen.queryByText(/31\. srpna/u)).not.toBeInTheDocument();
     });
@@ -81,14 +85,16 @@ describe('WindowBanner', () => {
       renderBanner({ state: 'LOCKED', lockMode: 'FORCE_LOCKED' });
 
       expect(
-        screen.getByText('Rezervace na září 2026 jsou uzamčené — uzamčení vynutil admin.')
+        screen.getByText('bannerLockedForced: month=září 2026,until=,from=')
       ).toBeInTheDocument();
     });
 
     it('never promises an opening date it cannot stand behind', () => {
       renderBanner({ state: 'NOT_YET_OPEN', lockMode: 'FORCE_LOCKED' });
 
-      expect(screen.getByText('Rezervace na září 2026 zatím nejsou otevřené.')).toBeInTheDocument();
+      expect(
+        screen.getByText('bannerNotYetOpenForced: month=září 2026,until=,from=')
+      ).toBeInTheDocument();
       expect(screen.queryByText(/25\. srpna/u)).not.toBeInTheDocument();
     });
   });
@@ -96,7 +102,7 @@ describe('WindowBanner', () => {
   it('names the month in the nominative, with its year', () => {
     renderBanner({ month: '2026-08', windowFrom: '2026-07-25', windowTo: '2026-07-31' });
 
-    expect(screen.getByText(/^Rezervace na srpen 2026 /u)).toBeInTheDocument();
+    expect(screen.getByText(/^bannerOpenAuto: month=srpen 2026,/u)).toBeInTheDocument();
   });
 
   describe('the colour and glyph, which are the signal before the words are', () => {

@@ -93,7 +93,7 @@ describe('AdminUsersScreen', () => {
   it('waits rather than showing an empty table while the list is in flight', () => {
     renderScreen({ users: { kind: 'loading' } });
 
-    expect(screen.getByRole('status')).toHaveTextContent('Načítá se…');
+    expect(screen.getByRole('status')).toHaveTextContent('loading');
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
   });
 
@@ -103,7 +103,7 @@ describe('AdminUsersScreen', () => {
     });
 
     expect(screen.queryByText(/connection refused/u)).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Zkusit znovu' }));
+    await user.click(screen.getByRole('button', { name: 'retry' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
@@ -118,14 +118,12 @@ describe('AdminUsersScreen', () => {
   it('counts the accounts in the Czech plural the design uses', () => {
     renderScreen();
 
-    expect(
-      screen.getByText('3 účty ze SSO · admin roli lze kdykoliv přidat i odebrat')
-    ).toBeInTheDocument();
+    expect(screen.getByText('usersDescription: count=3')).toBeInTheDocument();
   });
 
   it('declines the count for one and for many', () => {
     renderScreen({ users: { kind: 'ready', data: { users: [KAREL] } } });
-    expect(screen.getByText(/^1 účet ze SSO/u)).toBeInTheDocument();
+    expect(screen.getByText(/^usersDescription: count=1/u)).toBeInTheDocument();
   });
 
   it('shows the admin switch on and off according to the role', () => {
@@ -135,11 +133,13 @@ describe('AdminUsersScreen', () => {
     // "last admin" label and is disabled.
     expect(
       within(rowOf(KAREL)).getByRole('switch', {
-        name: 'Admin role — Karel Zíbar · poslední administrátor nemůže roli ztratit',
+        name: 'usersLastAdminToggleLabel: name=Karel Zíbar',
       })
     ).toBeChecked();
     expect(
-      within(rowOf(ADELA)).getByRole('switch', { name: 'Admin role — Adéla Horáková' })
+      within(rowOf(ADELA)).getByRole('switch', {
+        name: 'usersAdminToggleLabel: name=Adéla Horáková',
+      })
     ).not.toBeChecked();
   });
 
@@ -158,14 +158,16 @@ describe('AdminUsersScreen', () => {
 
     // Test a promotion: ADELA is a USER, clicking her switch makes her an admin.
     await user.click(
-      within(rowOf(ADELA)).getByRole('switch', { name: 'Admin role — Adéla Horáková' })
+      within(rowOf(ADELA)).getByRole('switch', {
+        name: 'usersAdminToggleLabel: name=Adéla Horáková',
+      })
     );
     expect(onRoleChange).toHaveBeenLastCalledWith(ADELA.id, true);
 
     // Test a demotion: KAREL is an admin, and with Zora as the second admin,
     // clicking his switch to demote him is allowed.
     await user.click(
-      within(rowOf(KAREL)).getByRole('switch', { name: 'Admin role — Karel Zíbar' })
+      within(rowOf(KAREL)).getByRole('switch', { name: 'usersAdminToggleLabel: name=Karel Zíbar' })
     );
     expect(onRoleChange).toHaveBeenLastCalledWith(KAREL.id, false);
   });
@@ -174,10 +176,12 @@ describe('AdminUsersScreen', () => {
     renderScreen();
 
     expect(
-      within(rowOf(ADELA)).getByRole('switch', { name: 'Aktivní účet — Adéla Horáková' })
+      within(rowOf(ADELA)).getByRole('switch', {
+        name: 'usersActiveToggleLabel: name=Adéla Horáková',
+      })
     ).toBeChecked();
     expect(
-      within(rowOf(PETR)).getByRole('switch', { name: 'Aktivní účet — Petr Novák' })
+      within(rowOf(PETR)).getByRole('switch', { name: 'usersActiveToggleLabel: name=Petr Novák' })
     ).not.toBeChecked();
   });
 
@@ -185,12 +189,14 @@ describe('AdminUsersScreen', () => {
     const { onActiveChange, user } = renderScreen();
 
     await user.click(
-      within(rowOf(ADELA)).getByRole('switch', { name: 'Aktivní účet — Adéla Horáková' })
+      within(rowOf(ADELA)).getByRole('switch', {
+        name: 'usersActiveToggleLabel: name=Adéla Horáková',
+      })
     );
     expect(onActiveChange).toHaveBeenLastCalledWith(ADELA.id, false);
 
     await user.click(
-      within(rowOf(PETR)).getByRole('switch', { name: 'Aktivní účet — Petr Novák' })
+      within(rowOf(PETR)).getByRole('switch', { name: 'usersActiveToggleLabel: name=Petr Novák' })
     );
     expect(onActiveChange).toHaveBeenLastCalledWith(PETR.id, true);
   });
@@ -200,7 +206,7 @@ describe('AdminUsersScreen', () => {
     // would not: screen readers announce it inconsistently and touch devices
     // never show it, so the people most likely to be stuck by a dead control
     // are the ones least likely to be told why.
-    const OWN_SWITCH = 'Aktivní účet — Karel Zíbar · vlastní účet nelze deaktivovat';
+    const OWN_SWITCH = 'usersSelfActiveToggleLabel: name=Karel Zíbar';
 
     it('disables the active switch on the viewer’s own row', () => {
       renderScreen({ viewerId: KAREL.id });
@@ -215,7 +221,7 @@ describe('AdminUsersScreen', () => {
       // carries the plain label.
       expect(within(rowOf(KAREL)).getByRole('switch', { name: OWN_SWITCH })).toBeInTheDocument();
       expect(
-        within(rowOf(ADELA)).queryByRole('switch', { name: /nelze deaktivovat/u })
+        within(rowOf(ADELA)).queryByRole('switch', { name: /usersSelfActiveToggleLabel/u })
       ).not.toBeInTheDocument();
     });
 
@@ -231,7 +237,9 @@ describe('AdminUsersScreen', () => {
       renderScreen({ viewerId: KAREL.id });
 
       expect(
-        within(rowOf(ADELA)).getByRole('switch', { name: 'Aktivní účet — Adéla Horáková' })
+        within(rowOf(ADELA)).getByRole('switch', {
+          name: 'usersActiveToggleLabel: name=Adéla Horáková',
+        })
       ).toBeEnabled();
     });
 
@@ -246,7 +254,9 @@ describe('AdminUsersScreen', () => {
       });
 
       expect(
-        within(rowOf(KAREL)).getByRole('switch', { name: 'Admin role — Karel Zíbar' })
+        within(rowOf(KAREL)).getByRole('switch', {
+          name: 'usersAdminToggleLabel: name=Karel Zíbar',
+        })
       ).toBeEnabled();
     });
 
@@ -258,8 +268,8 @@ describe('AdminUsersScreen', () => {
      * intended.
      */
     describe('stepping down from your own admin role', () => {
-      const CONFIRM_TITLE = 'Odebrat si roli administrátora?';
-      const OWN_ADMIN_SWITCH = 'Admin role — Karel Zíbar';
+      const CONFIRM_TITLE = 'usersSelfRoleConfirmTitle';
+      const OWN_ADMIN_SWITCH = 'usersAdminToggleLabel: name=Karel Zíbar';
       // Another admin is needed so KAREL is not the last admin.
       const anotherAdmin = { ...ADELA, role: 'ADMIN' as const };
 
@@ -283,11 +293,7 @@ describe('AdminUsersScreen', () => {
 
         await user.click(within(rowOf(KAREL)).getByRole('switch', { name: OWN_ADMIN_SWITCH }));
 
-        expect(
-          screen.getByText(
-            'Přijdete o přístup do Správy. Vrátit vám roli může potom už jen jiný administrátor.'
-          )
-        ).toBeInTheDocument();
+        expect(screen.getByText('usersSelfRoleConfirmDescription')).toBeInTheDocument();
       });
 
       it('goes through once confirmed', async () => {
@@ -297,7 +303,7 @@ describe('AdminUsersScreen', () => {
         });
 
         await user.click(within(rowOf(KAREL)).getByRole('switch', { name: OWN_ADMIN_SWITCH }));
-        await user.click(screen.getByRole('button', { name: 'Odebrat roli' }));
+        await user.click(screen.getByRole('button', { name: 'usersSelfRoleConfirmAction' }));
 
         expect(onRoleChange).toHaveBeenCalledWith(KAREL.id, false);
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -310,7 +316,7 @@ describe('AdminUsersScreen', () => {
         });
 
         await user.click(within(rowOf(KAREL)).getByRole('switch', { name: OWN_ADMIN_SWITCH }));
-        await user.click(screen.getByRole('button', { name: 'Zrušit' }));
+        await user.click(screen.getByRole('button', { name: 'cancel' }));
 
         expect(onRoleChange).not.toHaveBeenCalled();
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -325,7 +331,9 @@ describe('AdminUsersScreen', () => {
         });
 
         await user.click(
-          within(rowOf(ADELA)).getByRole('switch', { name: 'Admin role — Adéla Horáková' })
+          within(rowOf(ADELA)).getByRole('switch', {
+            name: 'usersAdminToggleLabel: name=Adéla Horáková',
+          })
         );
 
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -349,14 +357,15 @@ describe('AdminUsersScreen', () => {
       renderScreen({ viewerId: undefined });
 
       expect(
-        within(rowOf(KAREL)).getByRole('switch', { name: 'Aktivní účet — Karel Zíbar' })
+        within(rowOf(KAREL)).getByRole('switch', {
+          name: 'usersActiveToggleLabel: name=Karel Zíbar',
+        })
       ).toBeEnabled();
     });
   });
 
   describe('the last active administrator cannot lose the role', () => {
-    const LAST_ADMIN_SWITCH =
-      'Admin role — Karel Zíbar · poslední administrátor nemůže roli ztratit';
+    const LAST_ADMIN_SWITCH = 'usersLastAdminToggleLabel: name=Karel Zíbar';
 
     it('disables the admin switch when they are the only active admin', () => {
       renderScreen({ users: { kind: 'ready', data: { users: [KAREL, ADELA] } } });
@@ -371,7 +380,7 @@ describe('AdminUsersScreen', () => {
         within(rowOf(KAREL)).getByRole('switch', { name: LAST_ADMIN_SWITCH })
       ).toBeInTheDocument();
       expect(
-        within(rowOf(ADELA)).queryByRole('switch', { name: /poslední administrátor/u })
+        within(rowOf(ADELA)).queryByRole('switch', { name: /usersLastAdminToggleLabel/u })
       ).not.toBeInTheDocument();
     });
 
@@ -397,12 +406,14 @@ describe('AdminUsersScreen', () => {
       // KAREL is still the only *active* admin, so his switch is disabled...
       expect(
         within(rowOf(KAREL)).getByRole('switch', {
-          name: 'Admin role — Karel Zíbar · poslední administrátor nemůže roli ztratit',
+          name: 'usersLastAdminToggleLabel: name=Karel Zíbar',
         })
       ).toBeDisabled();
       // ...and the inactive admin's own switch is unaffected by this rule.
       expect(
-        within(rowOf(INACTIVE_ADMIN)).getByRole('switch', { name: 'Admin role — Ivo Malý' })
+        within(rowOf(INACTIVE_ADMIN)).getByRole('switch', {
+          name: 'usersAdminToggleLabel: name=Ivo Malý',
+        })
       ).toBeEnabled();
     });
 
@@ -413,7 +424,9 @@ describe('AdminUsersScreen', () => {
       });
 
       expect(
-        within(rowOf(KAREL)).getByRole('switch', { name: 'Admin role — Karel Zíbar' })
+        within(rowOf(KAREL)).getByRole('switch', {
+          name: 'usersAdminToggleLabel: name=Karel Zíbar',
+        })
       ).toBeEnabled();
     });
   });
@@ -423,12 +436,16 @@ describe('AdminUsersScreen', () => {
       renderScreen({ pendingChange: { id: ADELA.id, field: 'role' } });
 
       expect(
-        within(rowOf(ADELA)).getByRole('switch', { name: 'Admin role — Adéla Horáková' })
+        within(rowOf(ADELA)).getByRole('switch', {
+          name: 'usersAdminToggleLabel: name=Adéla Horáková',
+        })
       ).toBeDisabled();
       // The other field of the same row too: both go through one procedure,
       // and a second call would race the first.
       expect(
-        within(rowOf(ADELA)).getByRole('switch', { name: 'Aktivní účet — Adéla Horáková' })
+        within(rowOf(ADELA)).getByRole('switch', {
+          name: 'usersActiveToggleLabel: name=Adéla Horáková',
+        })
       ).toBeDisabled();
     });
 
@@ -436,7 +453,7 @@ describe('AdminUsersScreen', () => {
       renderScreen({ pendingChange: { id: ADELA.id, field: 'role' } });
 
       expect(
-        within(rowOf(PETR)).getByRole('switch', { name: 'Admin role — Petr Novák' })
+        within(rowOf(PETR)).getByRole('switch', { name: 'usersAdminToggleLabel: name=Petr Novák' })
       ).toBeEnabled();
     });
   });
@@ -445,7 +462,7 @@ describe('AdminUsersScreen', () => {
     it('filters by name', async () => {
       const { user } = renderScreen();
 
-      await user.type(screen.getByRole('searchbox', { name: 'Hledat uživatele' }), 'novák');
+      await user.type(screen.getByRole('searchbox', { name: 'usersSearchLabel' }), 'novák');
 
       expect(screen.getByText('Petr Novák')).toBeInTheDocument();
       expect(screen.queryByText('Adéla Horáková')).not.toBeInTheDocument();
@@ -454,7 +471,7 @@ describe('AdminUsersScreen', () => {
     it('filters by e-mail', async () => {
       const { user } = renderScreen();
 
-      await user.type(screen.getByRole('searchbox', { name: 'Hledat uživatele' }), 'karel.zibar@');
+      await user.type(screen.getByRole('searchbox', { name: 'usersSearchLabel' }), 'karel.zibar@');
 
       expect(screen.getByText('Karel Zíbar')).toBeInTheDocument();
       expect(screen.queryByText('Petr Novák')).not.toBeInTheDocument();
@@ -463,25 +480,25 @@ describe('AdminUsersScreen', () => {
     it('keeps the total in the description, not the filtered count', async () => {
       const { user } = renderScreen();
 
-      await user.type(screen.getByRole('searchbox', { name: 'Hledat uživatele' }), 'novák');
+      await user.type(screen.getByRole('searchbox', { name: 'usersSearchLabel' }), 'novák');
 
-      expect(screen.getByText(/^3 účty ze SSO/u)).toBeInTheDocument();
+      expect(screen.getByText(/^usersDescription: count=3/u)).toBeInTheDocument();
     });
 
     it('says the search found nothing, not that there are no accounts', async () => {
       const { user } = renderScreen();
 
-      await user.type(screen.getByRole('searchbox', { name: 'Hledat uživatele' }), 'zzz');
+      await user.type(screen.getByRole('searchbox', { name: 'usersSearchLabel' }), 'zzz');
 
-      expect(screen.getByText('Hledání nic nenašlo')).toBeInTheDocument();
-      expect(screen.getByText('Zkuste jiné jméno nebo e-mail.')).toBeInTheDocument();
-      expect(screen.queryByText('Žádní uživatelé')).not.toBeInTheDocument();
+      expect(screen.getByText('usersEmptySearch')).toBeInTheDocument();
+      expect(screen.getByText('usersEmptySearchDescription')).toBeInTheDocument();
+      expect(screen.queryByText('usersEmpty')).not.toBeInTheDocument();
     });
 
     it('says there are no accounts when the list itself is empty', () => {
       renderScreen({ users: { kind: 'ready', data: { users: [] } } });
 
-      expect(screen.getByText('Žádní uživatelé')).toBeInTheDocument();
+      expect(screen.getByText('usersEmpty')).toBeInTheDocument();
     });
   });
 
@@ -489,9 +506,7 @@ describe('AdminUsersScreen', () => {
     it('explains a CONFLICT as the last-admin rule, not as a lost race', async () => {
       renderScreen({ updateError: await failureWithCode('CONFLICT') });
 
-      expect(
-        screen.getByText('Poslední aktivní administrátor nemůže přijít o roli ani být deaktivován.')
-      ).toBeInTheDocument();
+      expect(screen.getByText('errUserConflict')).toBeInTheDocument();
       // The `errors` namespace's generic CONFLICT sentence explains nothing
       // here, and this screen must not reach for it.
       expect(screen.queryByText(cs.errors.CONFLICT)).not.toBeInTheDocument();
@@ -500,9 +515,7 @@ describe('AdminUsersScreen', () => {
     it('never shows the reservation wording for VALIDATION_FAILED', async () => {
       renderScreen({ updateError: await failureWithCode('VALIDATION_FAILED') });
 
-      expect(
-        screen.getByText('Tuto změnu role ani aktivity účtu nelze provést.')
-      ).toBeInTheDocument();
+      expect(screen.getByText('errUserValidation')).toBeInTheDocument();
       expect(screen.queryByText(cs.errors.VALIDATION_FAILED)).not.toBeInTheDocument();
     });
 

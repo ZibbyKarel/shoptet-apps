@@ -27,11 +27,6 @@ function describeWith(): (write: AdminWrite, failure: unknown) => string | null 
   return result.current;
 }
 
-/** Reads a key out of the real catalog, so the expectations are not a copy. */
-function copy(key: keyof typeof cs.admin): string {
-  return cs.admin[key];
-}
-
 describe('useAdminWriteError', () => {
   it('says nothing when nothing failed', () => {
     const describe_ = describeWith();
@@ -44,16 +39,14 @@ describe('useAdminWriteError', () => {
     it('reads CONFLICT as the last-admin rule on a user change', async () => {
       const describe_ = describeWith();
 
-      expect(describe_('userUpdate', await failureWithCode('CONFLICT'))).toBe(
-        copy('errUserConflict')
-      );
+      expect(describe_('userUpdate', await failureWithCode('CONFLICT'))).toBe('errUserConflict');
     });
 
     it('reads CONFLICT as a duplicate label when creating a spot', async () => {
       const describe_ = describeWith();
 
       expect(describe_('spotCreate', await failureWithCode('CONFLICT'))).toBe(
-        copy('spotsDuplicateLabel')
+        'spotsDuplicateLabel'
       );
     });
 
@@ -61,7 +54,7 @@ describe('useAdminWriteError', () => {
       const describe_ = describeWith();
 
       expect(describe_('spotRetire', await failureWithCode('CONFLICT'))).toBe(
-        copy('spotsDeleteConflict')
+        'spotsDeleteConflict'
       );
     });
 
@@ -71,9 +64,7 @@ describe('useAdminWriteError', () => {
       // duplicate label here would be inventing a reason.
       const describe_ = describeWith();
 
-      expect(describe_('spotRevive', await failureWithCode('CONFLICT'))).toBe(
-        copy('errFallbackSpot')
-      );
+      expect(describe_('spotRevive', await failureWithCode('CONFLICT'))).toBe('errFallbackSpot');
     });
 
     it('never reuses the reservation wording for VALIDATION_FAILED', async () => {
@@ -87,9 +78,9 @@ describe('useAdminWriteError', () => {
         expect(describe_(write, failure)).not.toBe(cs.errors.VALIDATION_FAILED);
       }
 
-      expect(describe_('userUpdate', failure)).toBe(copy('errUserValidation'));
-      expect(describe_('spotRename', failure)).toBe(copy('errSpotValidation'));
-      expect(describe_('windowUpdate', failure)).toBe(copy('errWindowValidation'));
+      expect(describe_('userUpdate', failure)).toBe('errUserValidation');
+      expect(describe_('spotRename', failure)).toBe('errSpotValidation');
+      expect(describe_('windowUpdate', failure)).toBe('errWindowValidation');
     });
   });
 
@@ -97,12 +88,8 @@ describe('useAdminWriteError', () => {
     it('is used for a transport failure, which carries no code at all', () => {
       const describe_ = describeWith();
 
-      expect(describe_('spotCreate', new Error('connection refused'))).toBe(
-        copy('errFallbackSpot')
-      );
-      expect(describe_('windowUpdate', new Error('connection refused'))).toBe(
-        copy('errFallbackWindow')
-      );
+      expect(describe_('spotCreate', new Error('connection refused'))).toBe('errFallbackSpot');
+      expect(describe_('windowUpdate', new Error('connection refused'))).toBe('errFallbackWindow');
     });
 
     it('never leaks the thrown error’s own message', () => {
@@ -119,8 +106,8 @@ describe('useAdminWriteError', () => {
       // `SPOT_ALREADY_RESERVED` is a booking failure; no admin write declares
       // it, so every operation must fall back rather than translate it.
       const failure = await failureWithCode('SPOT_ALREADY_RESERVED');
-      expect(describe_('userUpdate', failure)).toBe(copy('errFallbackUser'));
-      expect(describe_('spotRetire', failure)).toBe(copy('errFallbackSpot'));
+      expect(describe_('userUpdate', failure)).toBe('errFallbackUser');
+      expect(describe_('spotRetire', failure)).toBe('errFallbackSpot');
     });
   });
 

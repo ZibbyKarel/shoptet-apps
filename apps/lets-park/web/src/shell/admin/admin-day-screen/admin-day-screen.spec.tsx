@@ -121,30 +121,30 @@ describe('AdminDayScreen', () => {
   it('counts free and taken spots from the rows, not from a separate field', () => {
     renderScreen();
 
-    expect(screen.getByText('1 volných')).toBeInTheDocument();
-    expect(screen.getByText('2 obsazených')).toBeInTheDocument();
+    expect(screen.getByText('dayFree: count=1')).toBeInTheDocument();
+    expect(screen.getByText('dayTaken: count=2')).toBeInTheDocument();
   });
 
   it('counts a lot with nothing booked as entirely free', () => {
     renderScreen({ day: { kind: 'ready', data: anOverview({ spots: [FREE] }) } });
 
-    expect(screen.getByText('1 volných')).toBeInTheDocument();
-    expect(screen.getByText('0 obsazených')).toBeInTheDocument();
+    expect(screen.getByText('dayFree: count=1')).toBeInTheDocument();
+    expect(screen.getByText('dayTaken: count=0')).toBeInTheDocument();
   });
 
   it('carries the window banner for the day’s own month', () => {
     renderScreen();
 
     expect(
-      screen.getByText('Rezervace na září 2026 jsou otevřené — zapisovat lze do 31. srpna.')
+      screen.getByText('bannerOpenAuto: month=září 2026,until=31. srpna,from=25. srpna')
     ).toBeInTheDocument();
   });
 
   it('names the holder of a taken spot, and says nothing of the kind for a free one', () => {
     renderScreen();
 
-    expect(within(rowOf('s2')).getByText('Obsazeno — Karel Zíbar')).toBeInTheDocument();
-    expect(within(rowOf('s1')).getByText('Volné')).toBeInTheDocument();
+    expect(within(rowOf('s2')).getByText('dayStatusTaken: name=Karel Zíbar')).toBeInTheDocument();
+    expect(within(rowOf('s1')).getByText('dayStatusFree')).toBeInTheDocument();
   });
 
   it('badges a guest holder, so this table can tell one from an employee', () => {
@@ -152,16 +152,16 @@ describe('AdminDayScreen', () => {
       day: { kind: 'ready', data: anOverview({ spots: [FREE, TAKEN, GUEST_TAKEN] }) },
     });
 
-    expect(within(rowOf('s4')).getByText('Obsazeno — Jan Novotný')).toBeInTheDocument();
-    expect(within(rowOf('s4')).getByText('Host')).toBeInTheDocument();
-    expect(within(rowOf('s2')).queryByText('Host')).not.toBeInTheDocument();
+    expect(within(rowOf('s4')).getByText('dayStatusTaken: name=Jan Novotný')).toBeInTheDocument();
+    expect(within(rowOf('s4')).getByText('guestHolder')).toBeInTheDocument();
+    expect(within(rowOf('s2')).queryByText('guestHolder')).not.toBeInTheDocument();
   });
 
   it('shows how many people are queued, and says so when nobody is', () => {
     renderScreen();
 
-    expect(within(rowOf('s3')).getByText('2 ve frontě')).toBeInTheDocument();
-    expect(within(rowOf('s1')).getByText('Nikdo nečeká')).toBeInTheDocument();
+    expect(within(rowOf('s3')).getByText('dayQueueCount: count=2')).toBeInTheDocument();
+    expect(within(rowOf('s1')).getByText('dayQueueNone')).toBeInTheDocument();
   });
 
   it('never shows a licence plate — an admin table is not the parking grid', () => {
@@ -173,7 +173,7 @@ describe('AdminDayScreen', () => {
   it('opens the lot screen from its button', async () => {
     const { onOpenLot, user } = renderScreen();
 
-    await user.click(screen.getByRole('button', { name: 'Otevřít parkoviště' }));
+    await user.click(screen.getByRole('button', { name: 'dayOpenLot' }));
 
     expect(onOpenLot).toHaveBeenCalledTimes(1);
   });
@@ -181,13 +181,13 @@ describe('AdminDayScreen', () => {
   it('says the lot is empty rather than drawing a table of nothing', () => {
     renderScreen({ day: { kind: 'ready', data: anOverview({ spots: [] }) } });
 
-    expect(screen.getByText('Na parkovišti nejsou žádná aktivní místa')).toBeInTheDocument();
+    expect(screen.getByText('dayEmpty')).toBeInTheDocument();
   });
 
   it('waits while the day is in flight', () => {
     renderScreen({ day: { kind: 'loading' } });
 
-    expect(screen.getByRole('status')).toHaveTextContent('Načítá se…');
+    expect(screen.getByRole('status')).toHaveTextContent('loading');
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
   });
 
@@ -197,7 +197,7 @@ describe('AdminDayScreen', () => {
     });
 
     expect(screen.queryByText(/connection refused/u)).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Zkusit znovu' }));
+    await user.click(screen.getByRole('button', { name: 'retry' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 });
