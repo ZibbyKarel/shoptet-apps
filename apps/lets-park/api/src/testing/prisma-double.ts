@@ -501,14 +501,20 @@ export class PrismaDouble {
   private reservationDelegate() {
     return {
       findMany: async (args: {
-        where: { date: Date | { gte: Date }; userId?: string };
+        where: { date: Date | { gte: Date; lte?: Date }; userId?: string };
         include?: { parkingSpot?: unknown; user?: unknown };
+        select?: unknown;
         orderBy?: unknown;
       }) => {
         // The ICS feed's query (`CalendarService`): one user's reservations
         // from a lower date bound, with the spot's label joined in, ordered by
-        // date then id. Modelled rather than waved through, because the feed's
-        // whole content is this result.
+        // date then id. `myMonth` (`ReservationsService`) shares this branch
+        // but also bounds the range from above, hence the optional `lte`, and
+        // passes `select: { date: true }` instead of an `include` — accepted
+        // here and silently ignored, since every row is returned in full
+        // (with the joined `parkingSpot`) and `myMonth`'s caller only reads
+        // `row.date`, so the difference from a real narrowed `select` is
+        // harmless for what this double is used to test.
         if (args.where.userId !== undefined) {
           const bound = args.where.date;
           if (bound === undefined || !(bound instanceof Object) || !('gte' in bound)) {
@@ -518,8 +524,14 @@ export class PrismaDouble {
             );
           }
           const gte = bound.gte.getTime();
+          const lte = bound.lte?.getTime();
           const rows = this.reservations
-            .filter((row) => row.userId === args.where.userId && row.date.getTime() >= gte)
+            .filter(
+              (row) =>
+                row.userId === args.where.userId &&
+                row.date.getTime() >= gte &&
+                (lte === undefined || row.date.getTime() <= lte)
+            )
             .map((row) => ({ ...row, parkingSpot: copy(this.requireSpot(row.parkingSpotId)) }));
           // Ordering is applied **only when the caller asked for it**. An
           // earlier version of this delegate always sorted by date, which made

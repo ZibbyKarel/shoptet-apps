@@ -38,6 +38,9 @@ export class ReservationsController {
           cancel: implementer.reservation.cancel.handler(({ input, context }) =>
             reservations.cancel(input, context.user)
           ),
+          myMonth: implementer.reservation.myMonth.handler(({ input, context }) =>
+            reservations.myMonth(input, context.user)
+          ),
         },
       },
       logger
@@ -55,6 +58,15 @@ export class ReservationsController {
 
   @Post(rpcRoute('reservation', 'cancel'))
   cancelReservation(
+    @Req() request: Request,
+    @Res() response: Response,
+    @CurrentUser() user: AuthenticatedUser
+  ): Promise<void> {
+    return this.rpc.handle(request, response, user);
+  }
+
+  @Post(rpcRoute('reservation', 'myMonth'))
+  myMonthReservations(
     @Req() request: Request,
     @Res() response: Response,
     @CurrentUser() user: AuthenticatedUser

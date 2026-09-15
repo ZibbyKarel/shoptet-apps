@@ -61,11 +61,13 @@ import type {
   CancelReservationOutput,
   CreateReservationInput,
   CreateReservationOutput,
+  MyMonthReservationsInput,
+  MyMonthReservationsOutput,
 } from '@lets-park/contract';
 import type { Prisma } from '@lets-park/database';
 import { Prisma as PrismaNamespace } from '@lets-park/database';
 import type { DateOnly } from '@lets-park/shared-types';
-import { todayInPrague } from '@lets-park/shared-types';
+import { endOfMonth, startOfYearMonth, todayInPrague } from '@lets-park/shared-types';
 import { AuditLogService } from '../audit/audit-log.service';
 import type { AuthenticatedUser } from '../auth/authenticated-user';
 import { DomainError } from '../common/errors/domain-error';
@@ -232,6 +234,47 @@ export class ReservationsService {
     ]);
 
     return toContractReservation(reservation);
+  }
+
+  /**
+   * The caller's own confirmed reservations in one calendar month —
+   * read-only, and the frontend counterpart of
+   * `assertWithinMonthlyReservationCap` (`./monthly-reservation-cap.ts`),
+   * which this method must never diverge from: both read the same
+   * `[startOfYearMonth(month), endOfMonth(...)]` range for the same `userId`.
+   *
+   * Unlike the cap check, this takes no lock — it answers "what does the
+   * caller currently hold", not "may an insert proceed", so there is nothing
+   * here for a concurrent writer to race against in a way that matters: a
+   * reservation created a moment after this read simply is not reflected yet,
+   * the same staleness every other read in this app tolerates.
+   */
+  async myMonth(
+    input: MyMonthReservationsInput,
+    actor: AuthenticatedUser
+  ): Promise<MyMonthReservationsOutput> {
+    const from = startOfYearMonth(input.month);
+    const to = endOfMonth(from);
+
+    const rows = await this.prisma.client.reservation.findMany({
+      where: {
+        userId: actor.id,
+        date: { gte: toDateColumn(from), lte: toDateColumn(to) },
+      },
+      select: { date: true },
+      // `id` is a tiebreaker that can never fire: `Reservation (userId, date)`
+      // is a unique index, so this `userId` has at most one row per `date`.
+      // Included anyway because it is the one `orderBy` shape `PrismaDouble`
+      // (`../testing/prisma-double.ts`) has been taught for this table, and a
+      // deterministic order is free to ask for.
+      orderBy: [{ date: 'asc' }, { id: 'asc' }],
+    });
+
+    return {
+      month: input.month,
+      reservedDates: rows.map((row) => toDateOnly(row.date)),
+      count: rows.length,
+    };
   }
 
   /**
