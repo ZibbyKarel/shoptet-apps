@@ -7,7 +7,7 @@
 
 import * as z from 'zod';
 import { reservationSchema } from '../schemas/entities';
-import { dateOnlySchema, idSchema } from '../schemas/primitives';
+import { dateOnlySchema, idSchema, yearMonthSchema } from '../schemas/primitives';
 import { authed, contractErrors } from './builder';
 
 /**
@@ -127,3 +127,35 @@ export const cancelReservationContract = authed
   .input(cancelReservationInputSchema)
   .output(cancelReservationOutputSchema)
   .errors(contractErrors('NOT_FOUND', 'CONFLICT'));
+
+/**
+ * The viewer's own confirmed reservations in one calendar month.
+ *
+ * Read-only, and deliberately scoped to **the caller** — there is no `userId`
+ * input. An admin asking about somebody else's month is not a need this
+ * procedure exists to serve; the bulk modal only ever needs the viewer's own
+ * count and dates for the cap it enforces on itself
+ * (`apps/lets-park/api/src/reservations/monthly-reservation-cap.ts`).
+ */
+export const myMonthReservationsInputSchema = z.object({
+  month: yearMonthSchema,
+});
+export type MyMonthReservationsInput = z.infer<typeof myMonthReservationsInputSchema>;
+
+export const myMonthReservationsOutputSchema = z.object({
+  month: yearMonthSchema,
+  /** Every date in `month` the caller holds a confirmed reservation on, ascending. */
+  reservedDates: z.array(dateOnlySchema),
+  /** `reservedDates.length` — carried separately so a client need not recompute it. */
+  count: z.int().nonnegative(),
+});
+export type MyMonthReservationsOutput = z.infer<typeof myMonthReservationsOutputSchema>;
+
+/**
+ * Read-only, like `getDayOverviewContract`: any month is viewable by its own
+ * caller, so there is no domain rule a structurally valid `month` can break
+ * here beyond the inherited `FORBIDDEN`.
+ */
+export const getMyMonthReservationsContract = authed
+  .input(myMonthReservationsInputSchema)
+  .output(myMonthReservationsOutputSchema);

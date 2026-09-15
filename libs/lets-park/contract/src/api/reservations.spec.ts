@@ -11,6 +11,8 @@ import {
   cancelReservationOutputSchema,
   createReservationInputSchema,
   createReservationOutputSchema,
+  myMonthReservationsInputSchema,
+  myMonthReservationsOutputSchema,
 } from './reservations';
 
 describe('createReservationInputSchema', () => {
@@ -176,5 +178,39 @@ describe('cancelReservationOutputSchema', () => {
     expect(cancelReservationOutputSchema.safeParse({ ...valid, promoted: 'yes' }).success).toBe(
       false
     );
+  });
+});
+
+describe('myMonthReservationsInputSchema', () => {
+  it('accepts a valid year-month', () => {
+    expect(myMonthReservationsInputSchema.parse({ month: '2026-09' })).toEqual({
+      month: '2026-09',
+    });
+  });
+
+  it.each(['2026-9', '26-09', '2026/09', '2026-13', 'not-a-month'])(
+    'rejects an invalid month (%p)',
+    (month) => {
+      expect(myMonthReservationsInputSchema.safeParse({ month }).success).toBe(false);
+    }
+  );
+});
+
+describe('myMonthReservationsOutputSchema', () => {
+  it('accepts the reserved dates and the count', () => {
+    const output = { month: '2026-09', reservedDates: [DATE_A], count: 1 };
+    expect(myMonthReservationsOutputSchema.parse(output)).toEqual(output);
+  });
+
+  it('accepts an empty month', () => {
+    const output = { month: '2026-09', reservedDates: [], count: 0 };
+    expect(myMonthReservationsOutputSchema.parse(output)).toEqual(output);
+  });
+
+  it('rejects a negative count', () => {
+    expect(
+      myMonthReservationsOutputSchema.safeParse({ month: '2026-09', reservedDates: [], count: -1 })
+        .success
+    ).toBe(false);
   });
 });

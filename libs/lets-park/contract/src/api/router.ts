@@ -15,7 +15,11 @@ import type { ContractRouterClient } from '@orpc/contract';
 import { confirmBulkContract, previewBulkContract } from './bulk';
 import { getMyProfileContract, regenerateIcsTokenContract, updateMySettingsContract } from './me';
 import { getDayOverviewContract } from './overview';
-import { cancelReservationContract, createReservationContract } from './reservations';
+import {
+  cancelReservationContract,
+  createReservationContract,
+  getMyMonthReservationsContract,
+} from './reservations';
 import {
   getReservationWindowSettingsContract,
   listMonthWindowsContract,
@@ -43,6 +47,8 @@ export const contract = {
     previewBulk: previewBulkContract,
     /** Same input, real writes, real result. */
     confirmBulk: confirmBulkContract,
+    /** The caller's own reserved dates and count for one calendar month. */
+    myMonth: getMyMonthReservationsContract,
   },
   waitlist: {
     join: joinWaitlistContract,

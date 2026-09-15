@@ -33,6 +33,7 @@ const EXPECTED_PROCEDURES = [
   'reservation.cancel',
   'reservation.previewBulk',
   'reservation.confirmBulk',
+  'reservation.myMonth',
   'waitlist.join',
   'waitlist.leave',
   'spot.list',
@@ -96,6 +97,7 @@ const EXPECTED_ERROR_CODES: Record<string, readonly string[]> = {
     'VALIDATION_FAILED',
     'CONFLICT',
   ],
+  'reservation.myMonth': ['FORBIDDEN'],
   'waitlist.join': [
     'FORBIDDEN',
     'NOT_FOUND',
