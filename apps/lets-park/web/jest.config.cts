@@ -1,4 +1,5 @@
 const nextJest = require('next/jest.js');
+const { buildTransformIgnorePatterns } = require('../../../jest.preset.js');
 
 /**
  * Packages on this app's test path that are published ESM-only — `"type":
@@ -31,6 +32,12 @@ const nextJest = require('next/jest.js');
  * after it cannot subtract from a match that already happened. Appending
  * instead of overwriting was tried: 4 of the 8 suites fail with
  * `SyntaxError: Unexpected token 'export'` out of `next-intl`.
+ *
+ * Next's own entry above already knows to let `.pnpm` defeat its match —
+ * that's what `(?!.pnpm)` does. The replacement below uses
+ * `jest.preset.js`'s `buildTransformIgnorePatterns` for the same reason: a
+ * plain `/node_modules/(?!(?:pkg)/)` shape never reaches the real package two
+ * directories down (`.pnpm/<name>@<version>/node_modules/<name>/...`).
  */
 const esmOnlyPackages = [
   // `@lets-park/api-client` and `@lets-park/contract`.
@@ -93,7 +100,7 @@ module.exports = async () => {
   // and one match is all it takes. The CSS-module entry is Next's own and is
   // kept — dropping it would send `*.module.css` through the JS transform.
   resolved.transformIgnorePatterns = [
-    `/node_modules/(?!(?:${esmOnlyPackages.join('|')})/)`,
+    buildTransformIgnorePatterns(esmOnlyPackages),
     '^.+\\.module\\.(css|sass|scss)$',
   ];
   return resolved;

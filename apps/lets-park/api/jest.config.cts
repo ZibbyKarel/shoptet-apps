@@ -19,7 +19,14 @@
  * should move it into `jest.preset.js` rather than copy it again. That file is
  * outside the file set assigned to this task, so the lines are copied here and
  * the consolidation is flagged in the task report instead.
+ *
+ * The pattern itself is built by `jest.preset.js`'s `buildTransformIgnorePatterns`
+ * rather than hand-rolled here — a plain `/node_modules/(?!(?:pkg)/)` regex
+ * never matches under pnpm's nested `.pnpm/<name>@<version>/node_modules/<name>`
+ * layout; see that function's doc comment.
  */
+const { buildTransformIgnorePatterns } = require('../../../jest.preset.js');
+
 module.exports = {
   displayName: 'api',
   preset: '../../../jest.preset.js',
@@ -32,7 +39,9 @@ module.exports = {
     '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
     '^.+\\.mjs$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
   },
-  transformIgnorePatterns: ['/node_modules/(?!(?:@orpc|@nestjs/config|@nestjs/passport|jose)/)'],
+  transformIgnorePatterns: [
+    buildTransformIgnorePatterns(['@orpc', '@nestjs/config', '@nestjs/passport', 'jose']),
+  ],
   moduleFileExtensions: ['ts', 'js', 'mjs', 'html'],
   coverageDirectory: '../../../coverage/apps/lets-park/api',
 };

@@ -26,7 +26,14 @@
  * loaded. Only these packages are named, not the whole `@tanstack` scope:
  * `@tanstack/react-query` (used by `libs/query`) does ship a `require`
  * condition and must keep being ignored.
+ *
+ * The pattern is built by `jest.preset.js`'s `buildTransformIgnorePatterns`
+ * rather than hand-rolled here — a plain `/node_modules/(?!(?:pkg)/)` regex
+ * never matches under pnpm's nested `.pnpm/<name>@<version>/node_modules/<name>`
+ * layout; see that function's doc comment.
  */
+const { buildTransformIgnorePatterns } = require('../../../jest.preset.js');
+
 const esmOnlyPackages = [
   // From jest.preset.js — restated because this override replaces it.
   '@orpc',
@@ -51,7 +58,7 @@ module.exports = {
   transform: {
     '^.+\\.[tj]sx?$': ['babel-jest', { presets: ['@nx/react/babel'] }],
   },
-  transformIgnorePatterns: [`/node_modules/(?!(?:${esmOnlyPackages.join('|')})/)`],
+  transformIgnorePatterns: [buildTransformIgnorePatterns(esmOnlyPackages)],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   coverageDirectory: '../../../coverage/libs/shared/design-system',
 };

@@ -6,7 +6,13 @@
  * `doc/decision/0020-*`. `@orpc` is on the list too because
  * `access-token.spec.ts` drives a real `createApiClient` to prove the token
  * actually reaches the `Authorization` header.
+ *
+ * The pattern is built by `jest.preset.js`'s `buildTransformIgnorePatterns`
+ * rather than hand-rolled here — a plain `/node_modules/(?!(?:pkg)/)` regex
+ * never matches under pnpm's nested `.pnpm/<name>@<version>/node_modules/<name>`
+ * layout; see that function's doc comment.
  */
+const { buildTransformIgnorePatterns } = require('../../../jest.preset.js');
 const esmOnlyPackages = ['next-auth', '@auth', 'jose', 'oauth4webapi', '@panva', 'preact', '@orpc'];
 
 module.exports = {
@@ -32,7 +38,7 @@ module.exports = {
     '^.+\\.[tj]sx?$': ['babel-jest', { presets: ['@nx/react/babel'] }],
     '^.+\\.mjs$': ['babel-jest', { presets: ['@nx/react/babel'] }],
   },
-  transformIgnorePatterns: [`/node_modules/(?!(?:${esmOnlyPackages.join('|')})/)`],
+  transformIgnorePatterns: [buildTransformIgnorePatterns(esmOnlyPackages)],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'mjs'],
   coverageDirectory: '../../../coverage/libs/lets-park/auth',
 };
