@@ -72,7 +72,7 @@ describe('ScreenLoading', () => {
   it('announces itself as a status with the Czech label', () => {
     renderWithIntl(<ScreenLoading />);
 
-    expect(screen.getByRole('status')).toHaveTextContent('Načítá se…');
+    expect(screen.getByRole('status')).toHaveTextContent('loading');
   });
 
   it('lets a screen supply its own label', () => {
@@ -99,10 +99,8 @@ describe('ScreenError', () => {
 
     renderWithIntl(<ScreenError error={error} />);
 
-    expect(screen.getByText('Něco se nepovedlo')).toBeInTheDocument();
-    expect(
-      screen.getByText('Toto parkovací místo je na daný den už rezervované.')
-    ).toBeInTheDocument();
+    expect(screen.getByText('errorTitle')).toBeInTheDocument();
+    expect(screen.getByText('SPOT_ALREADY_RESERVED')).toBeInTheDocument();
   });
 
   it('never shows the error’s own developer-facing message', async () => {
@@ -117,9 +115,7 @@ describe('ScreenError', () => {
     renderWithIntl(<ScreenError error={error} />);
 
     expect(screen.queryByText(developerMessage)).not.toBeInTheDocument();
-    expect(
-      screen.getByText('Na tento den už máte rezervaci — na den je povolená jen jedna.')
-    ).toBeInTheDocument();
+    expect(screen.getByText('RESERVATION_LIMIT_REACHED')).toBeInTheDocument();
   });
 
   it('falls back to one generic sentence for a transport failure', async () => {
@@ -129,7 +125,7 @@ describe('ScreenError', () => {
 
     renderWithIntl(<ScreenError error={error} />);
 
-    expect(screen.getByText('Zkuste to prosím znovu za chvíli.')).toBeInTheDocument();
+    expect(screen.getByText('errorUnknown')).toBeInTheDocument();
     expect(screen.queryByText(/Failed to fetch/)).not.toBeInTheDocument();
   });
 
@@ -142,14 +138,14 @@ describe('ScreenError', () => {
 
     renderWithIntl(<ScreenError error={error} />);
 
-    expect(screen.getByText('Zkuste to prosím znovu za chvíli.')).toBeInTheDocument();
+    expect(screen.getByText('errorUnknown')).toBeInTheDocument();
     expect(screen.queryByText(/SOMETHING_NEW/)).not.toBeInTheDocument();
   });
 
   it('offers no retry control when there is nothing to retry', () => {
     renderWithIntl(<ScreenError error={new Error('boom')} />);
 
-    expect(screen.queryByRole('button', { name: 'Zkusit znovu' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'retry' })).not.toBeInTheDocument();
   });
 
   it('runs the retry callback when one is supplied', async () => {
@@ -157,7 +153,7 @@ describe('ScreenError', () => {
     const user = userEvent.setup();
 
     renderWithIntl(<ScreenError error={new Error('boom')} onRetry={onRetry} />);
-    await user.click(screen.getByRole('button', { name: 'Zkusit znovu' }));
+    await user.click(screen.getByRole('button', { name: 'retry' }));
 
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
@@ -172,7 +168,7 @@ describe('ScreenError', () => {
     unmount();
 
     renderWithIntl(<ScreenError error={new Error('boom')} headingLevel={2} />);
-    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Něco se nepovedlo');
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('errorTitle');
   });
 });
 
@@ -250,7 +246,7 @@ describe('ScreenDataGuard', () => {
     const children = jest.fn(() => <p>drawn</p>);
     renderWithIntl(<ScreenDataGuard state={{ kind: 'loading' }}>{children}</ScreenDataGuard>);
 
-    expect(screen.getByRole('status')).toHaveTextContent('Načítá se…');
+    expect(screen.getByRole('status')).toHaveTextContent('loading');
     expect(children).not.toHaveBeenCalled();
   });
 
@@ -264,9 +260,9 @@ describe('ScreenDataGuard', () => {
         {children}
       </ScreenDataGuard>
     );
-    await user.click(screen.getByRole('button', { name: 'Zkusit znovu' }));
+    await user.click(screen.getByRole('button', { name: 'retry' }));
 
-    expect(screen.getByText('Něco se nepovedlo')).toBeInTheDocument();
+    expect(screen.getByText('errorTitle')).toBeInTheDocument();
     expect(onRetry).toHaveBeenCalledTimes(1);
     expect(children).not.toHaveBeenCalled();
   });
@@ -278,7 +274,7 @@ describe('ScreenDataGuard', () => {
       </ScreenDataGuard>
     );
 
-    expect(screen.getByRole('heading', { level: 3 })).toHaveTextContent('Něco se nepovedlo');
+    expect(screen.getByRole('heading', { level: 3 })).toHaveTextContent('errorTitle');
   });
 
   it('offers no retry control when the caller passed none', () => {
@@ -288,7 +284,7 @@ describe('ScreenDataGuard', () => {
       </ScreenDataGuard>
     );
 
-    expect(screen.queryByRole('button', { name: 'Zkusit znovu' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'retry' })).not.toBeInTheDocument();
   });
 
   it('hands the data to the children once it is ready, and draws neither state', () => {
@@ -300,6 +296,6 @@ describe('ScreenDataGuard', () => {
 
     expect(screen.getByText('E2.92')).toBeInTheDocument();
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    expect(screen.queryByText('Něco se nepovedlo')).not.toBeInTheDocument();
+    expect(screen.queryByText('errorTitle')).not.toBeInTheDocument();
   });
 });

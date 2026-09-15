@@ -51,15 +51,15 @@ describe('AdminScreen', () => {
   it('shows the administration section to an admin', () => {
     renderAdminScreen({ role: 'ADMIN' });
 
-    expect(screen.getByRole('heading', { name: 'Správa' })).toBeInTheDocument();
-    expect(screen.queryByText('K této akci nemáte oprávnění.')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'administration' })).toBeInTheDocument();
+    expect(screen.queryByText('FORBIDDEN')).not.toBeInTheDocument();
   });
 
   it('refuses a plain user, and does not render the section', () => {
     renderAdminScreen({ role: 'USER' });
 
-    expect(screen.getByText('K této akci nemáte oprávnění.')).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Správa' })).not.toBeInTheDocument();
+    expect(screen.getByText('FORBIDDEN')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'administration' })).not.toBeInTheDocument();
     // Not one of the four tab bodies is mounted. A gate that rendered the
     // strip but hid the heading would still be leaking the admin screens.
     expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
@@ -70,10 +70,10 @@ describe('AdminScreen', () => {
     renderAdminScreen({ role: 'ADMIN' });
 
     expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
-      'Přehled parkoviště',
-      'Uživatelé',
-      'Parkovací místa',
-      'Rezervační okno',
+      'tabOverview',
+      'tabUsers',
+      'tabSpots',
+      'tabWindow',
     ]);
   });
 
@@ -87,9 +87,9 @@ describe('AdminScreen', () => {
   });
 
   it.each([
-    ['Uživatelé', 'panel-uzivatele'],
-    ['Parkovací místa', 'panel-mista'],
-    ['Rezervační okno', 'panel-okno'],
+    ['tabUsers', 'panel-uzivatele'],
+    ['tabSpots', 'panel-mista'],
+    ['tabWindow', 'panel-okno'],
   ])('shows the %s panel when its tab is chosen', async (tab, body) => {
     const { user } = renderAdminScreen({ role: 'ADMIN' });
 
@@ -106,16 +106,16 @@ describe('AdminScreen', () => {
     // would produce. Unknown is not an admin.
     renderAdminScreen({ role: undefined });
 
-    expect(screen.getByText('K této akci nemáte oprávnění.')).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Správa' })).not.toBeInTheDocument();
+    expect(screen.getByText('FORBIDDEN')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'administration' })).not.toBeInTheDocument();
   });
 
   it('waits rather than deciding while the profile is in flight', () => {
     renderAdminScreen({ role: undefined, isPending: true });
 
-    expect(screen.getByRole('status')).toHaveTextContent('Načítá se…');
-    expect(screen.queryByText('K této akci nemáte oprávnění.')).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Správa' })).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('loading');
+    expect(screen.queryByText('FORBIDDEN')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'administration' })).not.toBeInTheDocument();
   });
 
   it('offers a retry when the profile could not be loaded', async () => {
@@ -124,11 +124,11 @@ describe('AdminScreen', () => {
       error: new Error('connection refused'),
     });
 
-    expect(screen.queryByRole('heading', { name: 'Správa' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'administration' })).not.toBeInTheDocument();
     // The thrown error's own message is never shown; see `ScreenError`.
     expect(screen.queryByText(/connection refused/u)).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Zkusit znovu' }));
+    await user.click(screen.getByRole('button', { name: 'retry' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 });

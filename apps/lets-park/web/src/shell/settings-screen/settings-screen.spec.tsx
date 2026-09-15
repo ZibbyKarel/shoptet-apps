@@ -167,9 +167,9 @@ describe('SettingsScreen — loading and error', () => {
   it('shows the loading state and no form while the profile is in flight', () => {
     renderScreen({ isPending: true, profile: undefined });
 
-    expect(screen.getByRole('status')).toHaveTextContent('Načítá se…');
-    expect(screen.queryByLabelText('SPZ auta')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Uložit' })).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('loading');
+    expect(screen.queryByLabelText('licensePlateLabel')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'save' })).not.toBeInTheDocument();
   });
 
   it('shows the error state with a retry, and no form', async () => {
@@ -179,10 +179,10 @@ describe('SettingsScreen — loading and error', () => {
       profile: undefined,
     });
 
-    expect(screen.getByText('Něco se nepovedlo')).toBeInTheDocument();
-    expect(screen.queryByLabelText('SPZ auta')).not.toBeInTheDocument();
+    expect(screen.getByText('errorTitle')).toBeInTheDocument();
+    expect(screen.queryByLabelText('licensePlateLabel')).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Zkusit znovu' }));
+    await user.click(screen.getByRole('button', { name: 'retry' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
@@ -192,8 +192,8 @@ describe('SettingsScreen — loading and error', () => {
     // `undefined` whenever `isError` is `true`.
     renderScreen({ isError: true, error: new Error('boom'), profile: PROFILE });
 
-    expect(screen.queryByLabelText('SPZ auta')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Uložit' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('licensePlateLabel')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'save' })).not.toBeInTheDocument();
   });
 
   it('hides the form while isPending is set, even if a stale profile is still present', () => {
@@ -204,8 +204,8 @@ describe('SettingsScreen — loading and error', () => {
     // prove this one (Task 26 review, I2).
     renderScreen({ isPending: true, profile: PROFILE });
 
-    expect(screen.queryByLabelText('SPZ auta')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Uložit' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('licensePlateLabel')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'save' })).not.toBeInTheDocument();
   });
 
   it('hides the form when the profile is undefined, even if isPending and isError are both false', () => {
@@ -216,8 +216,8 @@ describe('SettingsScreen — loading and error', () => {
     // directly (Task 26 review, I2).
     renderScreen({ isPending: false, isError: false, profile: undefined });
 
-    expect(screen.queryByLabelText('SPZ auta')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Uložit' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('licensePlateLabel')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'save' })).not.toBeInTheDocument();
   });
 });
 
@@ -225,26 +225,26 @@ describe('SettingsScreen — the form', () => {
   it('pre-fills the licence plate and the preferred spot from the profile', () => {
     renderScreen();
 
-    expect(screen.getByLabelText('SPZ auta')).toHaveValue('4AB 1234');
-    expect(screen.getByLabelText('Preferované parkovací místo')).toHaveValue('spot-1');
+    expect(screen.getByLabelText('licensePlateLabel')).toHaveValue('4AB 1234');
+    expect(screen.getByLabelText('preferredSpotLabel')).toHaveValue('spot-1');
   });
 
   it('lists active spots as "label · group", plus a no-preference option', () => {
     renderScreen();
 
-    const select = screen.getByLabelText('Preferované parkovací místo') as HTMLSelectElement;
+    const select = screen.getByLabelText('preferredSpotLabel') as HTMLSelectElement;
     const optionTexts = Array.from(select.options).map((option) => option.textContent);
 
-    expect(optionTexts).toEqual(['Bez preference', 'E2.92 · IT', 'E2.65 · SHARED']);
+    expect(optionTexts).toEqual(['preferredSpotNone', 'E2.92 · IT', 'E2.65 · SHARED']);
   });
 
   it('sends the trimmed licence plate and the selected spot on save', async () => {
     const { onSave, user } = renderScreen();
 
-    await user.clear(screen.getByLabelText('SPZ auta'));
-    await user.type(screen.getByLabelText('SPZ auta'), '  9ZZ 8888  ');
-    await user.selectOptions(screen.getByLabelText('Preferované parkovací místo'), 'spot-2');
-    await user.click(screen.getByRole('button', { name: 'Uložit' }));
+    await user.clear(screen.getByLabelText('licensePlateLabel'));
+    await user.type(screen.getByLabelText('licensePlateLabel'), '  9ZZ 8888  ');
+    await user.selectOptions(screen.getByLabelText('preferredSpotLabel'), 'spot-2');
+    await user.click(screen.getByRole('button', { name: 'save' }));
 
     expect(onSave).toHaveBeenCalledWith({
       licensePlate: '9ZZ 8888',
@@ -255,8 +255,8 @@ describe('SettingsScreen — the form', () => {
   it('sends null for an emptied licence plate — clearing it, not an empty string', async () => {
     const { onSave, user } = renderScreen();
 
-    await user.clear(screen.getByLabelText('SPZ auta'));
-    await user.click(screen.getByRole('button', { name: 'Uložit' }));
+    await user.clear(screen.getByLabelText('licensePlateLabel'));
+    await user.click(screen.getByRole('button', { name: 'save' }));
 
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ licensePlate: null }));
   });
@@ -264,8 +264,8 @@ describe('SettingsScreen — the form', () => {
   it('sends null for the preferred spot when "Bez preference" is chosen', async () => {
     const { onSave, user } = renderScreen();
 
-    await user.selectOptions(screen.getByLabelText('Preferované parkovací místo'), '');
-    await user.click(screen.getByRole('button', { name: 'Uložit' }));
+    await user.selectOptions(screen.getByLabelText('preferredSpotLabel'), '');
+    await user.click(screen.getByRole('button', { name: 'save' }));
 
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ preferredParkingSpotId: null }));
   });
@@ -273,7 +273,7 @@ describe('SettingsScreen — the form', () => {
   it('cancels without saving', async () => {
     const { onSave, onClose, user } = renderScreen();
 
-    await user.click(screen.getByRole('button', { name: 'Zrušit' }));
+    await user.click(screen.getByRole('button', { name: 'cancel' }));
 
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(onSave).not.toHaveBeenCalled();
@@ -282,7 +282,7 @@ describe('SettingsScreen — the form', () => {
   it('disables Cancel and shows a spinner on Save while saving', () => {
     renderScreen({ isSaving: true });
 
-    expect(screen.getByRole('button', { name: 'Zrušit' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'cancel' })).toBeDisabled();
     expect(screen.getByTestId('button-spinner')).toBeInTheDocument();
   });
 
@@ -298,7 +298,7 @@ describe('SettingsScreen — the form', () => {
     // the settings-specific or catalogue ones.
     renderScreen({ saveError: new Error('network dropped') });
 
-    expect(screen.getByText('Zkuste to prosím znovu za chvíli.')).toBeInTheDocument();
+    expect(screen.getByText('errorUnknown')).toBeInTheDocument();
   });
 
   it('shows settings-specific copy for VALIDATION_FAILED, not the shared reservation-rule sentence', async () => {
@@ -314,14 +314,8 @@ describe('SettingsScreen — the form', () => {
 
     renderScreen({ saveError: error });
 
-    expect(
-      screen.getByText(
-        'Preferované místo už není k dispozici. Zvolte prosím jiné, nebo možnost Bez preference.'
-      )
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText('Požadavek porušuje pravidlo rezervací (např. víkend nebo svátek).')
-    ).not.toBeInTheDocument();
+    expect(screen.getByText('preferredSpotUnavailable')).toBeInTheDocument();
+    expect(screen.queryByText('VALIDATION_FAILED')).not.toBeInTheDocument();
   });
 
   it('still shows the shared catalogue sentence for a code other than VALIDATION_FAILED', async () => {
@@ -331,27 +325,27 @@ describe('SettingsScreen — the form', () => {
 
     renderScreen({ saveError: error });
 
-    expect(screen.getByText('Požadovaný záznam nebyl nalezen.')).toBeInTheDocument();
+    expect(screen.getByText('NOT_FOUND')).toBeInTheDocument();
   });
 
   it('does not clobber an in-progress edit when the profile silently refetches', async () => {
     const { user, rerenderWith } = renderScreen();
 
-    await user.clear(screen.getByLabelText('SPZ auta'));
-    await user.type(screen.getByLabelText('SPZ auta'), '1XY 9999');
+    await user.clear(screen.getByLabelText('licensePlateLabel'));
+    await user.type(screen.getByLabelText('licensePlateLabel'), '1XY 9999');
 
     // A background refetch (e.g. `me.get` invalidated after the ICS token
     // regenerates) hands down a new profile object — same person, new
     // reference. It must not silently overwrite what the user is mid-typing.
     rerenderWith({ profile: { ...PROFILE, icsToken: 'a-different-token' } });
 
-    expect(screen.getByLabelText('SPZ auta')).toHaveValue('1XY 9999');
+    expect(screen.getByLabelText('licensePlateLabel')).toHaveValue('1XY 9999');
   });
 
   it('submits the form when Enter is pressed in a field, not just via the Save button', async () => {
     const { onSave, user } = renderScreen();
 
-    await user.click(screen.getByLabelText('SPZ auta'));
+    await user.click(screen.getByLabelText('licensePlateLabel'));
     await user.keyboard('{Enter}');
 
     expect(onSave).toHaveBeenCalledTimes(1);
@@ -364,26 +358,24 @@ describe('SettingsScreen — the form', () => {
     // typing past the limit now reaches real Zod validation.
     const { onSave, user } = renderScreen();
 
-    await user.clear(screen.getByLabelText('SPZ auta'));
-    await user.type(screen.getByLabelText('SPZ auta'), '1234567890123456789');
-    await user.click(screen.getByRole('button', { name: 'Uložit' }));
+    await user.clear(screen.getByLabelText('licensePlateLabel'));
+    await user.type(screen.getByLabelText('licensePlateLabel'), '1234567890123456789');
+    await user.click(screen.getByRole('button', { name: 'save' }));
 
-    expect(await screen.findByText('Nejvýše 16 znaků.')).toBeInTheDocument();
+    expect(await screen.findByText('licensePlateTooLong')).toBeInTheDocument();
     expect(onSave).not.toHaveBeenCalled();
   });
 
   it('shows a loading hint under the picker while spot.list is still in flight', () => {
     renderScreen({ spotsPending: true });
 
-    expect(screen.getByText('Načítá se seznam parkovacích míst…')).toBeInTheDocument();
+    expect(screen.getByText('preferredSpotLoading')).toBeInTheDocument();
   });
 
   it('shows an inline error when spot.list fails, instead of silently offering only "Bez preference"', () => {
     renderScreen({ spotsError: true, spots: [] });
 
-    expect(
-      screen.getByText('Seznam parkovacích míst se nepodařilo načíst. Zkuste to prosím znovu.')
-    ).toBeInTheDocument();
+    expect(screen.getByText('preferredSpotLoadError')).toBeInTheDocument();
   });
 
   it('sends null, not the retired id, when saving after a reconciled preference', async () => {
@@ -401,7 +393,7 @@ describe('SettingsScreen — the form', () => {
       spots: [SPOT_A, SPOT_B],
     });
 
-    await user.click(screen.getByRole('button', { name: 'Uložit' }));
+    await user.click(screen.getByRole('button', { name: 'save' }));
 
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ preferredParkingSpotId: null }));
   });
@@ -417,7 +409,7 @@ describe('SettingsScreen — the form', () => {
       spotsPending: true,
     });
 
-    await user.click(screen.getByRole('button', { name: 'Uložit' }));
+    await user.click(screen.getByRole('button', { name: 'save' }));
 
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ preferredParkingSpotId: 'spot-retired' })
@@ -429,22 +421,14 @@ describe('SettingsScreen — the modal chrome', () => {
   it('shows the pinned title and description, verbatim', () => {
     renderScreen();
 
-    expect(screen.getByRole('heading', { name: 'Nastavení' })).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'SPZ se předplní při každé rezervaci místa. Preferované místo použijeme přednostně u hromadné rezervace.'
-      )
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'title' })).toBeInTheDocument();
+    expect(screen.getByText('description')).toBeInTheDocument();
   });
 
   it('hides the description while the form is not ready', () => {
     renderScreen({ isPending: true, profile: undefined });
 
-    expect(
-      screen.queryByText(
-        'SPZ se předplní při každé rezervaci místa. Preferované místo použijeme přednostně u hromadné rezervace.'
-      )
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText('description')).not.toBeInTheDocument();
   });
 
   it('closes on Escape', async () => {
@@ -475,22 +459,20 @@ describe('SettingsScreen — the ICS section', () => {
   it('shows the unavailable message when the API origin is unknown', () => {
     renderScreen({ apiOrigin: '' });
 
-    expect(
-      screen.getByText('Odkaz na kalendář teď není k dispozici. Zkuste to prosím znovu za chvíli.')
-    ).toBeInTheDocument();
-    expect(screen.queryByLabelText('Odkaz na kalendář')).not.toBeInTheDocument();
+    expect(screen.getByText('icsUnavailable')).toBeInTheDocument();
+    expect(screen.queryByLabelText('icsUrlLabel')).not.toBeInTheDocument();
   });
 
   it('shows the unavailable message when there is no token yet', () => {
     renderScreen({ icsToken: undefined });
 
-    expect(screen.queryByLabelText('Odkaz na kalendář')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('icsUrlLabel')).not.toBeInTheDocument();
   });
 
   it('builds the feed URL from the origin and the token', () => {
     renderScreen({ apiOrigin: API_ORIGIN, icsToken: 'abc' });
 
-    expect(screen.getByLabelText('Odkaz na kalendář')).toHaveValue(
+    expect(screen.getByLabelText('icsUrlLabel')).toHaveValue(
       'https://api.test/api/calendar/abc.ics'
     );
   });
@@ -498,7 +480,7 @@ describe('SettingsScreen — the ICS section', () => {
   it('keeps the ICS URL field read-only, so the credential cannot be edited in place', () => {
     renderScreen();
 
-    expect(screen.getByLabelText('Odkaz na kalendář')).toHaveAttribute('readonly');
+    expect(screen.getByLabelText('icsUrlLabel')).toHaveAttribute('readonly');
   });
 
   it('copies the feed URL and shows confirmation', async () => {
@@ -508,10 +490,10 @@ describe('SettingsScreen — the ICS section', () => {
     // stub defined any earlier.
     const { writeText } = stubClipboard();
 
-    await user.click(screen.getByRole('button', { name: 'Kopírovat odkaz' }));
+    await user.click(screen.getByRole('button', { name: 'icsCopy' }));
 
     expect(writeText).toHaveBeenCalledWith('https://api.test/api/calendar/ics-token-abc.ics');
-    expect(await screen.findByText('Odkaz zkopírován do schránky.')).toBeInTheDocument();
+    expect(await screen.findByText('icsCopied')).toBeInTheDocument();
   });
 
   it('shows a failure message when the clipboard write rejects', async () => {
@@ -521,26 +503,24 @@ describe('SettingsScreen — the ICS section', () => {
       configurable: true,
     });
 
-    await user.click(screen.getByRole('button', { name: 'Kopírovat odkaz' }));
+    await user.click(screen.getByRole('button', { name: 'icsCopy' }));
 
-    expect(
-      await screen.findByText('Kopírování se nezdařilo — zkopírujte odkaz ručně.')
-    ).toBeInTheDocument();
+    expect(await screen.findByText('icsCopyFailed')).toBeInTheDocument();
   });
 
   it('disables the regenerate trigger while a regeneration is already in flight', () => {
     renderScreen({ isRegenerating: true });
 
-    expect(screen.getByRole('button', { name: 'Vygenerovat nový odkaz' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'icsRegenerate' })).toBeDisabled();
   });
 
   it('opens a confirmation before regenerating the token', async () => {
     const { user } = renderScreen();
 
-    expect(screen.queryByText('Vygenerovat nový odkaz?')).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Vygenerovat nový odkaz' }));
+    expect(screen.queryByText('icsRegenerateConfirmTitle')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'icsRegenerate' }));
 
-    expect(screen.getByRole('dialog', { name: 'Vygenerovat nový odkaz?' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'icsRegenerateConfirmTitle' })).toBeInTheDocument();
   });
 
   it('warns, in the confirmation, that the old link stops working', async () => {
@@ -549,22 +529,18 @@ describe('SettingsScreen — the ICS section', () => {
     // label alone do not say what confirming actually does.
     const { user } = renderScreen();
 
-    await user.click(screen.getByRole('button', { name: 'Vygenerovat nový odkaz' }));
+    await user.click(screen.getByRole('button', { name: 'icsRegenerate' }));
 
-    expect(
-      screen.getByText(
-        'Starý odkaz přestane fungovat a kalendáře, které ho používají, se přestanou aktualizovat. Budete ho muset všude nahradit novým.'
-      )
-    ).toBeInTheDocument();
+    expect(screen.getByText('icsRegenerateConfirmDescription')).toBeInTheDocument();
   });
 
   it('renders the confirming button with the destructive (danger) styling', async () => {
     const { user } = renderScreen();
 
-    await user.click(screen.getByRole('button', { name: 'Vygenerovat nový odkaz' }));
-    const dialog = screen.getByRole('dialog', { name: 'Vygenerovat nový odkaz?' });
+    await user.click(screen.getByRole('button', { name: 'icsRegenerate' }));
+    const dialog = screen.getByRole('dialog', { name: 'icsRegenerateConfirmTitle' });
 
-    expect(within(dialog).getByRole('button', { name: 'Vygenerovat' })).toHaveClass(
+    expect(within(dialog).getByRole('button', { name: 'icsRegenerateConfirmButton' })).toHaveClass(
       'bg-danger-100'
     );
   });
@@ -572,27 +548,27 @@ describe('SettingsScreen — the ICS section', () => {
   it('cancels the confirmation without calling back', async () => {
     const { onRegenerateToken, user } = renderScreen();
 
-    await user.click(screen.getByRole('button', { name: 'Vygenerovat nový odkaz' }));
-    const dialog = screen.getByRole('dialog', { name: 'Vygenerovat nový odkaz?' });
-    await user.click(within(dialog).getByRole('button', { name: 'Zrušit' }));
+    await user.click(screen.getByRole('button', { name: 'icsRegenerate' }));
+    const dialog = screen.getByRole('dialog', { name: 'icsRegenerateConfirmTitle' });
+    await user.click(within(dialog).getByRole('button', { name: 'cancel' }));
 
     expect(onRegenerateToken).not.toHaveBeenCalled();
     expect(
-      screen.queryByRole('dialog', { name: 'Vygenerovat nový odkaz?' })
+      screen.queryByRole('dialog', { name: 'icsRegenerateConfirmTitle' })
     ).not.toBeInTheDocument();
   });
 
   it('regenerates the token and closes the dialog on success', async () => {
     const { onRegenerateToken, user } = renderScreen();
 
-    await user.click(screen.getByRole('button', { name: 'Vygenerovat nový odkaz' }));
-    const dialog = screen.getByRole('dialog', { name: 'Vygenerovat nový odkaz?' });
-    await user.click(within(dialog).getByRole('button', { name: 'Vygenerovat' }));
+    await user.click(screen.getByRole('button', { name: 'icsRegenerate' }));
+    const dialog = screen.getByRole('dialog', { name: 'icsRegenerateConfirmTitle' });
+    await user.click(within(dialog).getByRole('button', { name: 'icsRegenerateConfirmButton' }));
 
     expect(onRegenerateToken).toHaveBeenCalledTimes(1);
     await waitFor(() =>
       expect(
-        screen.queryByRole('dialog', { name: 'Vygenerovat nový odkaz?' })
+        screen.queryByRole('dialog', { name: 'icsRegenerateConfirmTitle' })
       ).not.toBeInTheDocument()
     );
   });
@@ -601,12 +577,12 @@ describe('SettingsScreen — the ICS section', () => {
     const onRegenerateToken = jest.fn().mockRejectedValue(new Error('boom'));
     const { user } = renderScreen({ onRegenerateToken });
 
-    await user.click(screen.getByRole('button', { name: 'Vygenerovat nový odkaz' }));
-    const dialog = screen.getByRole('dialog', { name: 'Vygenerovat nový odkaz?' });
-    await user.click(within(dialog).getByRole('button', { name: 'Vygenerovat' }));
+    await user.click(screen.getByRole('button', { name: 'icsRegenerate' }));
+    const dialog = screen.getByRole('dialog', { name: 'icsRegenerateConfirmTitle' });
+    await user.click(within(dialog).getByRole('button', { name: 'icsRegenerateConfirmButton' }));
 
     await waitFor(() => expect(onRegenerateToken).toHaveBeenCalledTimes(1));
-    expect(screen.getByRole('dialog', { name: 'Vygenerovat nový odkaz?' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'icsRegenerateConfirmTitle' })).toBeInTheDocument();
   });
 
   it('shows a translated message inside the dialog when a previous regeneration failed', async () => {
@@ -615,19 +591,19 @@ describe('SettingsScreen — the ICS section', () => {
     );
     const { user } = renderScreen({ regenerateError: error });
 
-    await user.click(screen.getByRole('button', { name: 'Vygenerovat nový odkaz' }));
-    const dialog = screen.getByRole('dialog', { name: 'Vygenerovat nový odkaz?' });
+    await user.click(screen.getByRole('button', { name: 'icsRegenerate' }));
+    const dialog = screen.getByRole('dialog', { name: 'icsRegenerateConfirmTitle' });
 
-    expect(within(dialog).getByText('K této akci nemáte oprávnění.')).toBeInTheDocument();
+    expect(within(dialog).getByText('FORBIDDEN')).toBeInTheDocument();
   });
 
   it('shows the confirm button as loading once a regeneration is in flight', async () => {
     const { user, rerenderWith } = renderScreen();
 
-    await user.click(screen.getByRole('button', { name: 'Vygenerovat nový odkaz' }));
+    await user.click(screen.getByRole('button', { name: 'icsRegenerate' }));
     rerenderWith({ isRegenerating: true });
 
-    const dialog = screen.getByRole('dialog', { name: 'Vygenerovat nový odkaz?' });
+    const dialog = screen.getByRole('dialog', { name: 'icsRegenerateConfirmTitle' });
     expect(within(dialog).getByTestId('button-spinner')).toBeInTheDocument();
   });
 });

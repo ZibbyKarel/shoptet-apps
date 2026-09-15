@@ -27,15 +27,15 @@ describe('LoginScreen', () => {
   it('titles the page with the product name', () => {
     renderLoginScreen();
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Let’s Park');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('brand');
   });
 
   it('shows both lines of the Czech tagline and the footnote', () => {
     renderLoginScreen();
 
-    expect(screen.getByText(/Rezervace firemních parkovacích míst\./)).toBeInTheDocument();
-    expect(screen.getByText(/Přihlaste se firemním účtem\./)).toBeInTheDocument();
-    expect(screen.getByText('Interní nástroj · pouze pro zaměstnance')).toBeInTheDocument();
+    expect(screen.getByText(/tagline/)).toBeInTheDocument();
+    expect(screen.getByText(/taglineSecondary/)).toBeInTheDocument();
+    expect(screen.getByText('footnote')).toBeInTheDocument();
   });
 
   it('offers exactly one control, and it submits a form', () => {
@@ -43,14 +43,14 @@ describe('LoginScreen', () => {
 
     const buttons = screen.getAllByRole('button');
     expect(buttons).toHaveLength(1);
-    expect(buttons[0]).toHaveAccessibleName('Login přes OKTA Verify');
+    expect(buttons[0]).toHaveAccessibleName('signIn');
     expect(buttons[0]).toHaveAttribute('type', 'submit');
   });
 
   it('runs the server action when the button is pressed', async () => {
     const { action, user } = renderLoginScreen();
 
-    await user.click(screen.getByRole('button', { name: 'Login přes OKTA Verify' }));
+    await user.click(screen.getByRole('button', { name: 'signIn' }));
 
     expect(action).toHaveBeenCalledTimes(1);
   });

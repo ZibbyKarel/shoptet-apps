@@ -43,7 +43,7 @@ function renderTopBar(
 }
 
 async function openMenu(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole('button', { name: 'Uživatelské menu' }));
+  await user.click(screen.getByRole('button', { name: 'userMenu' }));
 }
 
 describe('TopBar', () => {
@@ -52,7 +52,7 @@ describe('TopBar', () => {
 
     expect(screen.getAllByText('Karel Zíbar').length).toBeGreaterThan(0);
     expect(screen.getByText('KZ')).toBeInTheDocument();
-    expect(screen.getByText('Let’s Park')).toBeInTheDocument();
+    expect(screen.getByText('brand')).toBeInTheDocument();
   });
 
   it('shows the email only inside the menu, not on the bar', async () => {
@@ -66,30 +66,30 @@ describe('TopBar', () => {
   describe('for a plain user', () => {
     it('renders no ADMIN badge', () => {
       renderTopBar({ role: 'USER' });
-      expect(screen.queryByText('Admin')).not.toBeInTheDocument();
+      expect(screen.queryByText('adminBadge')).not.toBeInTheDocument();
     });
 
     it('offers only settings and sign-out', async () => {
       const { user } = renderTopBar({ role: 'USER' });
       await openMenu(user);
 
-      expect(screen.getByRole('menuitem', { name: 'Nastavení (SPZ auta)' })).toBeInTheDocument();
-      expect(screen.getByRole('menuitem', { name: 'Odhlásit se' })).toBeInTheDocument();
-      expect(screen.queryByRole('menuitem', { name: /Správa/ })).not.toBeInTheDocument();
+      expect(screen.getByRole('menuitem', { name: 'settings' })).toBeInTheDocument();
+      expect(screen.getByRole('menuitem', { name: 'signOut' })).toBeInTheDocument();
+      expect(screen.queryByRole('menuitem', { name: /administration/ })).not.toBeInTheDocument();
     });
   });
 
   describe('for an administrator', () => {
     it('renders the ADMIN badge', () => {
       renderTopBar({ role: 'ADMIN' });
-      expect(screen.getByText('Admin')).toBeInTheDocument();
+      expect(screen.getByText('adminBadge')).toBeInTheDocument();
     });
 
     it('offers the administration entry', async () => {
       const { user } = renderTopBar({ role: 'ADMIN' });
       await openMenu(user);
 
-      expect(screen.getByRole('menuitem', { name: /Správa/ })).toBeInTheDocument();
+      expect(screen.getByRole('menuitem', { name: /administration/ })).toBeInTheDocument();
     });
   });
 
@@ -99,16 +99,16 @@ describe('TopBar', () => {
     it('renders neither the badge nor the administration entry', async () => {
       const { user } = renderTopBar({ role: undefined });
 
-      expect(screen.queryByText('Admin')).not.toBeInTheDocument();
+      expect(screen.queryByText('adminBadge')).not.toBeInTheDocument();
       await openMenu(user);
-      expect(screen.queryByRole('menuitem', { name: /Správa/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole('menuitem', { name: /administration/ })).not.toBeInTheDocument();
     });
   });
 
   it('navigates to the settings route when settings is chosen', async () => {
     const { user, onNavigate, onSignOut } = renderTopBar({ role: 'USER' });
     await openMenu(user);
-    await user.click(screen.getByRole('menuitem', { name: 'Nastavení (SPZ auta)' }));
+    await user.click(screen.getByRole('menuitem', { name: 'settings' }));
 
     expect(onNavigate).toHaveBeenCalledWith(SETTINGS_ROUTE);
     expect(onSignOut).not.toHaveBeenCalled();
@@ -117,7 +117,7 @@ describe('TopBar', () => {
   it('navigates to the administration route when administration is chosen', async () => {
     const { user, onNavigate } = renderTopBar({ role: 'ADMIN' });
     await openMenu(user);
-    await user.click(screen.getByRole('menuitem', { name: /Správa/ }));
+    await user.click(screen.getByRole('menuitem', { name: /administration/ }));
 
     expect(onNavigate).toHaveBeenCalledWith(ADMIN_ROUTE);
   });
@@ -125,7 +125,7 @@ describe('TopBar', () => {
   it('signs out when sign-out is chosen, and does not navigate', async () => {
     const { user, onNavigate, onSignOut } = renderTopBar({ role: 'USER' });
     await openMenu(user);
-    await user.click(screen.getByRole('menuitem', { name: 'Odhlásit se' }));
+    await user.click(screen.getByRole('menuitem', { name: 'signOut' }));
 
     expect(onSignOut).toHaveBeenCalledTimes(1);
     expect(onNavigate).not.toHaveBeenCalled();
