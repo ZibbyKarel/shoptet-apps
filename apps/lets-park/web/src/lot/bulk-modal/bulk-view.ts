@@ -434,6 +434,7 @@ export type BulkErrorMessageKey =
   | 'errorValidation'
   | 'errorConflict'
   | 'errorForbidden'
+  | 'errorMonthlyCapReached'
   | 'errorUnknown';
 
 const BULK_ERROR_KEYS: Partial<Record<ErrorCode, BulkErrorMessageKey>> = {
@@ -443,6 +444,7 @@ const BULK_ERROR_KEYS: Partial<Record<ErrorCode, BulkErrorMessageKey>> = {
   VALIDATION_FAILED: 'errorValidation',
   CONFLICT: 'errorConflict',
   FORBIDDEN: 'errorForbidden',
+  MONTHLY_RESERVATION_LIMIT_REACHED: 'errorMonthlyCapReached',
 };
 
 export function toBulkErrorMessageKey(error: unknown): BulkErrorMessageKey {

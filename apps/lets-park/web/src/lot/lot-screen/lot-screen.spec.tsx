@@ -116,6 +116,7 @@ const apiMocks = {
   spotList: jest.fn(),
   previewBulk: jest.fn(),
   confirmBulk: jest.fn(),
+  myMonth: jest.fn(),
   adminUserList: jest.fn(),
 };
 
@@ -127,6 +128,7 @@ function buildClient() {
       cancel: apiMocks.reservationCancel,
       previewBulk: apiMocks.previewBulk,
       confirmBulk: apiMocks.confirmBulk,
+      myMonth: apiMocks.myMonth,
     },
     waitlist: { join: apiMocks.waitlistJoin, leave: apiMocks.waitlistLeave },
     me: { get: apiMocks.meGet },
@@ -270,6 +272,10 @@ function setup(
   // The bulk modal reads the spot list for its preferred-spot label. Its own
   // behaviour is `bulk-modal.spec.tsx`'s; here it only has to not fail.
   apiMocks.spotList.mockResolvedValue({ spots: [] });
+  // Same for the viewer's monthly reservation summary — the cap and the
+  // reserved-day highlight are `bulk-modal.spec.tsx`'s concern, not this
+  // file's; here the query only has to resolve.
+  apiMocks.myMonth.mockResolvedValue({ month: '2026-09', reservedDates: [], count: 0 });
   // Only fetched by an admin (`holderQuery`'s `enabled`), but harmless to seed
   // unconditionally — a case that cares about its contents passes `adminUsers`.
   if (options.adminUsersImpl) {
@@ -363,7 +369,9 @@ describe('LotScreen — loading, error and empty', () => {
     await user.click(screen.getByRole('button', { name: 'retry' }));
 
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: /^reserveSpotAction: label=E2\.93,/u })).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: /^reserveSpotAction: label=E2\.93,/u })
+      ).toBeInTheDocument()
     );
   });
 
@@ -668,7 +676,9 @@ describe('LotScreen — every write closes the dialog and invalidates the day', 
     );
 
     await user.click(screen.getByRole('button', { name: 'nextDay' }));
-    await user.click(await screen.findByRole('button', { name: /^reserveSpotAction: label=E2\.93,/u }));
+    await user.click(
+      await screen.findByRole('button', { name: /^reserveSpotAction: label=E2\.93,/u })
+    );
     await user.click(await screen.findByRole('button', { name: 'ctaReserve' }));
 
     await waitFor(() =>
@@ -1111,7 +1121,9 @@ describe('LotScreen — an admin adding somebody to the queue', () => {
     // gets the `⋯` admin-menu button (`Možnosti místa E2.92`) — the same
     // `/^openSpotAction: label=E2\.92,/u` disambiguation the other describe blocks
     // in this file already use.
-    await user.click(await screen.findByRole('button', { name: /^openSpotAction: label=E2\.92,/u }));
+    await user.click(
+      await screen.findByRole('button', { name: /^openSpotAction: label=E2\.92,/u })
+    );
 
     await waitFor(() => {
       const call = apiMocks.adminUserList.mock.calls.find(
@@ -1150,7 +1162,9 @@ describe('LotScreen — an admin adding somebody to the queue', () => {
       adminUsersImpl: () => new Promise(() => undefined),
     });
 
-    await user.click(await screen.findByRole('button', { name: /^openSpotAction: label=E2\.92,/u }));
+    await user.click(
+      await screen.findByRole('button', { name: /^openSpotAction: label=E2\.92,/u })
+    );
 
     expect(await screen.findByRole('button', { name: 'ctaQueue' })).toBeDisabled();
   });
@@ -1174,7 +1188,9 @@ describe('LotScreen — an admin adding somebody to the queue', () => {
           : Promise.reject(new Error('boom'))
     );
 
-    await user.click(await screen.findByRole('button', { name: /^openSpotAction: label=E2\.92,/u }));
+    await user.click(
+      await screen.findByRole('button', { name: /^openSpotAction: label=E2\.92,/u })
+    );
 
     expect(await screen.findByText('errorUnknown')).toBeInTheDocument();
   });

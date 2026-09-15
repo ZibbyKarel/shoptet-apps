@@ -277,8 +277,10 @@
     "weekdaySun": "NE",
     "dayCell": "{date}",
     "dayCellBlocked": "{date} — nelze vybrat",
+    "dayCellReserved": "{date} — už zde máte rezervaci",
     "gridLabel": "Výběr dní",
     "nonSelectableNote": "Víkendy a svátky nelze vybrat.",
+    "capNote": "Tento měsíc už máte {count, plural, one {# rezervaci} few {# rezervace} other {# rezervací}} z {cap} povolených.",
     "preferredSpot": "Preferované místo: {label}",
     "preferredSpotNone": "Preferované místo: nemáte nastavené",
     "preferredSpotLoading": "Preferované místo: načítá se…",
@@ -316,6 +318,7 @@
     "errorValidation": "Výběr dní neprošel kontrolou — vyberte alespoň jeden den a všechny v jednom měsíci.",
     "errorConflict": "Někdo jiný mezitím obsadil místa, se kterými rozvrh počítal. Nezapsali jsme nic — vygenerujte rozvrh znovu.",
     "errorForbidden": "K hromadné rezervaci nemáte oprávnění.",
+    "errorMonthlyCapReached": "V tomto měsíci už máte 5 rezervovaných míst — víc jich v jednom měsíci mít nemůžete.",
     "errorUnknown": "Hromadnou rezervaci se nepodařilo dokončit. Zkuste to prosím znovu za chvíli."
   }
 }

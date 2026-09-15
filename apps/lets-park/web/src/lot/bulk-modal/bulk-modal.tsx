@@ -25,10 +25,12 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   parseDateOnly,
   todayInPrague,
+  toYearMonth,
   useDateFormatters,
   useTranslations,
   type DateOnly,
 } from '@lets-park/i18n';
+import { MONTHLY_RESERVATION_CAP } from '@lets-park/shared-types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Button,
@@ -47,6 +49,7 @@ import { useApi } from '../../shell/api-provider/api-provider';
 import { useCurrentUser } from '../../shell/use-current-user';
 import { useNotify } from '../../shell/notifications/toast-provider';
 import type { HolderOption } from '../spot-dialog/holder-input';
+import { carColorVar } from '../lot-view';
 import {
   buildMonthGrid,
   diffBulkSchedule,
@@ -190,6 +193,13 @@ function BulkReservationModalContent({
 
   const profile = useCurrentUser();
   const spotList = useQuery({ ...api.spot.list.queryOptions(), enabled: open });
+  const monthSummary = useQuery({
+    ...api.reservation.myMonth.queryOptions({ input: { month: toYearMonth(anchorDate) } }),
+    enabled: open,
+  });
+  const reservedDates = new Set(monthSummary.data?.reservedDates ?? []);
+  const existingCount = monthSummary.data?.count ?? 0;
+  const remainingSlots = Math.max(0, MONTHLY_RESERVATION_CAP - existingCount);
   const preferredSpot = toPreferredSpotView(
     profile.data === undefined ? undefined : profile.data.preferredParkingSpotId,
     spotList.data?.spots,
@@ -242,7 +252,7 @@ function BulkReservationModalContent({
     onError: setFailure,
   });
 
-  const grid = buildMonthGrid(anchorDate, todayInPrague());
+  const grid = buildMonthGrid(anchorDate, todayInPrague(), reservedDates);
   const weekendHeads = weekendColumns(grid);
   const selectedSet = new Set(selected);
 
@@ -512,12 +522,25 @@ function BulkReservationModalContent({
                       shape="cell"
                       transition="base"
                       selected={day.selectable ? selectedSet.has(day.date) : false}
-                      selectable={day.selectable}
+                      selectable={
+                        day.selectable &&
+                        (selectedSet.has(day.date) || selected.length < remainingSlots)
+                      }
                       aria-pressed={day.selectable ? selectedSet.has(day.date) : undefined}
                       aria-label={
-                        day.selectable
-                          ? t('dayCell', { date: f.fullDate(day.date) })
-                          : t('dayCellBlocked', { date: f.fullDate(day.date) })
+                        !day.selectable && day.block === 'ALREADY_RESERVED'
+                          ? t('dayCellReserved', { date: f.fullDate(day.date) })
+                          : day.selectable &&
+                              !(selectedSet.has(day.date) || selected.length < remainingSlots)
+                            ? t('dayCellBlocked', { date: f.fullDate(day.date) })
+                            : day.selectable
+                              ? t('dayCell', { date: f.fullDate(day.date) })
+                              : t('dayCellBlocked', { date: f.fullDate(day.date) })
+                      }
+                      style={
+                        !day.selectable && day.block === 'ALREADY_RESERVED' && viewerUserId !== null
+                          ? { backgroundColor: carColorVar(viewerUserId) }
+                          : undefined
                       }
                       onClick={() => {
                         toggleDay(day);
@@ -545,6 +568,11 @@ function BulkReservationModalContent({
         <Text as="span" size="sm" weight="bold" tone="default">
           {preferredSpotNote()}
         </Text>
+        {existingCount > 0 ? (
+          <Text as="span" size="sm" tone="subtle">
+            {t('capNote', { count: existingCount, cap: MONTHLY_RESERVATION_CAP })}
+          </Text>
+        ) : null}
       </Stack>
     </Modal>
   );

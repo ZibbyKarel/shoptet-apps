@@ -55,6 +55,7 @@ const apiMocks = {
   spotList: jest.fn(),
   previewBulk: jest.fn(),
   confirmBulk: jest.fn(),
+  myMonth: jest.fn(),
   overviewDay: jest.fn(),
 };
 
@@ -62,7 +63,11 @@ function buildClient() {
   return {
     me: { get: apiMocks.meGet },
     spot: { list: apiMocks.spotList },
-    reservation: { previewBulk: apiMocks.previewBulk, confirmBulk: apiMocks.confirmBulk },
+    reservation: {
+      previewBulk: apiMocks.previewBulk,
+      confirmBulk: apiMocks.confirmBulk,
+      myMonth: apiMocks.myMonth,
+    },
     overview: { day: apiMocks.overviewDay },
   };
 }
@@ -194,6 +199,12 @@ function meKey() {
   return createApiQueryUtils(buildClient() as never).me.get.queryOptions().queryKey;
 }
 
+interface MyMonthOutput {
+  readonly month: string;
+  readonly reservedDates: readonly string[];
+  readonly count: number;
+}
+
 interface SetupOptions {
   readonly canReserveMonth?: boolean;
   readonly profile?: MyProfile;
@@ -204,6 +215,8 @@ interface SetupOptions {
   readonly previewFailure?: unknown;
   /** Makes `spot.list` reject, so the query settles into `isError`. */
   readonly spotListFails?: boolean;
+  /** `reservation.myMonth`'s answer — defaults to no reservations this month. */
+  readonly myMonthOutput?: MyMonthOutput;
   readonly isAdmin?: boolean;
   readonly viewerUserId?: string | null;
   readonly holderOptions?: readonly HolderOption[];
@@ -220,6 +233,9 @@ function setup(options: SetupOptions = {}) {
     apiMocks.previewBulk.mockRejectedValue(options.previewFailure);
   }
   apiMocks.confirmBulk.mockResolvedValue(options.confirmOutput ?? confirmed());
+  apiMocks.myMonth.mockResolvedValue(
+    options.myMonthOutput ?? { month: '2026-09', reservedDates: [], count: 0 }
+  );
   if (options.spotListFails === true) {
     apiMocks.spotList.mockRejectedValue(new TypeError('Failed to fetch'));
   } else {
@@ -490,6 +506,47 @@ describe('BulkReservationModal — step 1, choosing the days', () => {
         expect.anything()
       );
     });
+  });
+});
+
+describe('BulkReservationModal — the monthly cap and the reserved-day highlight', () => {
+  it('highlights a day the viewer already holds a reservation on', async () => {
+    setup({
+      viewerUserId: 'user-1',
+      myMonthOutput: { month: '2026-09', reservedDates: ['2026-09-16'], count: 1 },
+    });
+
+    const cell = await screen.findByRole('button', {
+      name: 'dayCellReserved: date=středa 16. září 2026',
+    });
+    expect(cell).toBeDisabled();
+    expect(cell).toHaveStyle({
+      backgroundColor: expect.stringContaining('--color-car-') as string,
+    });
+  });
+
+  it('disables further day selection once the viewer would exceed the monthly cap', async () => {
+    // 4 existing reservations + up to 1 more selectable = cap of 5.
+    const { user } = setup({ myMonthOutput: { month: '2026-09', reservedDates: [], count: 4 } });
+
+    const firstSelectable = await screen.findByRole('button', {
+      name: 'dayCell: date=čtvrtek 17. září 2026',
+    });
+    await user.click(firstSelectable);
+
+    const secondSelectable = screen.getByRole('button', {
+      name: 'dayCellBlocked: date=pátek 18. září 2026',
+    });
+    expect(secondSelectable).toBeDisabled();
+    // The already-selected one must stay clickable, so it can be deselected.
+    expect(firstSelectable).not.toBeDisabled();
+  });
+
+  it('does not disable any day when the viewer is well under the cap', async () => {
+    setup({ myMonthOutput: { month: '2026-09', reservedDates: [], count: 1 } });
+
+    const day = await screen.findByRole('button', { name: 'dayCell: date=čtvrtek 17. září 2026' });
+    expect(day).not.toBeDisabled();
   });
 });
 
