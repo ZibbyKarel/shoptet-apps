@@ -156,6 +156,12 @@ function meKey() {
   return createApiQueryUtils(buildClient() as never).me.get.queryOptions().queryKey;
 }
 
+function myMonthKey(month: string) {
+  return createApiQueryUtils(buildClient() as never).reservation.myMonth.queryOptions({
+    input: { month },
+  }).queryKey;
+}
+
 function freeSpot(overrides: Partial<DaySpotOverview> = {}): DaySpotOverview {
   return {
     spot: {
@@ -549,6 +555,22 @@ describe('LotScreen — every write closes the dialog and invalidates the day', 
     );
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(invalidate).toHaveBeenCalledWith(expect.objectContaining({ queryKey: dayKey(DATE) }));
+  });
+
+  it('invalidates reservation.myMonth for the day’s month too (I6)', async () => {
+    // Otherwise cancelling/creating here and then opening the bulk modal for
+    // the same month can show a stale cap/highlight state, because nothing
+    // else in this screen's own write paths ever invalidates that query.
+    const { user, invalidate } = setup();
+
+    await user.click(screen.getByRole('button', { name: /^reserveSpotAction: label=E2\.93,/u }));
+    await user.click(await screen.findByRole('button', { name: 'ctaReserve' }));
+
+    await waitFor(() =>
+      expect(invalidate).toHaveBeenCalledWith(
+        expect.objectContaining({ queryKey: myMonthKey('2026-01') })
+      )
+    );
   });
 
   it('does not close the dialog, or invalidate, when a write fails', async () => {

@@ -23,6 +23,7 @@ import {
   parseDateOnly,
   previousWeekday,
   todayInPrague,
+  toYearMonth,
   useDateFormatters,
   useTranslations,
 } from '@lets-park/i18n';
@@ -189,9 +190,22 @@ export function LotScreen() {
     enabled: openSpot !== null && openSpot.action !== 'info',
   });
 
+  /**
+   * `reservation.myMonth` is invalidated alongside `overview.day` — a create
+   * or cancel here changes the viewer's own monthly count/reserved-dates the
+   * same way a bulk batch does, and `BulkReservationModal` reads that query
+   * whenever it opens. Without this, cancelling (or creating) a reservation
+   * here and then opening the bulk modal for the same month could show a
+   * stale count/highlight for up to that query's stale time — the same defect
+   * `bulk-modal.tsx`'s own `invalidateDays` fixes for its own writes.
+   */
   const invalidateDay = useCallback(() => {
     void queryClient.invalidateQueries({
       queryKey: api.overview.day.queryOptions({ input: { date } }).queryKey,
+    });
+    void queryClient.invalidateQueries({
+      queryKey: api.reservation.myMonth.queryOptions({ input: { month: toYearMonth(date) } })
+        .queryKey,
     });
   }, [api, queryClient, date]);
 
