@@ -45,7 +45,7 @@ import { toContractError } from '@lets-park/api-client';
 const DAYS_PER_WEEK = 7;
 
 /** Why a cell in the month grid cannot be picked. */
-export type BulkCellBlock = 'WEEKEND' | 'HOLIDAY' | 'PAST';
+export type BulkCellBlock = 'WEEKEND' | 'HOLIDAY' | 'PAST' | 'ALREADY_RESERVED';
 
 /**
  * One day in the month grid.
@@ -88,14 +88,20 @@ export type BulkMonthGrid = CalendarGrid<BulkDayCell>;
  * the note under the grid explains; reversing it would put "in the past" on
  * cells whose real reason never changes.
  */
-function toCell(date: DateOnly, today: DateOnly): BulkDayCell {
+function toCell(
+  date: DateOnly,
+  today: DateOnly,
+  reservedDates: ReadonlySet<DateOnly>
+): BulkDayCell {
   const block: BulkCellBlock | null = !isBusinessDay(date)
     ? isWeekend(date)
       ? 'WEEKEND'
       : 'HOLIDAY'
     : isBefore(date, today)
       ? 'PAST'
-      : null;
+      : reservedDates.has(date)
+        ? 'ALREADY_RESERVED'
+        : null;
 
   return {
     date,
@@ -113,8 +119,12 @@ function toCell(date: DateOnly, today: DateOnly): BulkDayCell {
  * request when one is present (`doc/decision/0090-*`), so offering it would
  * let one stale cell throw away a month's selection.
  */
-export function buildMonthGrid(anchor: DateOnly, today: DateOnly): BulkMonthGrid {
-  return buildCalendarGrid(anchor, (date) => toCell(date, today));
+export function buildMonthGrid(
+  anchor: DateOnly,
+  today: DateOnly,
+  reservedDates: ReadonlySet<DateOnly>
+): BulkMonthGrid {
+  return buildCalendarGrid(anchor, (date) => toCell(date, today, reservedDates));
 }
 
 /**

@@ -92,7 +92,7 @@ describe('buildMonthGrid — the layout the design draws', () => {
   it('starts the first row on Monday, padding the days before the 1st', () => {
     // September 2026 begins on a Tuesday (doc/design/screens/10-modal-bulk.png:
     // the first row's PO cell is empty and the 1 sits under ÚT).
-    const grid = buildMonthGrid('2026-09-15', '2026-09-01');
+    const grid = buildMonthGrid('2026-09-15', '2026-09-01', new Set());
 
     expect(grid.month).toBe('2026-09');
     expect(grid.weeks[0]?.slots[0]?.day).toBeNull();
@@ -100,7 +100,7 @@ describe('buildMonthGrid — the layout the design draws', () => {
   });
 
   it('lays out exactly seven slots per row and every day of the month once', () => {
-    const grid = buildMonthGrid('2026-09-15', '2026-09-01');
+    const grid = buildMonthGrid('2026-09-15', '2026-09-01', new Set());
 
     for (const week of grid.weeks) {
       expect(week.slots).toHaveLength(7);
@@ -112,13 +112,13 @@ describe('buildMonthGrid — the layout the design draws', () => {
 
   it('handles a month that begins on a Monday with no leading blanks', () => {
     // 2026-06-01 is a Monday.
-    const grid = buildMonthGrid('2026-06-10', '2026-06-01');
+    const grid = buildMonthGrid('2026-06-10', '2026-06-01', new Set());
     expect(grid.weeks[0]?.slots[0]?.day?.dayOfMonth).toBe(1);
   });
 
   it('gives every slot a key that carries the month, so a re-layout cannot reuse one', () => {
-    const september = buildMonthGrid('2026-09-15', '2026-09-01');
-    const october = buildMonthGrid('2026-10-15', '2026-09-01');
+    const september = buildMonthGrid('2026-09-15', '2026-09-01', new Set());
+    const october = buildMonthGrid('2026-10-15', '2026-09-01', new Set());
 
     const keys = new Set([
       ...september.weeks.flatMap((week) => [week.key, ...week.slots.map((slot) => slot.key)]),
@@ -133,7 +133,7 @@ describe('buildMonthGrid — the layout the design draws', () => {
 });
 
 describe('buildMonthGrid — which days may be picked', () => {
-  const grid = buildMonthGrid('2026-09-15', '2026-09-01');
+  const grid = buildMonthGrid('2026-09-15', '2026-09-01', new Set());
 
   it('blocks Saturday and Sunday and marks them as the right-hand columns', () => {
     // 2026-09-05 Saturday, 2026-09-06 Sunday.
@@ -165,7 +165,7 @@ describe('buildMonthGrid — which days may be picked', () => {
   it('blocks a business day that is already in the past', () => {
     // One `PAST_DATE` day rejects the whole batch (doc/decision/0090-*), so a
     // past cell must not be offered.
-    const midMonth = buildMonthGrid('2026-09-15', '2026-09-15');
+    const midMonth = buildMonthGrid('2026-09-15', '2026-09-15', new Set());
     expect(cellOn(midMonth, '2026-09-14')).toMatchObject({ selectable: false, block: 'PAST' });
     expect(cellOn(midMonth, '2026-09-15').selectable).toBe(true);
   });
@@ -174,9 +174,37 @@ describe('buildMonthGrid — which days may be picked', () => {
     // `planDay` asks `isBusinessDay` first (doc/decision/0090-*): a Saturday is
     // the most durable fact about a day. Reversing the two checks would put
     // "in the past" on a cell whose real reason never changes.
-    const late = buildMonthGrid('2026-09-15', '2026-09-30');
+    const late = buildMonthGrid('2026-09-15', '2026-09-30', new Set());
     expect(cellOn(late, '2026-09-05')).toMatchObject({ selectable: false, block: 'WEEKEND' });
     expect(cellOn(late, '2026-09-28')).toMatchObject({ selectable: false, block: 'HOLIDAY' });
+  });
+});
+
+describe('buildMonthGrid — already-reserved days', () => {
+  it('marks a day the viewer already holds as ALREADY_RESERVED, not selectable', () => {
+    const grid = buildMonthGrid('2026-09-15', '2026-09-01', new Set(['2026-09-16']));
+    const cell = cellOn(grid, '2026-09-16');
+
+    expect(cell.selectable).toBe(false);
+    expect(cell.selectable === false && cell.block).toBe('ALREADY_RESERVED');
+  });
+
+  it('takes priority over nothing — a weekend the viewer somehow holds still reads as WEEKEND', () => {
+    // 2026-09-19 is a Saturday. Business-day blocking is a more durable fact
+    // about a day than "did a reservation get created here", so it is checked
+    // first — mirroring the existing PAST-before-nothing-else ordering this
+    // module's own docs describe for `toCell`.
+    const grid = buildMonthGrid('2026-09-15', '2026-09-01', new Set(['2026-09-19']));
+    const cell = cellOn(grid, '2026-09-19');
+
+    expect(cell.selectable === false && cell.block).toBe('WEEKEND');
+  });
+
+  it('leaves an unreserved business day selectable', () => {
+    const grid = buildMonthGrid('2026-09-15', '2026-09-01', new Set(['2026-09-16']));
+    const cell = cellOn(grid, '2026-09-17');
+
+    expect(cell.selectable).toBe(true);
   });
 });
 
@@ -303,9 +331,9 @@ describe('toBadgeMessage — which of the six sentences, and its one value', () 
   });
 });
 
-describe('weekendColumns — the design’s recessed right-hand columns', () => {
+describe("weekendColumns — the design's recessed right-hand columns", () => {
   it('marks exactly the sixth and seventh columns, Monday first', () => {
-    expect(weekendColumns(buildMonthGrid('2026-09-15', '2026-09-01'))).toEqual([
+    expect(weekendColumns(buildMonthGrid('2026-09-15', '2026-09-01', new Set()))).toEqual([
       false,
       false,
       false,
@@ -319,7 +347,7 @@ describe('weekendColumns — the design’s recessed right-hand columns', () => 
   it('answers the same for a month whose first row is mostly blanks', () => {
     // 2026-08-01 is a Saturday, so the first row has five leading blanks and
     // its only days land in the two weekend columns.
-    expect(weekendColumns(buildMonthGrid('2026-08-10', '2026-08-01'))).toEqual([
+    expect(weekendColumns(buildMonthGrid('2026-08-10', '2026-08-01', new Set()))).toEqual([
       false,
       false,
       false,
