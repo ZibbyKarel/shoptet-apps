@@ -76,13 +76,26 @@ insert the `Reservation` row(s) — by `ReservationsService.create`,
 not once, earlier, outside it. `doc/decision/0307-*` already established that
 the cap has no unique index to act as a final arbiter: the
 `pg_advisory_xact_lock` plus a recount, done inside the transaction, _is_ the
-authoritative check. A cap value read before that transaction opened would be
-exactly the kind of stale read that check exists to rule out — an admin could
-lower the cap between the read and the insert, and the insert would go on to
-enforce a number nobody configured any more. Reading it as one more statement
-inside a transaction that already takes a lock and does a recount is a small
-addition to a path that is already doing several things, and it cannot go
-stale against itself.
+authoritative check. A cap read before that transaction opened is stale for as
+long as the request lasts — an admin could lower it between that read and the
+insert, and the insert would go on to enforce a number nobody configured any
+more. Reading it as one more statement inside a transaction that already takes
+a lock and does a recount is a small addition to a path that is already doing
+several things.
+
+What that buys is a **narrower window, not the absence of one**, and the
+difference matters enough to state. Nothing locks the settings row:
+`readMonthlyReservationCap` is a plain `findUnique` on purpose, because a
+locking read there would add an edge to the wait-for graph the advisory lock
+already lives in. Nothing here sets an isolation level either, so these
+transactions run at PostgreSQL's default READ COMMITTED. An admin who commits
+a lower cap after the read and before the insert therefore *can* have that
+insert enforce the older number — what reading inside the transaction changes
+is that the exposure is the few statements between the read and the insert
+rather than the whole request. `monthly-reservation-cap.ts` puts it the same
+way ("could be stale"), and the weaker claim is the true one: an earlier
+comment on this branch was confidently wrong about exactly this isolation
+level and was corrected in `0157a3b`.
 
 ### Why the promotion loop hoists that read above the loop
 
