@@ -317,6 +317,12 @@ function BulkReservationModalContent({
    * is one invalidation in practice) — otherwise a reopened modal can show the
    * cap/highlight state from before this write for up to the query's stale
    * time, because nothing else in this flow ever invalidates that query.
+   *
+   * `admin.reservation.month` gets the same treatment, for the same reason,
+   * but by exact key rather than by prefix: this callback knows exactly whose
+   * month it just changed (`holderForm`'s current value), so invalidating
+   * that one key is enough, and a prefix invalidation would refetch every
+   * other holder an admin had looked at in this session for nothing.
    */
   const invalidateDays = useCallback(
     (dates: readonly DateOnly[]) => {
@@ -330,9 +336,14 @@ function BulkReservationModalContent({
         void queryClient.invalidateQueries({
           queryKey: api.reservation.myMonth.queryOptions({ input: { month } }).queryKey,
         });
+        void queryClient.invalidateQueries({
+          queryKey: api.admin.reservation.month.queryOptions({
+            input: { userId: holderForm.getValues('userId'), month },
+          }).queryKey,
+        });
       }
     },
-    [api, queryClient]
+    [api, queryClient, holderForm]
   );
 
   const confirmBulk = useMutation({

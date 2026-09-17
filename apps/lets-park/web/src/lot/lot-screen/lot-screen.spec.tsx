@@ -166,6 +166,10 @@ function myMonthKey(month: string) {
   }).queryKey;
 }
 
+function holderMonthBranchKey() {
+  return createApiQueryUtils(buildClient() as never).admin.reservation.month.key();
+}
+
 function freeSpot(overrides: Partial<DaySpotOverview> = {}): DaySpotOverview {
   return {
     spot: {
@@ -582,6 +586,23 @@ describe('LotScreen — every write closes the dialog and invalidates the day', 
     await waitFor(() =>
       expect(invalidate).toHaveBeenCalledWith(
         expect.objectContaining({ queryKey: myMonthKey('2026-01') })
+      )
+    );
+  });
+
+  it('invalidates the holder-scoped month summaries too, since the write may have been for somebody else', async () => {
+    // This screen's writes can name a holder (`SpotDialog`'s own form), and
+    // this callback never learns which — so the branch key, not an exact one.
+    // Without it, an admin reserving for a colleague here and then opening the
+    // bulk modal shows that colleague's budget from before the write.
+    const { user, invalidate } = setup();
+
+    await user.click(screen.getByRole('button', { name: /^reserveSpotAction: label=E2\.93,/u }));
+    await user.click(await screen.findByRole('button', { name: 'ctaReserve' }));
+
+    await waitFor(() =>
+      expect(invalidate).toHaveBeenCalledWith(
+        expect.objectContaining({ queryKey: holderMonthBranchKey() })
       )
     );
   });

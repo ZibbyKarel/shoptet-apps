@@ -207,6 +207,12 @@ function myMonthKey(month: string) {
   }).queryKey;
 }
 
+function holderMonthKey(userId: string, month: string) {
+  return createApiQueryUtils(buildClient() as never).admin.reservation.month.queryOptions({
+    input: { userId, month },
+  }).queryKey;
+}
+
 interface MyMonthOutput {
   readonly month: string;
   readonly reservedDates: readonly string[];
@@ -1098,6 +1104,25 @@ describe('BulkReservationModal — the confirmed result against the proposal', (
 
     await waitFor(() => {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: myMonthKey('2026-09') });
+    });
+  });
+
+  it('invalidates the holder’s month after confirming for somebody else, not only the viewer’s', async () => {
+    const { user, invalidate } = setup({
+      isAdmin: true,
+      viewerUserId: 'admin-1',
+      holderOptions: [
+        { userId: 'admin-1', name: 'Dev Admin', licensePlate: null },
+        { userId: 'user-1', name: 'Dev User', licensePlate: '1AB 2345' },
+      ],
+    });
+
+    await user.selectOptions(screen.getByLabelText('holderField'), 'user-1');
+    const confirm = await reachSchedule(user);
+    await user.click(confirm);
+
+    await waitFor(() => {
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: holderMonthKey('user-1', '2026-09') });
     });
   });
 
