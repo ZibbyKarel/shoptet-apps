@@ -6,13 +6,18 @@
 import { RESERVATION_LIMIT_SETTINGS_ID, type PrismaClient } from '@lets-park/database';
 import { addDays, isBusinessDay, toYearMonth, type DateOnly } from '@lets-park/shared-types';
 import { toDateColumn } from '../common/prisma-mapping';
+import type { Harness } from '../testing/database/reservation-harness';
 import {
   FUTURE_BUSINESS_DAY,
+  TODAY,
+  actorFor,
+  buildHarness,
   codeOf,
   connect,
   holdTransaction,
   seedSpot,
   seedUser,
+  setLockMode,
   waitForBlockedBackend,
 } from '../testing/database/reservation-harness';
 import {
@@ -282,5 +287,179 @@ describe('assertWithinMonthlyReservationCap against a real PostgreSQL', () => {
     const cap = await client.$transaction((tx) => readMonthlyReservationCap(tx));
 
     expect(cap).toBe(DEFAULT_MONTHLY_RESERVATION_CAP);
+  });
+
+  /**
+   * The three production call sites, each driven through its own service with a
+   * cap an admin has changed.
+   *
+   * These exist because everything above them — and every unit spec — answers
+   * `DEFAULT_MONTHLY_RESERVATION_CAP` for a different reason: the tests above
+   * call the helper pair directly, `PrismaDouble`'s limit settings start `null`
+   * so the double answers the default, and every other database suite reads the
+   * stored 5 the migration inserted, which *equals* the constant. So an edit
+   * that replaced `cap` with `DEFAULT_MONTHLY_RESERVATION_CAP` at
+   * `reservations.service.ts`, `bulk-reservation.service.ts` or
+   * `waitlist-promotion.service.ts` used to pass the entire workspace. Each
+   * test below is written so that it would fail under the default and pass only
+   * under the configured number, which is the whole point of having it.
+   *
+   * They live in this file rather than beside each service's own suite for the
+   * settings singleton's sake: the restore is the sharp edge, this file already
+   * owns it in one `afterEach`, and spreading the same mutate-and-restore into
+   * three suites that never touch that row would be three chances to leave a
+   * lowered cap behind for whatever runs next.
+   */
+  describe('through the services, with a cap an admin has changed', () => {
+    let harness: Harness;
+
+    beforeAll(() => {
+      harness = buildHarness(client);
+    });
+
+    /**
+     * `FORCE_OPEN` rather than arithmetic on `today`: these tests are about the
+     * cap, and the window is only in the way. The lock mode is a second mutable
+     * singleton, so it goes back to `AUTO` — the default — afterwards, the same
+     * way the outer `afterEach` puts the cap back.
+     */
+    beforeEach(async () => {
+      harness.publisher.reset();
+      await setLockMode(client, 'FORCE_OPEN');
+    });
+
+    afterEach(async () => {
+      await setLockMode(client, 'AUTO');
+    });
+
+    /** Rows written straight to the database, to put `user` at `count` for the month. */
+    async function fillMonth(
+      userId: string,
+      dates: readonly DateOnly[],
+      spotId: string
+    ): Promise<void> {
+      for (const date of dates) {
+        await client.reservation.create({
+          data: { parkingSpotId: spotId, userId, date: toDateColumn(date) },
+        });
+      }
+    }
+
+    async function setCap(monthlyReservationCap: number): Promise<void> {
+      await client.reservationLimitSettings.upsert({
+        where: { id: RESERVATION_LIMIT_SETTINGS_ID },
+        create: { id: RESERVATION_LIMIT_SETTINGS_ID, monthlyReservationCap },
+        update: { monthlyReservationCap },
+      });
+    }
+
+    it('refuses a single-day reservation at a lowered cap that the default would allow', async () => {
+      const user = await seedUser(client);
+      const spot = await seedSpot(client);
+      await setCap(2);
+      // Two days used, a third asked for: over a cap of 2, comfortably under
+      // the default of 5. A service still reading the constant would succeed.
+      const dates = businessDaysInMonth(3);
+      await fillMonth(user.id, dates.slice(0, 2), spot.id);
+
+      const code = await codeOf(
+        harness.reservations.create(
+          { parkingSpotId: spot.id, date: nth(dates, 2) },
+          actorFor(user),
+          TODAY
+        )
+      );
+
+      expect(code).toBe('MONTHLY_RESERVATION_LIMIT_REACHED');
+    });
+
+    it('accepts a single-day reservation at a raised cap that the default would refuse', async () => {
+      const user = await seedUser(client);
+      const spot = await seedSpot(client);
+      await setCap(DEFAULT_MONTHLY_RESERVATION_CAP + 2);
+      // Exactly `DEFAULT` days used, so the next one is the first the default
+      // would reject: a service still reading the constant would refuse it.
+      const dates = businessDaysInMonth(DEFAULT_MONTHLY_RESERVATION_CAP + 1);
+      await fillMonth(user.id, dates.slice(0, DEFAULT_MONTHLY_RESERVATION_CAP), spot.id);
+
+      const created = await harness.reservations.create(
+        { parkingSpotId: spot.id, date: nth(dates, DEFAULT_MONTHLY_RESERVATION_CAP) },
+        actorFor(user),
+        TODAY
+      );
+
+      expect(created.date).toBe(nth(dates, DEFAULT_MONTHLY_RESERVATION_CAP));
+    });
+
+    it("measures a bulk confirmation's assigned days against the lowered cap", async () => {
+      const user = await seedUser(client);
+      // At least one free spot on those days, so the allocator assigns all
+      // three rather than queueing them — `assignedCount` is what the cap check
+      // is handed, and a queued day contributes nothing to it.
+      await seedSpot(client);
+      await setCap(2);
+      const dates = businessDaysInMonth(3);
+
+      const code = await codeOf(harness.bulk.confirm({ dates }, actorFor(user), TODAY));
+
+      expect(code).toBe('MONTHLY_RESERVATION_LIMIT_REACHED');
+      expect(await client.reservation.count({ where: { userId: user.id } })).toBe(0);
+    });
+
+    it('skips a waitlist candidate who is at the lowered cap, and promotes the next one', async () => {
+      const [holder, firstInLine, secondInLine] = [
+        await seedUser(client),
+        await seedUser(client),
+        await seedUser(client),
+      ];
+      const [contested, filler] = [await seedSpot(client), await seedSpot(client)];
+      await setCap(3);
+      const dates = businessDaysInMonth(4);
+      const contestedDay = dates[0];
+
+      await harness.reservations.create(
+        { parkingSpotId: contested.id, date: contestedDay },
+        actorFor(holder),
+        TODAY
+      );
+      // Both join while still under the cap — `join` checks the target's cap
+      // too, so the queue has to be formed before the month is filled.
+      await harness.waitlist.join(
+        { parkingSpotId: contested.id, date: contestedDay },
+        actorFor(firstInLine),
+        TODAY
+      );
+      await harness.waitlist.join(
+        { parkingSpotId: contested.id, date: contestedDay },
+        actorFor(secondInLine),
+        TODAY
+      );
+      // Three days on *other* dates: `eligibleInOrder` already filters somebody
+      // who holds the contested day itself, so filling that day would make this
+      // test pass without the cap being consulted at all.
+      await fillMonth(firstInLine.id, dates.slice(1), filler.id);
+
+      const reservation = await client.reservation.findUniqueOrThrow({
+        where: {
+          parkingSpotId_date: {
+            parkingSpotId: contested.id,
+            date: toDateColumn(contestedDay),
+          },
+        },
+      });
+      await harness.reservations.cancel({ reservationId: reservation.id }, actorFor(holder));
+
+      // Under the default cap of 5 the person first in line is under their
+      // budget and takes the spot; under the configured 3 they are skipped.
+      const promoted = await client.reservation.findUnique({
+        where: {
+          parkingSpotId_date: {
+            parkingSpotId: contested.id,
+            date: toDateColumn(contestedDay),
+          },
+        },
+      });
+      expect(promoted?.userId).toBe(secondInLine.id);
+    });
   });
 });
