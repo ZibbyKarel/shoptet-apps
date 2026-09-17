@@ -12,7 +12,8 @@
  *
  * The cap is read **inside** that transaction rather than before it: see
  * {@link readMonthlyReservationCap}. `WaitlistPromotionService.promote` reads it
- * once above its candidate loop for the reason the next paragraph is about.
+ * once above its candidate loop rather than per candidate; the reason is stated
+ * at the loop, which is where anybody changing it is standing.
  *
  * The `pg_advisory_xact_lock` this takes is a new lock resource, but it is not
  * a disjoint one, and an earlier version of this comment claiming it could not
@@ -77,8 +78,10 @@ export async function readMonthlyReservationCap(tx: Prisma.TransactionClient): P
  * Throws `DomainError('MONTHLY_RESERVATION_LIMIT_REACHED')` if `userId` already
  * holds `cap - additional` or more confirmed reservations in `date`'s calendar
  * month. `additional` is how many more the caller is about to insert in this
- * same transaction (default 1; bulk confirm passes the count of days it is
- * about to assign).
+ * same transaction: bulk confirm passes the count of days it is about to
+ * assign, and the two single-row callers pass `1`. It has **no default** — a
+ * parameter with one cannot precede the required `cap` below, and every call
+ * site therefore says how many rows it is about to add.
  *
  * `cap` is a **required parameter**, not a constant read from the module: it is
  * an admin setting now (`ReservationLimitSettings`), and a default here would

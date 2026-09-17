@@ -133,11 +133,21 @@ export class WaitlistPromotionService {
     // judged clear a moment ago. A capped candidate is **skipped**, not
     // failed — their queue entry stays, and the spot goes to the next person
     // in line, same as a per-day conflict.
-    // Read once, above the loop and inside the transaction, deliberately. The
-    // setting cannot change inside a transaction, so a per-candidate re-read
-    // would answer the same number — while adding one query per iteration to
-    // exactly the path whose query sequence the deadlock analysis in
-    // `monthly-reservation-cap.ts` is about.
+
+    // Read once, above the loop and inside the transaction, deliberately — and
+    // *not* because a re-read would answer the same number. Nothing here sets
+    // an isolation level, so these transactions run at PostgreSQL's default
+    // READ COMMITTED, where every statement takes a fresh snapshot: a
+    // per-candidate re-read genuinely could see an admin's committed change
+    // mid-loop. Two reasons it is hoisted anyway:
+    //
+    // 1. **One pass, one rule.** Every candidate in a single promotion is
+    //    judged against the same cap. Re-reading would let an admin saving a
+    //    new cap mid-loop have the earlier candidates measured against the old
+    //    number and the later ones against the new, inside one promotion.
+    // 2. **One query instead of one per candidate**, in exactly the path whose
+    //    query sequence the deadlock analysis in `monthly-reservation-cap.ts`
+    //    is about.
     const cap = await readMonthlyReservationCap(tx);
 
     for (const candidate of eligible) {

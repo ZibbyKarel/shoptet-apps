@@ -1,3 +1,4 @@
+import { DEFAULT_MONTHLY_RESERVATION_CAP } from '@lets-park/shared-types';
 import type { AuthenticatedUser } from '../auth/authenticated-user';
 import { AuditLogService } from '../audit/audit-log.service';
 import { PrismaDouble } from '../testing/prisma-double';
@@ -51,7 +52,7 @@ describe('ReservationsService.myMonth', () => {
       month: '2026-09',
       reservedDates: ['2026-09-07', '2026-09-14'],
       count: 2,
-      cap: 5,
+      cap: DEFAULT_MONTHLY_RESERVATION_CAP,
     });
   });
 
@@ -62,7 +63,12 @@ describe('ReservationsService.myMonth', () => {
 
     const result = await reservations.myMonth({ month: '2026-09' }, authenticated(viewer.id));
 
-    expect(result).toEqual({ month: '2026-09', reservedDates: [], count: 0, cap: 5 });
+    expect(result).toEqual({
+      month: '2026-09',
+      reservedDates: [],
+      count: 0,
+      cap: DEFAULT_MONTHLY_RESERVATION_CAP,
+    });
   });
 
   it('reports the configured cap, not the default, in the month summary', async () => {
@@ -81,7 +87,12 @@ describe('ReservationsService.myMonth', () => {
 
     const result = await reservations.myMonth({ month: '2026-09' }, authenticated(viewer.id));
 
-    expect(result).toEqual({ month: '2026-09', reservedDates: [], count: 0, cap: 5 });
+    expect(result).toEqual({
+      month: '2026-09',
+      reservedDates: [],
+      count: 0,
+      cap: DEFAULT_MONTHLY_RESERVATION_CAP,
+    });
   });
 });
 
@@ -121,7 +132,7 @@ describe('ReservationsService.userMonth', () => {
       month: '2026-09',
       reservedDates: ['2026-09-07', '2026-09-14'],
       count: 2,
-      cap: 5,
+      cap: DEFAULT_MONTHLY_RESERVATION_CAP,
     });
   });
 
@@ -146,7 +157,12 @@ describe('ReservationsService.userMonth', () => {
       authenticated(admin.id)
     );
 
-    expect(result).toEqual({ month: '2026-09', reservedDates: [], count: 0, cap: 5 });
+    expect(result).toEqual({
+      month: '2026-09',
+      reservedDates: [],
+      count: 0,
+      cap: DEFAULT_MONTHLY_RESERVATION_CAP,
+    });
   });
 
   it('answers an empty month for an id that holds nothing, rather than throwing', async () => {
@@ -161,6 +177,11 @@ describe('ReservationsService.userMonth', () => {
       authenticated(admin.id)
     );
 
-    expect(result).toEqual({ month: '2026-09', reservedDates: [], count: 0, cap: 5 });
+    expect(result).toEqual({
+      month: '2026-09',
+      reservedDates: [],
+      count: 0,
+      cap: DEFAULT_MONTHLY_RESERVATION_CAP,
+    });
   });
 });
