@@ -5,7 +5,7 @@ implement one, and the rules each module owns. Written for Task 12's surface —
 users, personal settings, the reservation window, the day overview and the audit log. Reservations
 and the waitlist (Task 13) plug into the same transport and are documented with their own task. The
 ICS feed (Task 14 — this file said "Task 17", which was wrong) does **not**: it is the single
-controller outside the contract, and it has its own document, `doc/ics.md`, plus §10 below.
+controller outside the contract, and it has its own document, `doc/ics.md`, plus §12 below.
 
 Companion documents: `doc/contract.md` (the procedures and their schemas), `doc/auth.md` (who the
 caller is and how they are gated), `doc/database.md` (the schema and its constraints),
@@ -105,7 +105,7 @@ Prisma 7 with `@prisma/adapter-pg` does not populate it, and puts the violated i
 `meta.driverAdapterError.cause.constraint.index` instead. Both are read, `target` first. This is
 what lets `Reservation (parkingSpotId, date)` arrive as `SPOT_ALREADY_RESERVED` rather than the
 vague `CONFLICT` every unique violation used to degrade to; the shape is pinned against a real
-server (§10).
+server (§11).
 
 **Stack traces are logged and never sent — and a 4xx does not log one either.** A framework 4xx
 (no such route, a malformed body, a throttled caller) is logged at `warn` with the status, method,
@@ -182,9 +182,11 @@ class instance or an `undefined` has no representation in it.
 | `USER_UPDATED`               | `MeService.updateSettings`                      | `change: 'settings'`, before/after `{ licensePlate, preferredParkingSpotId }`      |
 | `USER_UPDATED`               | `MeService.regenerateIcsToken`                  | `change: 'ics-token-regenerated'` — **never the token**                            |
 | `RESERVATION_WINDOW_UPDATED` | `ReservationWindowService.updateSettings`       | before/after `{ openDaysBefore, lockMode }`                                        |
+| `RESERVATION_LIMITS_UPDATED` | `ReservationLimitsService.updateSettings`       | before/after `{ monthlyReservationCap }`                                           |
 
 `RESERVATION_WINDOW_UPDATED` is new in Task 12, in both the contract enum and the Prisma enum:
-`doc/decision/0059-*`.
+`doc/decision/0059-*`. `RESERVATION_LIMITS_UPDATED` is the same shape, added when the monthly cap
+became its own settings singleton (`doc/decision/0312-*`).
 
 Two omissions are intentional. **The ICS token never appears in a payload** — it is the only
 credential on the personal calendar feed, and an append-only table nobody can redact is the worst
@@ -312,7 +314,34 @@ an omitted field has already been filled with its default before it arrives.
 
 ---
 
-## 8. Day overview
+## 8. Reservation limits
+
+`apps/lets-park/api/src/reservation-limits/`. Routes: `admin.reservationLimits.get`,
+`admin.reservationLimits.update`. Both `@Roles('ADMIN')`, the same as every route in §7.
+
+Built the same way as §7's pair, deliberately — a second singleton settings surface rather than a
+column on `ReservationWindowSettings` (`doc/decision/0312-*`): the window decides whether a month is
+open to anybody, this decides how much one person may take while it is, and the two settings never
+shared an identity to begin with.
+
+**The settings row is upserted, and a missing one reads as the documented default** — the same
+reasoning as §7's, and the same reason: a deployment whose seed had not run would otherwise answer
+`admin.reservationLimits.get` with a 500, and the honest value for "no row yet" is the default,
+which is what the row would have contained.
+
+`update` is a **replacement**, not a patch, same as `admin.window.update`.
+
+**This module is not in the enforcement path.** The cap that actually rejects an over-quota insert
+is loaded by `readMonthlyReservationCap` inside the writer's own transaction
+(`apps/lets-park/api/src/reservations/monthly-reservation-cap.ts`), not through this service —
+`ReservationLimitsService` serves the admin screen and the month summary
+(`reservation.myMonth` / `admin.reservation.month`'s `cap` field), both of which are plain reads
+outside any transaction. `ReservationLimitsModule` exports the service for exactly that second
+consumer.
+
+---
+
+## 9. Day overview
 
 `apps/lets-park/api/src/overview/`. Route: `overview.day`, any authenticated user.
 
@@ -362,7 +391,7 @@ in `viewerReservationId`. Including it would make `canReserve` mean two things a
 
 ---
 
-## 9. Reservations and the waitlist
+## 10. Reservations and the waitlist
 
 `apps/lets-park/api/src/reservations/`. Routes: `reservation.create`, `reservation.cancel`,
 `reservation.myMonth`, `waitlist.join`, `waitlist.leave`, plus the bulk pair below — open to any
@@ -413,7 +442,7 @@ has exactly one route.
 
 ---
 
-## 10. Testing
+## 11. Testing
 
 Unit specs sit beside each service and run against `apps/lets-park/api/src/testing/prisma-double.ts` — an
 in-memory stand-in for `PrismaService` that copies every row it returns (a live reference would
@@ -505,7 +534,7 @@ refusal has been exercised (`DATABASE_URL= jest --config apps/lets-park/api/jest
 
 ---
 
-## 10. The ICS feed
+## 12. The ICS feed
 
 `apps/lets-park/api/src/calendar/`. Route: `GET /api/calendar/:icsToken.ics` — **not** a contract procedure,
 and the only route in the application that is not. Full write-up in `doc/ics.md`; what matters when

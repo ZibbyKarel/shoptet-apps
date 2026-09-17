@@ -1,7 +1,8 @@
 # The administration section (`/admin`)
 
 Task 27. The tabbed "Správa" screen: the lot for a day, the users, the parking
-spots and the reservation window.
+spots, the reservation window, and the reservation limits (`TODO.md` item 2,
+`doc/decision/0312-*`).
 
 Designs: `doc/design/screens/03-admin-users.png`, `04-admin-spots.png`,
 `05-admin-window.png`, `06-admin-overview.png`, and `01-lot-admin.png` for the
@@ -38,7 +39,7 @@ and refuses removing the last active admin whatever the browser sends.
 
 ```
 apps/lets-park/web/src/
-  app/(app)/admin/page.tsx       wiring: profile + the four connected panels
+  app/(app)/admin/page.tsx       wiring: profile + the five connected panels
   shell/admin-screen/admin-screen.tsx  role gate, page chrome, the tab strip
   shell/admin/
     admin-errors.ts              (operation, code) -> Czech sentence
@@ -48,9 +49,10 @@ apps/lets-park/web/src/
     admin-users-screen.tsx   / admin-users-panel.tsx
     admin-spots-screen.tsx   / admin-spots-panel.tsx
     admin-window-screen.tsx  / admin-window-panel.tsx
+    admin-limits-screen.tsx  / admin-limits-panel.tsx
 ```
 
-The screens have a spec each; the four panels share one
+The screens have a spec each; the five panels share one
 (`admin-panels.spec.tsx`), which runs the real screens and the real
 `@lets-park/query` against a fake `api` object. What only that spec can see is
 everything _between_ a screen and the contract: which procedure a control calls,
@@ -64,12 +66,12 @@ rule testable with nothing but an `IntlProvider`) and a **panel** (wiring: the
 queries, the mutations, the router). Same split, and same reason, as
 `TopBar`/`AppTopBar` and `SettingsScreen`/`SettingsPage`.
 
-`AdminScreen` takes the four panels as a `panels` prop rather than importing
+`AdminScreen` takes the five panels as a `panels` prop rather than importing
 them, so it stays renderable without a query client. React elements are inert
 until rendered, and `Tabs` mounts only the selected panel — an unselected tab
 fetches nothing.
 
-## The four tabs
+## The five tabs
 
 ### Přehled parkoviště
 
@@ -123,6 +125,24 @@ and the list cannot disagree about the same moment.
   `doc/decision/0166-*`.
 - Right: one row per month with its window range and an
   Otevřeno / Uzamčeno / Zatím neotevřeno badge.
+
+### Limity rezervací
+
+`admin.reservationLimits.get` / `.update` — one stepper (1–31), no Save
+button, same choice as the window tab's and for the same reason: the control
+writes on change, so there is never an unsaved value on screen that disagrees
+with the server. Built the same way as `AdminWindowScreen`/`AdminWindowPanel`,
+deliberately: a second settings surface rather than a variant, because the
+cap is not a window setting (`doc/decision/0312-*`).
+
+Saving invalidates more than its own query: every month summary
+(`reservation.myMonth`, `admin.reservation.month`) carries the cap in force,
+and the bulk-booking modal's greyed-out days are derived from it, so both are
+stale the moment the cap changes. `AdminLimitsPanel`'s `onSuccess` invalidates
+`api.reservation.key()` and `api.admin.reservation.key()` alongside its own.
+
+Lowering the cap does not touch reservations that already exist — it binds
+new inserts only (`doc/decision/0312-*`).
 
 ## Never printing a date that is not true
 

@@ -1,11 +1,16 @@
 # 0307 – The monthly cap takes an advisory lock, and `confirmBulk` retries
 
-**Date:** 2026-09-09 · **Status:** accepted · **Task:** `TODO.md` item 4
+**Date:** 2026-09-09 · **Status:** accepted, partly superseded by
+`doc/decision/0312-the-monthly-cap-is-its-own-settings-singleton.md` (the cap
+became an admin-configurable setting; the lock, recount and deadlock analysis
+below are unaffected) · **Task:** `TODO.md` item 4
 
 ## What
 
-`apps/lets-park/api/src/reservations/monthly-reservation-cap.ts` enforces a cap of five
-confirmed reservations per user per calendar month. Every path that inserts a
+`apps/lets-park/api/src/reservations/monthly-reservation-cap.ts` enforces a cap on
+confirmed reservations per user per calendar month — five, fixed, when this was
+written; an admin-configurable setting since `doc/decision/0312-*`, read as a
+parameter rather than a constant. Every path that inserts a
 `Reservation` row for a real user calls `assertWithinMonthlyReservationCap` as
 its last check before the insert, inside the transaction that will do the
 insert: `ReservationsService.create`, `BulkReservationService.confirmOnce`, and

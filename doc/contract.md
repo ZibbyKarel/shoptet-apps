@@ -188,9 +188,10 @@ beyond `FORBIDDEN`".
 
 **Every procedure has an input schema, even one with no arguments.** oRPC
 allows `.input()` to be omitted, but an omitted schema means an accidentally
-sent payload is silently discarded. The four argument-less procedures
+sent payload is silently discarded. The five argument-less procedures
 (`overview` doesn't have one; the others are `spot.list`, `me.get`,
-`me.regenerateIcsToken`, `admin.window.get`) therefore declare the shared
+`me.regenerateIcsToken`, `admin.window.get`, `admin.reservationLimits.get`)
+therefore declare the shared
 `noInputSchema` from `api/errors.ts` – it accepts `undefined` (how a call
 arrives via RPC) as well as `{}` (how a GET with no parameters arrives via
 OpenAPI), but rejects anything with a key. In the tables, their input is
@@ -277,8 +278,8 @@ never reach another user's browser.
 | ------------------------- | ------------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `reservation.create`      | `{ parkingSpotId, date }` | `Reservation`                                      | `NOT_FOUND`, `SPOT_ALREADY_RESERVED`, `RESERVATION_LIMIT_REACHED`, `PAST_DATE`, `OUT_OF_HORIZON`, `RESERVATIONS_LOCKED`, `VALIDATION_FAILED`, `CONFLICT` |
 | `reservation.cancel`      | `{ reservationId }`       | `{ reservationId, date, parkingSpotId, promoted }` | `NOT_FOUND`, `CONFLICT`                                                                                                                                  |
-| `reservation.myMonth`     | `{ month }`               | `{ month, reservedDates[], count }`                | —                                                                                                                                                        |
-| `admin.reservation.month` | `{ userId, month }`       | `{ month, reservedDates[], count }`                | —                                                                                                                                                        |
+| `reservation.myMonth`     | `{ month }`               | `{ month, reservedDates[], count, cap }`           | —                                                                                                                                                        |
+| `admin.reservation.month` | `{ userId, month }`       | `{ month, reservedDates[], count, cap }`           | —                                                                                                                                                        |
 
 `reservation.cancel` **deliberately declares no window error.** Per
 `doc/decision/0004-*`, a regular user may cancel their own reservation at any
@@ -300,6 +301,15 @@ only ever answer for whoever is calling. `admin.reservation.month` answers the
 same question about a named user instead and is `@Roles('ADMIN')`: unlike the
 rest of this table, reading somebody else's month is a rule about the route,
 not about a row.
+
+`cap` is the monthly reservation cap **in force**, not the count of
+reservations that already exist. It comes from the `ReservationLimitSettings`
+singleton (`doc/decision/0312-*`), rides along on both procedures for the same
+reason the reservation-window state rides along on `overview.day`: the
+client's whole job with the two numbers is `cap - count`, and a count and a
+cap fetched from two independent round trips could disagree the moment an
+admin changes the setting between them. See "Reservation limits (admin)"
+below for where `cap` is written.
 
 ### Waitlist
 
@@ -487,6 +497,35 @@ has no domain rule left that a structurally valid input could violate.
 
 A regular user calls none of these procedures; they get the window state for
 a specific day from `overview.day`.
+
+### Reservation limits (admin)
+
+| procedure                        | input                        | output                     | other errors                    |
+| -------------------------------- | ---------------------------- | -------------------------- | ------------------------------- |
+| `admin.reservationLimits.get`    | —                            | `ReservationLimitSettings` | —                               |
+| `admin.reservationLimits.update` | `{ monthlyReservationCap? }` | `ReservationLimitSettings` | `VALIDATION_FAILED`, `CONFLICT` |
+
+Same shape as the reservation window's pair, and deliberately so — a second
+settings surface built the same way rather than a variant
+(`doc/decision/0312-*`). `admin.reservationLimits.update` is a **replacement,
+not a patch**: the input is `reservationLimitSettingsSchema` itself, so an
+omitted field falls back to its default (`monthlyReservationCap: 5`), not to
+the value currently stored.
+
+A regular user calls neither procedure. The cap they need to render a correct
+grid rides along on `reservation.myMonth` / `admin.reservation.month` instead
+— see "Reservations" above.
+
+`admin.reservationLimits.update` declares `VALIDATION_FAILED` on the shared
+`authed` error builder, the same as `admin.window.update`, but — unlike
+`admin.window.update`, whose combination of fields can be rejected by
+`ReservationWindowService` — nothing in `ReservationLimitsService` currently
+throws it: the one field is a bounded integer the schema itself already
+guards (`MIN_MONTHLY_RESERVATION_CAP`–`MAX_MONTHLY_RESERVATION_CAP`), the same
+situation `admin.window.months` is in above. Worth checking against
+`doc/decision/0021-declared-error-must-have-a-reachable-trigger.md` — this
+documentation task does not change the contract, so it is left declared as
+written and flagged here rather than silently doc'd over.
 
 ---
 

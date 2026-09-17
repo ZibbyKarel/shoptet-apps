@@ -205,3 +205,4 @@ for why, and take the next number from the end of this list.
 - [`0309-reset-e2e-removes-parking-spots-the-suite-created`](0309-reset-e2e-removes-parking-spots-the-suite-created.md) — 0309 – `reset-e2e` removes parking spots the suite created
 - [`0310-the-workspace-is-namespaced-to-host-two-applications`](0310-the-workspace-is-namespaced-to-host-two-applications.md) — 0310 – The workspace is namespaced to host two applications
 - [`0311-the-application-layer-carries-no-tailwind`](0311-the-application-layer-carries-no-tailwind.md) — 0311 – The application layer carries no Tailwind
+- [`0312-the-monthly-cap-is-its-own-settings-singleton`](0312-the-monthly-cap-is-its-own-settings-singleton.md) — 0312 – The monthly cap is its own settings singleton
