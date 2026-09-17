@@ -402,7 +402,8 @@ export const ModelName = {
   Reservation: 'Reservation',
   WaitlistEntry: 'WaitlistEntry',
   AuditLog: 'AuditLog',
-  ReservationWindowSettings: 'ReservationWindowSettings'
+  ReservationWindowSettings: 'ReservationWindowSettings',
+  ReservationLimitSettings: 'ReservationLimitSettings'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -418,7 +419,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "parkingSpot" | "reservation" | "waitlistEntry" | "auditLog" | "reservationWindowSettings"
+    modelProps: "user" | "parkingSpot" | "reservation" | "waitlistEntry" | "auditLog" | "reservationWindowSettings" | "reservationLimitSettings"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -866,6 +867,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ReservationLimitSettings: {
+      payload: Prisma.$ReservationLimitSettingsPayload<ExtArgs>
+      fields: Prisma.ReservationLimitSettingsFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ReservationLimitSettingsFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservationLimitSettingsPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ReservationLimitSettingsFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservationLimitSettingsPayload>
+        }
+        findFirst: {
+          args: Prisma.ReservationLimitSettingsFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservationLimitSettingsPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ReservationLimitSettingsFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservationLimitSettingsPayload>
+        }
+        findMany: {
+          args: Prisma.ReservationLimitSettingsFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservationLimitSettingsPayload>[]
+        }
+        create: {
+          args: Prisma.ReservationLimitSettingsCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservationLimitSettingsPayload>
+        }
+        createMany: {
+          args: Prisma.ReservationLimitSettingsCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ReservationLimitSettingsCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservationLimitSettingsPayload>[]
+        }
+        delete: {
+          args: Prisma.ReservationLimitSettingsDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservationLimitSettingsPayload>
+        }
+        update: {
+          args: Prisma.ReservationLimitSettingsUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservationLimitSettingsPayload>
+        }
+        deleteMany: {
+          args: Prisma.ReservationLimitSettingsDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ReservationLimitSettingsUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ReservationLimitSettingsUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservationLimitSettingsPayload>[]
+        }
+        upsert: {
+          args: Prisma.ReservationLimitSettingsUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReservationLimitSettingsPayload>
+        }
+        aggregate: {
+          args: Prisma.ReservationLimitSettingsAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateReservationLimitSettings>
+        }
+        groupBy: {
+          args: Prisma.ReservationLimitSettingsGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ReservationLimitSettingsGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ReservationLimitSettingsCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ReservationLimitSettingsCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -979,6 +1054,15 @@ export const ReservationWindowSettingsScalarFieldEnum = {
 } as const
 
 export type ReservationWindowSettingsScalarFieldEnum = (typeof ReservationWindowSettingsScalarFieldEnum)[keyof typeof ReservationWindowSettingsScalarFieldEnum]
+
+
+export const ReservationLimitSettingsScalarFieldEnum = {
+  id: 'id',
+  monthlyReservationCap: 'monthlyReservationCap',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ReservationLimitSettingsScalarFieldEnum = (typeof ReservationLimitSettingsScalarFieldEnum)[keyof typeof ReservationLimitSettingsScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1316,6 +1400,7 @@ export type GlobalOmitConfig = {
   waitlistEntry?: Prisma.WaitlistEntryOmit
   auditLog?: Prisma.AuditLogOmit
   reservationWindowSettings?: Prisma.ReservationWindowSettingsOmit
+  reservationLimitSettings?: Prisma.ReservationLimitSettingsOmit
 }
 
 /* Types for Logging */

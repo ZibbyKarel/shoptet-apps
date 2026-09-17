@@ -29,8 +29,10 @@
 import { createPrismaClient } from '../lib/create-prisma-client';
 import { assertDisposableDatabase } from '../lib/disposable-database';
 import {
+  RESERVATION_LIMIT_SETTINGS_ID,
   RESERVATION_WINDOW_SETTINGS_ID,
   SEED_PARKING_SPOTS,
+  SEED_RESERVATION_LIMIT_SETTINGS,
   SEED_RESERVATION_WINDOW_SETTINGS,
   SEED_USERS,
 } from '../lib/seed-data';
@@ -111,6 +113,16 @@ async function main(): Promise<void> {
       create: { id: RESERVATION_WINDOW_SETTINGS_ID, ...SEED_RESERVATION_WINDOW_SETTINGS },
     });
     console.log('Seeded reservation window settings.');
+
+    // Same arrangement as the window settings above: the migration already
+    // inserted this row, and the upsert restores the documented default if an
+    // admin changed the cap while poking around.
+    await prisma.reservationLimitSettings.upsert({
+      where: { id: RESERVATION_LIMIT_SETTINGS_ID },
+      update: SEED_RESERVATION_LIMIT_SETTINGS,
+      create: { id: RESERVATION_LIMIT_SETTINGS_ID, ...SEED_RESERVATION_LIMIT_SETTINGS },
+    });
+    console.log('Seeded reservation limit settings.');
 
     // No reservations or waitlist entries are seeded: they are date-bound and
     // would be in the past by the time anyone runs this. Create them in the UI.

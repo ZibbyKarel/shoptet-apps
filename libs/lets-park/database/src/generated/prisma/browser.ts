@@ -70,3 +70,23 @@ export type AuditLog = Prisma.AuditLogModel
  * See `doc/database.md` and `doc/decision/0026-*`.
  */
 export type ReservationWindowSettings = Prisma.ReservationWindowSettingsModel
+/**
+ * Model ReservationLimitSettings
+ * Singleton settings row holding the reservation limits (TODO item 2).
+ * 
+ * Separate from `ReservationWindowSettings` rather than a column on it: that
+ * model drives the *window* — whether a month is open to anybody — and a
+ * per-user monthly quota is a different rule with a different audience. Its
+ * name and doc comment say so, and a column that made both false is the kind
+ * of defect this repo treats as real. Renaming that model instead would have
+ * dragged `AuditLog.entityType` and `action` string values with it, leaving
+ * the append-only audit table permanently disagreeing with itself.
+ * See `doc/decision/0312-*`.
+ * 
+ * Same singleton arrangement as its neighbour: `id` is a fixed `Int`, never
+ * leaves the database (the contract's `reservationLimitSettingsSchema` has no
+ * `id` field), and the single-row property is a `CHECK ("id" = 1)` added by
+ * hand in the migration, because Prisma's schema language cannot express a
+ * CHECK. See `doc/database.md` and `doc/decision/0026-*`.
+ */
+export type ReservationLimitSettings = Prisma.ReservationLimitSettingsModel

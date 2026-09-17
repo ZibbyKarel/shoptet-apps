@@ -17,6 +17,7 @@ export type {
   AuditLog,
   ParkingSpot,
   Reservation,
+  ReservationLimitSettings,
   ReservationWindowSettings,
   User,
   WaitlistEntry,
@@ -29,4 +30,4 @@ export {
   UserRole,
 } from './generated/prisma/enums';
 
-export { RESERVATION_WINDOW_SETTINGS_ID } from './lib/seed-data';
+export { RESERVATION_LIMIT_SETTINGS_ID, RESERVATION_WINDOW_SETTINGS_ID } from './lib/seed-data';

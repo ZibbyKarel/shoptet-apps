@@ -7,14 +7,22 @@
 
 import { parkingSpotSchema, userSchema } from '@lets-park/contract';
 import {
+  DEFAULT_MONTHLY_RESERVATION_CAP,
   DEFAULT_OPEN_DAYS_BEFORE,
   DEFAULT_RESERVATION_LOCK_MODE,
+  MAX_MONTHLY_RESERVATION_CAP,
   MAX_OPEN_DAYS_BEFORE,
+  MIN_MONTHLY_RESERVATION_CAP,
   MIN_OPEN_DAYS_BEFORE,
 } from '@lets-park/shared-types';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { SEED_PARKING_SPOTS, SEED_RESERVATION_WINDOW_SETTINGS, SEED_USERS } from './seed-data';
+import {
+  SEED_PARKING_SPOTS,
+  SEED_RESERVATION_LIMIT_SETTINGS,
+  SEED_RESERVATION_WINDOW_SETTINGS,
+  SEED_USERS,
+} from './seed-data';
 
 /** The contract describes entities as returned; the seed supplies the writable half. */
 const seedSpotSchema = parkingSpotSchema.pick({ label: true, group: true, active: true });
@@ -153,6 +161,24 @@ describe('seeded reservation window settings', () => {
     );
     expect(SEED_RESERVATION_WINDOW_SETTINGS.openDaysBefore).toBeLessThanOrEqual(
       MAX_OPEN_DAYS_BEFORE
+    );
+  });
+});
+
+describe('seeded reservation limit settings', () => {
+  it('is the documented default cap', () => {
+    expect(SEED_RESERVATION_LIMIT_SETTINGS).toEqual({
+      monthlyReservationCap: DEFAULT_MONTHLY_RESERVATION_CAP,
+    });
+    expect(DEFAULT_MONTHLY_RESERVATION_CAP).toBe(5);
+  });
+
+  it('sits inside the range the CHECK constraint allows', () => {
+    expect(SEED_RESERVATION_LIMIT_SETTINGS.monthlyReservationCap).toBeGreaterThanOrEqual(
+      MIN_MONTHLY_RESERVATION_CAP
+    );
+    expect(SEED_RESERVATION_LIMIT_SETTINGS.monthlyReservationCap).toBeLessThanOrEqual(
+      MAX_MONTHLY_RESERVATION_CAP
     );
   });
 });
