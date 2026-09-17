@@ -129,33 +129,78 @@ export const cancelReservationContract = authed
   .errors(contractErrors('NOT_FOUND', 'CONFLICT'));
 
 /**
- * The viewer's own confirmed reservations in one calendar month.
+ * One user's confirmed reservations in one calendar month.
  *
- * Read-only, and deliberately scoped to **the caller** — there is no `userId`
- * input. An admin asking about somebody else's month is not a need this
- * procedure exists to serve; the bulk modal only ever needs the viewer's own
- * count and dates for the cap it enforces on itself
- * (`apps/lets-park/api/src/reservations/monthly-reservation-cap.ts`).
+ * The shape is shared by the two procedures that answer it — the caller-scoped
+ * `reservation.myMonth` and the admin-only `admin.reservation.month` — because
+ * they are the same question about a different subject, and a second
+ * hand-copied object is how the two would drift.
  */
+export const monthReservationsOutputSchema = z.object({
+  month: yearMonthSchema,
+  /** Every date in `month` the subject holds a confirmed reservation on, ascending. */
+  reservedDates: z.array(dateOnlySchema),
+  /** `reservedDates.length` — carried separately so a client need not recompute it. */
+  count: z.int().nonnegative(),
+});
+export type MonthReservations = z.infer<typeof monthReservationsOutputSchema>;
+
 export const myMonthReservationsInputSchema = z.object({
   month: yearMonthSchema,
 });
 export type MyMonthReservationsInput = z.infer<typeof myMonthReservationsInputSchema>;
 
-export const myMonthReservationsOutputSchema = z.object({
-  month: yearMonthSchema,
-  /** Every date in `month` the caller holds a confirmed reservation on, ascending. */
-  reservedDates: z.array(dateOnlySchema),
-  /** `reservedDates.length` — carried separately so a client need not recompute it. */
-  count: z.int().nonnegative(),
-});
-export type MyMonthReservationsOutput = z.infer<typeof myMonthReservationsOutputSchema>;
+/**
+ * Kept under its original name: every existing consumer annotates with it, and
+ * the caller-scoped procedure's output is genuinely this shape.
+ */
+export const myMonthReservationsOutputSchema = monthReservationsOutputSchema;
+export type MyMonthReservationsOutput = MonthReservations;
 
 /**
  * Read-only, like `getDayOverviewContract`: any month is viewable by its own
  * caller, so there is no domain rule a structurally valid `month` can break
  * here beyond the inherited `FORBIDDEN`.
+ *
+ * Deliberately scoped to **the caller** — there is no `userId` input, and
+ * widening it would make every consumer's call site a place where "whose
+ * month?" has to be re-answered. An admin who needs somebody else's month
+ * asks `admin.reservation.month` instead, which is admin-gated by its
+ * position in the router.
  */
 export const getMyMonthReservationsContract = authed
   .input(myMonthReservationsInputSchema)
   .output(myMonthReservationsOutputSchema);
+
+export const adminUserMonthReservationsInputSchema = z.object({
+  /** Whose month to read. Never defaulted to the caller — see the contract below. */
+  userId: idSchema,
+  month: yearMonthSchema,
+});
+export type AdminUserMonthReservationsInput = z.infer<typeof adminUserMonthReservationsInputSchema>;
+
+/**
+ * One named user's confirmed reservations in one calendar month, for an admin.
+ *
+ * Exists because the monthly cap
+ * (`apps/lets-park/api/src/reservations/monthly-reservation-cap.ts`) is
+ * enforced against the **holder** of a reservation, who can be somebody other
+ * than the caller whenever an admin books on a colleague's behalf. Without
+ * this, the bulk modal has no way to show the budget it is actually spending,
+ * and the first the admin hears of a full month is the server rejecting the
+ * whole batch.
+ *
+ * `userId` is **required**, with no "defaults to the caller" branch: a
+ * procedure that answers about the caller already exists, and an optional
+ * subject would make every call site a place to re-decide whose month this is.
+ *
+ * Admin-only, and enforced by position: this sits under `admin` in the router,
+ * which is `@Roles('ADMIN')` on the Nest route. `FORBIDDEN` (inherited from
+ * the base builder) is the refusal a non-admin gets. An unknown `userId`
+ * honestly holds no reservations, so it answers `count: 0` rather than
+ * declaring `NOT_FOUND` — nothing in the UI can produce one, because the
+ * holder picker is populated from `admin.user.list`.
+ */
+export const getUserMonthReservationsContract = authed
+  .input(adminUserMonthReservationsInputSchema)
+  .output(monthReservationsOutputSchema);

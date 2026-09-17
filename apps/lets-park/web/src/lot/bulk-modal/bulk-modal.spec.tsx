@@ -57,6 +57,7 @@ const apiMocks = {
   confirmBulk: jest.fn(),
   myMonth: jest.fn(),
   overviewDay: jest.fn(),
+  adminReservationMonth: jest.fn(),
 };
 
 function buildClient() {
@@ -69,6 +70,7 @@ function buildClient() {
       myMonth: apiMocks.myMonth,
     },
     overview: { day: apiMocks.overviewDay },
+    admin: { reservation: { month: apiMocks.adminReservationMonth } },
   };
 }
 
@@ -205,6 +207,12 @@ function myMonthKey(month: string) {
   }).queryKey;
 }
 
+function holderMonthKey(userId: string, month: string) {
+  return createApiQueryUtils(buildClient() as never).admin.reservation.month.queryOptions({
+    input: { userId, month },
+  }).queryKey;
+}
+
 interface MyMonthOutput {
   readonly month: string;
   readonly reservedDates: readonly string[];
@@ -223,6 +231,8 @@ interface SetupOptions {
   readonly spotListFails?: boolean;
   /** `reservation.myMonth`'s answer — defaults to no reservations this month. */
   readonly myMonthOutput?: MyMonthOutput;
+  /** `admin.reservation.month`'s answer — defaults to no reservations this month. */
+  readonly holderMonthOutput?: MyMonthOutput;
   readonly isAdmin?: boolean;
   readonly viewerUserId?: string | null;
   readonly holderOptions?: readonly HolderOption[];
@@ -241,6 +251,9 @@ function setup(options: SetupOptions = {}) {
   apiMocks.confirmBulk.mockResolvedValue(options.confirmOutput ?? confirmed());
   apiMocks.myMonth.mockResolvedValue(
     options.myMonthOutput ?? { month: '2026-09', reservedDates: [], count: 0 }
+  );
+  apiMocks.adminReservationMonth.mockResolvedValue(
+    options.holderMonthOutput ?? { month: '2026-09', reservedDates: [], count: 0 }
   );
   if (options.spotListFails === true) {
     apiMocks.spotList.mockRejectedValue(new TypeError('Failed to fetch'));
@@ -591,20 +604,45 @@ describe('BulkReservationModal — the monthly cap and the reserved-day highligh
   });
 });
 
-describe('BulkReservationModal — cap/highlight suppression while booking for someone else (C1)', () => {
+describe('BulkReservationModal — the cap follows the holder, not the viewer', () => {
   const ADMIN_OPTIONS: readonly HolderOption[] = [
     { userId: 'admin-1', name: 'Dev Admin', licensePlate: null },
     { userId: 'user-1', name: 'Dev User', licensePlate: '1AB 2345' },
   ];
 
-  it('leaves the grid fully enabled and unhighlighted for a colleague, even when the admin is at the cap', async () => {
-    const { user } = setup({
+  function asAdminBookingFor(options: Partial<SetupOptions> = {}) {
+    return setup({
       isAdmin: true,
       viewerUserId: 'admin-1',
       holderOptions: ADMIN_OPTIONS,
-      // The admin themselves is at the cap and already holds today's cell —
-      // if this leaked through, the whole grid would be disabled/highlighted.
+      ...options,
+    });
+  }
+
+  it('reads the holder’s month, not the admin’s, once a colleague is selected', async () => {
+    const { user } = asAdminBookingFor({
       myMonthOutput: { month: '2026-09', reservedDates: ['2026-09-16'], count: 5 },
+      holderMonthOutput: { month: '2026-09', reservedDates: [], count: 0 },
+    });
+
+    await user.selectOptions(screen.getByLabelText('holderField'), 'user-1');
+
+    await waitFor(() => {
+      expect(apiMocks.adminReservationMonth).toHaveBeenCalledWith(
+        { userId: 'user-1', month: '2026-09' },
+        expect.anything()
+      );
+    });
+  });
+
+  it('keeps the grid open for a colleague with room, even when the admin is at their own cap', async () => {
+    const { user } = asAdminBookingFor({
+      // The admin is at the cap and already holds the 16th. Neither fact may
+      // reach the grid once the holder is somebody else — this is the working
+      // admin flow the previous suppression hack existed to protect, and it
+      // still has to work now that the cap is real for the holder.
+      myMonthOutput: { month: '2026-09', reservedDates: ['2026-09-16'], count: 5 },
+      holderMonthOutput: { month: '2026-09', reservedDates: [], count: 0 },
     });
 
     await user.selectOptions(screen.getByLabelText('holderField'), 'user-1');
@@ -613,19 +651,65 @@ describe('BulkReservationModal — cap/highlight suppression while booking for s
       name: 'dayCell: date=středa 16. září 2026',
     });
     expect(previouslyReserved).not.toBeDisabled();
-    expect(previouslyReserved.style.backgroundColor).toBe('');
-
-    const anyOtherDay = screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' });
-    expect(anyOtherDay).not.toBeDisabled();
-    expect(screen.queryByText(/^capNote:/)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' })
+    ).not.toBeDisabled();
   });
 
-  it('restores the cap/highlight the moment the holder is switched back to the admin themselves', async () => {
-    const { user } = setup({
-      isAdmin: true,
-      viewerUserId: 'admin-1',
-      holderOptions: ADMIN_OPTIONS,
+  it('caps the grid at the holder’s remaining slots and names them in the note', async () => {
+    const { user } = asAdminBookingFor({
+      myMonthOutput: { month: '2026-09', reservedDates: [], count: 0 },
+      holderMonthOutput: { month: '2026-09', reservedDates: ['2026-09-16'], count: 4 },
+    });
+
+    await user.selectOptions(screen.getByLabelText('holderField'), 'user-1');
+
+    // The holder's own reserved day is blocked, and named as theirs — but not
+    // painted in the viewer's own car colour, which would claim it as theirs.
+    const holderReserved = await screen.findByRole('button', {
+      name: 'dayCellReservedHolder: date=středa 16. září 2026',
+    });
+    expect(holderReserved).toBeDisabled();
+    expect(holderReserved.style.backgroundColor).toBe('');
+
+    // One slot left: the first pick is allowed, the rest of the month locks.
+    await user.click(screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' }));
+    expect(
+      await screen.findByRole('button', { name: 'dayCellCappedHolder: date=středa 2. září 2026' })
+    ).toBeDisabled();
+    expect(screen.getByText('capNoteHolder: count=4,cap=5')).toBeInTheDocument();
+  });
+
+  it('clears the selection when the holder changes, so days picked for one person cannot be booked for another', async () => {
+    const { user } = asAdminBookingFor({
+      myMonthOutput: { month: '2026-09', reservedDates: [], count: 0 },
+      holderMonthOutput: { month: '2026-09', reservedDates: [], count: 4 },
+    });
+
+    // Five days for the admin themselves — allowed, they start the month empty.
+    for (const label of [
+      'dayCell: date=úterý 1. září 2026',
+      'dayCell: date=středa 2. září 2026',
+      'dayCell: date=čtvrtek 3. září 2026',
+      'dayCell: date=pátek 4. září 2026',
+      'dayCell: date=pondělí 7. září 2026',
+    ]) {
+      await user.click(screen.getByRole('button', { name: label }));
+    }
+    expect(screen.getByRole('button', { name: 'ctaGenerate: count=5' })).toBeInTheDocument();
+
+    // Switching the holder to somebody with one slot left must not carry the
+    // five days over — the server would reject the whole batch, which is the
+    // defect this change exists to remove.
+    await user.selectOptions(screen.getByLabelText('holderField'), 'user-1');
+
+    expect(await screen.findByRole('button', { name: 'ctaSelectDays' })).toBeInTheDocument();
+  });
+
+  it('restores the viewer’s own cap the moment the holder is switched back to the admin', async () => {
+    const { user } = asAdminBookingFor({
       myMonthOutput: { month: '2026-09', reservedDates: ['2026-09-16'], count: 5 },
+      holderMonthOutput: { month: '2026-09', reservedDates: [], count: 0 },
     });
 
     await user.selectOptions(screen.getByLabelText('holderField'), 'user-1');
@@ -637,6 +721,53 @@ describe('BulkReservationModal — cap/highlight suppression while booking for s
     expect(
       await screen.findByRole('button', { name: 'dayCellCapped: date=úterý 1. září 2026' })
     ).toBeDisabled();
+  });
+
+  it('does not ask for a holder month at all while the admin books for themselves', async () => {
+    asAdminBookingFor({ myMonthOutput: { month: '2026-09', reservedDates: [], count: 0 } });
+    // Give the modal a real window to have made the call, so this negative
+    // assertion could actually fail: wait for the query that *should* fire
+    // (the viewer's own month) before asserting the one that must not.
+    await waitFor(() => {
+      expect(apiMocks.myMonth).toHaveBeenCalled();
+    });
+    expect(apiMocks.adminReservationMonth).not.toHaveBeenCalled();
+  });
+
+  it('never fires a holder-month query while `holderForm` still holds the empty default (I5)', async () => {
+    // `holderOptions: []` reproduces exactly what `LotScreen` passes while its
+    // own `admin.user.list` fetch is still in flight: `showHolderForm` is
+    // `false` and `holderForm`'s `userId` is seeded to `''`
+    // (`defaultBulkHolderId`, empty options). The options then "arrive" —
+    // the parent re-renders with a real list, without remounting this
+    // component (`BulkReservationModal`'s `key` is `open`+month only) — which
+    // is the one moment `holderId !== ''` guards: `showHolderForm` flips to
+    // `true` on this render before the reset effect has caught the form up.
+    const { rerender } = asAdminBookingFor({ holderOptions: [] });
+    expect(screen.queryByLabelText('holderField')).not.toBeInTheDocument();
+
+    rerender(
+      <BulkReservationModal
+        open
+        onClose={jest.fn()}
+        anchorDate={ANCHOR}
+        canReserveMonth
+        isAdmin
+        viewerUserId="admin-1"
+        holderOptions={ADMIN_OPTIONS}
+        holderPending={false}
+      />
+    );
+
+    // Give the modal a real window to have fired the query, so this negative
+    // assertion could actually fail: wait for the holder selector — driven by
+    // the same now-populated `holderOptions` — to appear before asserting
+    // that no call with an empty `userId` ever went out.
+    await screen.findByLabelText('holderField');
+    expect(apiMocks.adminReservationMonth).not.toHaveBeenCalledWith(
+      expect.objectContaining({ userId: '' }),
+      expect.anything()
+    );
   });
 });
 
@@ -1009,6 +1140,25 @@ describe('BulkReservationModal — the confirmed result against the proposal', (
 
     await waitFor(() => {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: myMonthKey('2026-09') });
+    });
+  });
+
+  it('invalidates the holder’s month after confirming for somebody else, not only the viewer’s', async () => {
+    const { user, invalidate } = setup({
+      isAdmin: true,
+      viewerUserId: 'admin-1',
+      holderOptions: [
+        { userId: 'admin-1', name: 'Dev Admin', licensePlate: null },
+        { userId: 'user-1', name: 'Dev User', licensePlate: '1AB 2345' },
+      ],
+    });
+
+    await user.selectOptions(screen.getByLabelText('holderField'), 'user-1');
+    const confirm = await reachSchedule(user);
+    await user.click(confirm);
+
+    await waitFor(() => {
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: holderMonthKey('user-1', '2026-09') });
     });
   });
 

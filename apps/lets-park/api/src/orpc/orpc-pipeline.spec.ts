@@ -202,6 +202,7 @@ describe('the oRPC transport through the assembled application', () => {
       'admin.window.get': () => undefined,
       'admin.window.update': () => ({ openDaysBefore: 21, lockMode: 'FORCE_OPEN' }),
       'admin.window.months': () => ({ from: '2026-09', to: '2026-10' }),
+      'admin.reservation.month': () => ({ userId: double.users[0]?.id, month: '2026-09' }),
     };
 
     it('lists exactly the admin procedures the contract declares', () => {

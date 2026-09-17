@@ -19,6 +19,7 @@ import {
   cancelReservationContract,
   createReservationContract,
   getMyMonthReservationsContract,
+  getUserMonthReservationsContract,
 } from './reservations';
 import {
   getReservationWindowSettingsContract,
@@ -64,6 +65,14 @@ export const contract = {
     regenerateIcsToken: regenerateIcsTokenContract,
   },
   admin: {
+    reservation: {
+      /**
+       * One named user's reserved dates and count for one calendar month.
+       * The holder-scoped counterpart of `reservation.myMonth`, for the bulk
+       * modal's cap when an admin books on somebody else's behalf.
+       */
+      month: getUserMonthReservationsContract,
+    },
     spot: {
       list: adminListSpotsContract,
       create: createSpotContract,

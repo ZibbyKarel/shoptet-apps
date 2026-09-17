@@ -197,6 +197,26 @@ function BulkReservationModalContent({
   // enough, further down at `onConfirm`).
   const holderId = holderForm.watch('userId');
 
+  /**
+   * A holder switch starts the selection over.
+   *
+   * The days already picked were measured against the previous holder's
+   * remaining slots, and `selectedSet.has(day.date)` deliberately keeps an
+   * already-selected cell clickable even once the cap is reached — so without
+   * this, five days chosen for an empty month would survive a switch to a
+   * colleague with one slot left, stay selectable, and be confirmed straight
+   * into the `MONTHLY_RESERVATION_LIMIT_REACHED` this change exists to stop.
+   *
+   * Keyed on the id rather than on a change event because `holderId` comes
+   * from `watch`, and the first render after a `reset` reports the new value
+   * with no event of its own.
+   */
+  const [selectionHolderId, setSelectionHolderId] = useState(holderId);
+  if (selectionHolderId !== holderId) {
+    setSelectionHolderId(holderId);
+    setSelected([]);
+  }
+
   const profile = useCurrentUser();
   const spotList = useQuery({ ...api.spot.list.queryOptions(), enabled: open });
   const monthSummary = useQuery({
@@ -205,30 +225,54 @@ function BulkReservationModalContent({
   });
 
   /**
-   * `reservation.myMonth` is deliberately caller-scoped — it only ever answers
-   * "the viewer's own month" (see the contract doc comment) — but the
-   * server's cap check (`assertWithinMonthlyReservationCap`, called from
-   * `bulk-reservation.service.ts`) is enforced against the **holder**, who can
-   * be someone else entirely while `showHolderForm` is open. Reading
-   * `monthSummary` straight into the grid below would disable the whole
-   * calendar for an admin near their own cap even when the colleague they are
-   * booking for has plenty of room — a real regression of a working admin
-   * flow.
+   * The month budget this booking actually spends.
+   *
+   * The cap is enforced server-side against the **holder**
+   * (`assertWithinMonthlyReservationCap`, called with `holderId` from
+   * `bulk-reservation.service.ts`), who can be somebody else entirely while
+   * `showHolderForm` is open. `reservation.myMonth` is caller-scoped and can
+   * only ever answer for the viewer, so a second, admin-only query
+   * (`admin.reservation.month`) answers for the holder, and the grid reads
+   * whichever of the two matches who this batch is for.
+   *
+   * This used to drop the cap altogether while booking for somebody else
+   * (`remainingSlots = Infinity`, `reservedDates = ∅`). That protected a real
+   * admin flow — an admin near their *own* cap must still be able to book for
+   * a colleague with room — but it also let an admin pick a sixth day for
+   * somebody who only had one left, and hear about it first from the server
+   * rejecting the entire batch. Reading the holder's own month keeps the flow
+   * and removes the surprise.
    *
    * `viewerUserId === null` (the profile still loading) does not count as
    * "someone else": there is nothing to compare `holderId` against yet, and
-   * defaulting to "someone else" would suppress the highlight/cap for every
-   * admin for one render for no reason.
+   * defaulting to "someone else" would fire a holder query for the admin
+   * themselves for one render for no reason.
    */
   const bookingForSomeoneElse =
     showHolderForm && viewerUserId !== null && holderId !== viewerUserId;
-  const reservedDates = bookingForSomeoneElse
-    ? new Set<DateOnly>()
-    : new Set(monthSummary.data?.reservedDates ?? []);
-  const existingCount = monthSummary.data?.count ?? 0;
-  const remainingSlots = bookingForSomeoneElse
-    ? Number.POSITIVE_INFINITY
-    : Math.max(0, MONTHLY_RESERVATION_CAP - existingCount);
+  const holderSummary = useQuery({
+    ...api.admin.reservation.month.queryOptions({
+      input: { userId: holderId, month: toYearMonth(anchorDate) },
+    }),
+    enabled: open && bookingForSomeoneElse && holderId !== '',
+  });
+
+  /**
+   * Whichever month summary this batch is measured against, or `undefined`
+   * when it is not loaded — in flight, or failed. TanStack Query leaves
+   * `data` as `undefined` after a failed fetch, not only while pending, so
+   * this is not a proxy for "in flight" and must not be treated as one.
+   *
+   * The two queries are never both authoritative, and "not loaded" is kept
+   * distinct from "loaded, and empty" on purpose: treating an unloaded
+   * holder query as zero would show `capNoteHolder: count=0` and a full grid
+   * for a holder who is in fact at their cap, i.e. it would flash the exact
+   * wrong answer before showing the right one.
+   */
+  const activeSummary = bookingForSomeoneElse ? holderSummary.data : monthSummary.data;
+  const reservedDates = new Set(activeSummary?.reservedDates ?? []);
+  const existingCount = activeSummary?.count ?? 0;
+  const remainingSlots = Math.max(0, MONTHLY_RESERVATION_CAP - existingCount);
   const preferredSpot = toPreferredSpotView(
     profile.data === undefined ? undefined : profile.data.preferredParkingSpotId,
     spotList.data?.spots,
@@ -265,6 +309,12 @@ function BulkReservationModalContent({
    * is one invalidation in practice) — otherwise a reopened modal can show the
    * cap/highlight state from before this write for up to the query's stale
    * time, because nothing else in this flow ever invalidates that query.
+   *
+   * `admin.reservation.month` gets the same treatment, for the same reason,
+   * but by exact key rather than by prefix: this callback knows exactly whose
+   * month it just changed (`holderForm`'s current value), so invalidating
+   * that one key is enough, and a prefix invalidation would refetch every
+   * other holder an admin had looked at in this session for nothing.
    */
   const invalidateDays = useCallback(
     (dates: readonly DateOnly[]) => {
@@ -278,9 +328,14 @@ function BulkReservationModalContent({
         void queryClient.invalidateQueries({
           queryKey: api.reservation.myMonth.queryOptions({ input: { month } }).queryKey,
         });
+        void queryClient.invalidateQueries({
+          queryKey: api.admin.reservation.month.queryOptions({
+            input: { userId: holderForm.getValues('userId'), month },
+          }).queryKey,
+        });
       }
     },
-    [api, queryClient]
+    [api, queryClient, holderForm]
   );
 
   const confirmBulk = useMutation({
@@ -576,22 +631,30 @@ function BulkReservationModalContent({
                       aria-pressed={day.selectable ? selectedSet.has(day.date) : undefined}
                       aria-label={
                         !day.selectable && day.block === 'ALREADY_RESERVED'
-                          ? t('dayCellReserved', { date: f.fullDate(day.date) })
+                          ? t(bookingForSomeoneElse ? 'dayCellReservedHolder' : 'dayCellReserved', {
+                              date: f.fullDate(day.date),
+                            })
                           : day.selectable &&
                               !(selectedSet.has(day.date) || selected.length < remainingSlots)
                             ? // Distinct from `dayCellBlocked`: this day is a perfectly
                               // good business day (`day.selectable`) that only can't be
                               // picked *right now* because the batch would exceed the
                               // monthly cap — a weekend/holiday/past-day cell never
-                              // reaches this branch. Unreachable while `bookingForSomeoneElse`
-                              // suppresses the cap (`remainingSlots` is `Infinity` there).
-                              t('dayCellCapped', { date: f.fullDate(day.date) })
+                              // reaches this branch. Reachable for a holder too since the
+                              // cap follows them rather than being suppressed, which is
+                              // why the copy has a holder-scoped variant.
+                              t(bookingForSomeoneElse ? 'dayCellCappedHolder' : 'dayCellCapped', {
+                                date: f.fullDate(day.date),
+                              })
                             : day.selectable
                               ? t('dayCell', { date: f.fullDate(day.date) })
                               : t('dayCellBlocked', { date: f.fullDate(day.date) })
                       }
                       accentColor={
-                        !day.selectable && day.block === 'ALREADY_RESERVED' && viewerUserId !== null
+                        !day.selectable &&
+                        day.block === 'ALREADY_RESERVED' &&
+                        !bookingForSomeoneElse &&
+                        viewerUserId !== null
                           ? carColorVar(viewerUserId)
                           : undefined
                       }
@@ -622,21 +685,24 @@ function BulkReservationModalContent({
           {preferredSpotNote()}
         </Text>
         {/*
-          Shown whenever the cap is a live fact for this booking: the viewer
+          Shown whenever the cap is a live fact for this booking: the subject
           already has reservations this month (`existingCount > 0`, so the
           count itself is worth showing), OR this session's own selection has
           reached the cap together with what already existed
           (`existingCount + selected.length >= MONTHLY_RESERVATION_CAP`) — the
-          case a viewer starting the month at zero and picking 5 days in this
+          case a subject starting the month at zero and picking 5 days in this
           one session hits, where `existingCount` alone would stay `0` and the
           note would never appear even though day 6 onward is greying out.
-          Suppressed entirely under `bookingForSomeoneElse`, matching the whole
-          cap-disable path it explains.
+
+          The subject is the holder whenever an admin is booking for one, so
+          the note names them (`capNoteHolder`) rather than saying "you".
         */}
-        {!bookingForSomeoneElse &&
-        (existingCount > 0 || existingCount + selected.length >= MONTHLY_RESERVATION_CAP) ? (
+        {existingCount > 0 || existingCount + selected.length >= MONTHLY_RESERVATION_CAP ? (
           <Text as="span" size="sm" tone="subtle">
-            {t('capNote', { count: existingCount, cap: MONTHLY_RESERVATION_CAP })}
+            {t(bookingForSomeoneElse ? 'capNoteHolder' : 'capNote', {
+              count: existingCount,
+              cap: MONTHLY_RESERVATION_CAP,
+            })}
           </Text>
         ) : null}
       </Stack>

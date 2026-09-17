@@ -4,6 +4,12 @@ import { ERROR_CODES } from '../schemas/errors';
 import { noInputSchema } from './builder';
 import type { ContractClient } from './router';
 import { contract } from './router';
+import {
+  adminUserMonthReservationsInputSchema,
+  getMyMonthReservationsContract,
+  getUserMonthReservationsContract,
+  myMonthReservationsInputSchema,
+} from './reservations';
 
 /** Flattens the router into `['a.b.c', procedure]` pairs. */
 function flatten(
@@ -40,6 +46,7 @@ const EXPECTED_PROCEDURES = [
   'me.get',
   'me.updateSettings',
   'me.regenerateIcsToken',
+  'admin.reservation.month',
   'admin.spot.list',
   'admin.spot.create',
   'admin.spot.update',
@@ -122,6 +129,7 @@ const EXPECTED_ERROR_CODES: Record<string, readonly string[]> = {
   'me.get': ['FORBIDDEN'],
   'me.updateSettings': ['FORBIDDEN', 'NOT_FOUND', 'VALIDATION_FAILED'],
   'me.regenerateIcsToken': ['FORBIDDEN'],
+  'admin.reservation.month': ['FORBIDDEN'],
   'admin.spot.list': ['FORBIDDEN'],
   'admin.spot.create': ['FORBIDDEN', 'CONFLICT', 'VALIDATION_FAILED'],
   'admin.spot.update': ['FORBIDDEN', 'NOT_FOUND', 'CONFLICT', 'VALIDATION_FAILED'],
@@ -275,10 +283,29 @@ describe('contract router', () => {
     expect(output.parkingSpotId).toBe(UUID_A);
   });
 
+  it('exposes the admin month-summary procedure at admin.reservation.month', () => {
+    expect(contract.admin.reservation.month).toBe(getUserMonthReservationsContract);
+  });
+
+  it('scopes the admin month summary to a named user, unlike the caller-scoped myMonth', () => {
+    expect(
+      adminUserMonthReservationsInputSchema.parse({ userId: UUID_A, month: '2026-09' })
+    ).toEqual({ userId: UUID_A, month: '2026-09' });
+    // `myMonth` must stay caller-scoped: a `userId` is not one of its inputs.
+    expect(Object.keys(myMonthReservationsInputSchema.shape)).toEqual(['month']);
+  });
+
+  it('answers the admin month summary in the same shape as myMonth', () => {
+    expect(getUserMonthReservationsContract['~orpc'].outputSchema).toBe(
+      getMyMonthReservationsContract['~orpc'].outputSchema
+    );
+  });
+
   it('puts every admin-only procedure under the admin subtree', () => {
     // Grouping is the authorization boundary Task 12 implements against.
     expect(procedurePaths.filter((path) => path.startsWith('admin.')).sort()).toEqual(
       [
+        'admin.reservation.month',
         'admin.spot.create',
         'admin.spot.deactivate',
         'admin.spot.list',

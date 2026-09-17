@@ -57,16 +57,18 @@
 
 import { Injectable } from '@nestjs/common';
 import type {
+  AdminUserMonthReservationsInput,
   CancelReservationInput,
   CancelReservationOutput,
   CreateReservationInput,
   CreateReservationOutput,
+  MonthReservations,
   MyMonthReservationsInput,
   MyMonthReservationsOutput,
 } from '@lets-park/contract';
 import type { Prisma } from '@lets-park/database';
 import { Prisma as PrismaNamespace } from '@lets-park/database';
-import type { DateOnly } from '@lets-park/shared-types';
+import type { DateOnly, YearMonth } from '@lets-park/shared-types';
 import { endOfMonth, startOfYearMonth, todayInPrague } from '@lets-park/shared-types';
 import { AuditLogService } from '../audit/audit-log.service';
 import type { AuthenticatedUser } from '../auth/authenticated-user';
@@ -237,28 +239,59 @@ export class ReservationsService {
   }
 
   /**
-   * The caller's own confirmed reservations in one calendar month —
-   * read-only, and the frontend counterpart of
-   * `assertWithinMonthlyReservationCap` (`./monthly-reservation-cap.ts`),
-   * which this method must never diverge from: both read the same
-   * `[startOfYearMonth(month), endOfMonth(...)]` range for the same `userId`.
+   * The caller's own confirmed reservations in one calendar month.
    *
-   * Unlike the cap check, this takes no lock — it answers "what does the
-   * caller currently hold", not "may an insert proceed", so there is nothing
-   * here for a concurrent writer to race against in a way that matters: a
-   * reservation created a moment after this read simply is not reflected yet,
-   * the same staleness every other read in this app tolerates.
+   * See {@link monthSummary} for why this and `userMonth` share one body.
    */
   async myMonth(
     input: MyMonthReservationsInput,
     actor: AuthenticatedUser
   ): Promise<MyMonthReservationsOutput> {
-    const from = startOfYearMonth(input.month);
+    return this.monthSummary(actor.id, input.month);
+  }
+
+  /**
+   * One **named** user's confirmed reservations in one calendar month, for an
+   * admin booking on that person's behalf.
+   *
+   * `actor` is unused on purpose and stays in the signature: the authorization
+   * is `@Roles('ADMIN')` on the route (`reservations.controller.ts`), not a
+   * row-level rule this method could apply — there is no per-row decision to
+   * make about a read of somebody's own month. Keeping the parameter matches
+   * every other service method's shape, so the controller wiring reads the
+   * same as its neighbours.
+   *
+   * An unknown `userId` holds no reservations and is answered as an empty
+   * month rather than `NOT_FOUND`; the contract says why.
+   */
+  async userMonth(
+    input: AdminUserMonthReservationsInput,
+    _actor: AuthenticatedUser
+  ): Promise<MonthReservations> {
+    return this.monthSummary(input.userId, input.month);
+  }
+
+  /**
+   * The frontend counterpart of `assertWithinMonthlyReservationCap`
+   * (`./monthly-reservation-cap.ts`), which this must never diverge from: both
+   * read the same `[startOfYearMonth(month), endOfMonth(...)]` range for the
+   * same `userId`. One body, two procedures — `myMonth` supplies the caller's
+   * id and `userMonth` a named one, and that is the *only* difference between
+   * them, so it is the only thing either method says.
+   *
+   * Unlike the cap check, this takes no lock — it answers "what does this user
+   * currently hold", not "may an insert proceed", so there is nothing here for
+   * a concurrent writer to race against in a way that matters: a reservation
+   * created a moment after this read simply is not reflected yet, the same
+   * staleness every other read in this app tolerates.
+   */
+  private async monthSummary(userId: string, month: YearMonth): Promise<MonthReservations> {
+    const from = startOfYearMonth(month);
     const to = endOfMonth(from);
 
     const rows = await this.prisma.client.reservation.findMany({
       where: {
-        userId: actor.id,
+        userId,
         date: { gte: toDateColumn(from), lte: toDateColumn(to) },
       },
       select: { date: true },
@@ -271,7 +304,7 @@ export class ReservationsService {
     });
 
     return {
-      month: input.month,
+      month,
       reservedDates: rows.map((row) => toDateOnly(row.date)),
       count: rows.length,
     };

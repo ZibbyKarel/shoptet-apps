@@ -198,6 +198,13 @@ export function LotScreen() {
    * here and then opening the bulk modal for the same month could show a
    * stale count/highlight for up to that query's stale time — the same defect
    * `bulk-modal.tsx`'s own `invalidateDays` fixes for its own writes.
+   *
+   * `admin.reservation.month` needs the same treatment, and gets it by
+   * **prefix**: an admin's create or cancel on this screen can be for any
+   * holder, and this callback never learns which — the holder lives inside
+   * `SpotDialog`'s own form. Invalidating the branch refetches only the
+   * holder months this session has actually looked at, which is at most a
+   * handful, and is the only option that cannot miss the one that moved.
    */
   const invalidateDay = useCallback(() => {
     void queryClient.invalidateQueries({
@@ -206,6 +213,9 @@ export function LotScreen() {
     void queryClient.invalidateQueries({
       queryKey: api.reservation.myMonth.queryOptions({ input: { month: toYearMonth(date) } })
         .queryKey,
+    });
+    void queryClient.invalidateQueries({
+      queryKey: api.admin.reservation.month.key(),
     });
   }, [api, queryClient, date]);
 
