@@ -259,10 +259,12 @@ function BulkReservationModalContent({
 
   /**
    * Whichever month summary this batch is measured against, or `undefined`
-   * while it is still in flight.
+   * when it is not loaded — in flight, or failed. TanStack Query leaves
+   * `data` as `undefined` after a failed fetch, not only while pending, so
+   * this is not a proxy for "in flight" and must not be treated as one.
    *
-   * The two queries are never both authoritative, and the in-flight case is
-   * kept distinct from "loaded, and empty" on purpose: treating a pending
+   * The two queries are never both authoritative, and "not loaded" is kept
+   * distinct from "loaded, and empty" on purpose: treating an unloaded
    * holder query as zero would show `capNoteHolder: count=0` and a full grid
    * for a holder who is in fact at their cap, i.e. it would flash the exact
    * wrong answer before showing the right one.
@@ -270,17 +272,7 @@ function BulkReservationModalContent({
   const activeSummary = bookingForSomeoneElse ? holderSummary.data : monthSummary.data;
   const reservedDates = new Set(activeSummary?.reservedDates ?? []);
   const existingCount = activeSummary?.count ?? 0;
-  /**
-   * `Infinity` **only** while the authoritative summary has not arrived — not
-   * as a policy, the way it used to be for every holder. A cell the admin
-   * could not click for a fraction of a second and then could would be worse
-   * than one they click and see rejected; the server is still the arbiter
-   * either way.
-   */
-  const remainingSlots =
-    activeSummary === undefined
-      ? Number.POSITIVE_INFINITY
-      : Math.max(0, MONTHLY_RESERVATION_CAP - existingCount);
+  const remainingSlots = Math.max(0, MONTHLY_RESERVATION_CAP - existingCount);
   const preferredSpot = toPreferredSpotView(
     profile.data === undefined ? undefined : profile.data.preferredParkingSpotId,
     spotList.data?.spots,
