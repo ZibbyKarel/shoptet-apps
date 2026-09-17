@@ -85,13 +85,13 @@ export function LotHeader({
                 aria-label={t('previousDay')}
                 onClick={onPreviousDay}
               >
-                ‹
+                <Text size="lg">‹</Text>
               </Button>
               <Button variant="ghost" size="sm" onClick={onOpenDatePicker}>
                 {f.fullDate(date)}
               </Button>
               <Button variant="ghost" size="sm" aria-label={t('nextDay')} onClick={onNextDay}>
-                ›
+                <Text size="lg">›</Text>
               </Button>
             </Stack>
           </Box>
