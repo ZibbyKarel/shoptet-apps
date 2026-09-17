@@ -28,10 +28,10 @@ so `admin.spot.create` is `POST /api/rpc/admin/spot/create`, with the request bo
 
 Three files carry it, all in `apps/lets-park/api/src/orpc/`:
 
-| File | What it owns |
-| --- | --- |
-| `rpc-route.ts` | `RPC_ROUTE_PREFIX`, `RPC_PATH_PREFIX` (`/api/rpc`) and `rpcRoute(...segments)`. The single definition of where a procedure lives. |
-| `implementer.ts` | `implement(contract).$context<OrpcContext>()` plus the middleware that maps thrown errors. Every procedure is built from it. |
+| File                   | What it owns                                                                                                                        |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `rpc-route.ts`         | `RPC_ROUTE_PREFIX`, `RPC_PATH_PREFIX` (`/api/rpc`) and `rpcRoute(...segments)`. The single definition of where a procedure lives.   |
+| `implementer.ts`       | `implement(contract).$context<OrpcContext>()` plus the middleware that maps thrown errors. Every procedure is built from it.        |
 | `rpc-route-handler.ts` | One `RPCHandler`, mounted with `prefix: RPC_PATH_PREFIX`; `handle()` throws `NotFoundException` when the path matches no procedure. |
 
 **A procedure is reachable only when a Nest route exists for it.** The controller method is where
@@ -80,7 +80,7 @@ export interface OrpcContext {
 ```
 
 **Nothing in a service reads a user id from the payload.** `me.*` has no user id in its input at
-all; the admin procedures take the *subject's* id and get the *actor's* from the context. There is
+all; the admin procedures take the _subject's_ id and get the _actor's_ from the context. There is
 no request shape that lets one user act as another.
 
 ### How an error becomes a response
@@ -109,7 +109,7 @@ server (§10).
 
 **Stack traces are logged and never sent — and a 4xx does not log one either.** A framework 4xx
 (no such route, a malformed body, a throttled caller) is logged at `warn` with the status, method,
-path and reason, and *without* `err`: those frames are `@nestjs/core` router internals that answer
+path and reason, and _without_ `err`: those frames are `@nestjs/core` router internals that answer
 nothing, and 404 is the most common status on a public endpoint, so a scanner walking URLs would
 otherwise write a multi-kilobyte log line per probe. A `DomainError` keeps its stack, because there
 the frames name the service and the rule that refused; so does every 5xx.
@@ -121,10 +121,10 @@ the frames name the service and the rule that refused; so does every 5xx.
 `apps/lets-park/api/src/common/prisma-mapping.ts` is the only place a Prisma row becomes a contract object.
 Three conversions are worth knowing:
 
-| Function | Rule |
-| --- | --- |
-| `toTimestamp(date)` | `Date` → ISO 8601 string. For `@db.Timestamptz` columns. |
-| `toDateOnly(date)` | A `@db.Date` column's `Date` → `YYYY-MM-DD`, read with **UTC** getters. |
+| Function              | Rule                                                                            |
+| --------------------- | ------------------------------------------------------------------------------- |
+| `toTimestamp(date)`   | `Date` → ISO 8601 string. For `@db.Timestamptz` columns.                        |
+| `toDateOnly(date)`    | A `@db.Date` column's `Date` → `YYYY-MM-DD`, read with **UTC** getters.         |
 | `toDateColumn(value)` | `YYYY-MM-DD` → `new Date('…T00:00:00.000Z')`, for querying a `@db.Date` column. |
 
 **`toDateOnly` is not `toDateOnlyInPrague`.** They are different functions for different inputs:
@@ -133,11 +133,11 @@ instant to the day it fell on in Prague. `prisma-mapping.spec.ts` pins the disti
 instant where they disagree.
 
 For the `@db.Date` direction specifically, they happen to **agree**, and it is worth saying so
-plainly rather than leaving a vague warning in place. Prague is UTC+1 or UTC+2 — always *ahead* of
+plainly rather than leaving a vague warning in place. Prague is UTC+1 or UTC+2 — always _ahead_ of
 UTC — so the UTC midnight a `@db.Date` produces is 01:00 or 02:00 on the **same** calendar day in
 Prague; the day is never moved forward. (Measured, not reasoned: both DST Sundays, a leap day, a
 new year and both offsets all agree.) `toDateOnly` is still the right call here because it is the
-one that says what the value *is* — a calendar day, not an instant — but that is a clarity choice,
+one that says what the value _is_ — a calendar day, not an instant — but that is a clarity choice,
 not a bug fix, and code that used the other one would not be wrong about any date.
 
 The projections are equally deliberate:
@@ -175,13 +175,13 @@ class instance or an `undefined` has no representation in it.
 
 ### What is written, and what is never written
 
-| Action | Written by | Payload |
-| --- | --- | --- |
-| `SPOT_UPDATED` | `SpotsService.create` / `update` / `deactivate` | `change: 'created' \| 'updated' \| 'deactivated'`, plus before/after for an update |
-| `USER_UPDATED` | `UsersService.adminUpdate` | `change: 'admin-updated'`, before/after `{ role, active }` |
-| `USER_UPDATED` | `MeService.updateSettings` | `change: 'settings'`, before/after `{ licensePlate, preferredParkingSpotId }` |
-| `USER_UPDATED` | `MeService.regenerateIcsToken` | `change: 'ics-token-regenerated'` — **never the token** |
-| `RESERVATION_WINDOW_UPDATED` | `ReservationWindowService.updateSettings` | before/after `{ openDaysBefore, lockMode }` |
+| Action                       | Written by                                      | Payload                                                                            |
+| ---------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `SPOT_UPDATED`               | `SpotsService.create` / `update` / `deactivate` | `change: 'created' \| 'updated' \| 'deactivated'`, plus before/after for an update |
+| `USER_UPDATED`               | `UsersService.adminUpdate`                      | `change: 'admin-updated'`, before/after `{ role, active }`                         |
+| `USER_UPDATED`               | `MeService.updateSettings`                      | `change: 'settings'`, before/after `{ licensePlate, preferredParkingSpotId }`      |
+| `USER_UPDATED`               | `MeService.regenerateIcsToken`                  | `change: 'ics-token-regenerated'` — **never the token**                            |
+| `RESERVATION_WINDOW_UPDATED` | `ReservationWindowService.updateSettings`       | before/after `{ openDaysBefore, lockMode }`                                        |
 
 `RESERVATION_WINDOW_UPDATED` is new in Task 12, in both the contract enum and the Prisma enum:
 `doc/decision/0059-*`.
@@ -211,7 +211,7 @@ supposed to answer "what actually changed".
   `CONFLICT`.
 - **Retiring a spot that still has reservations is refused** with `CONFLICT` and
   `details.reservations`. "Still has" means `date >= today` in Europe/Prague — `>=`, not `>`,
-  because a reservation for *today* is one somebody has already parked on.
+  because a reservation for _today_ is one somebody has already parked on.
 - **`update({ active: false })` is held to the same rule.** Otherwise it would be the way around
   the check, which is how a spot ends up retired with people still holding it.
 - **`deactivate` is idempotent.**
@@ -239,7 +239,7 @@ promote anybody without already being an admin. Somebody would have to open the 
    always a mis-click on the wrong row, and the cost of being wrong is losing your own session
    mid-task. Another admin can still do it, which is the right shape for an offboarding anyway.
 
-Demoting *yourself* while another admin exists is allowed — a deliberate step down, with rule 1
+Demoting _yourself_ while another admin exists is allowed — a deliberate step down, with rule 1
 still covering the dangerous version.
 
 **Known race, accepted.** The "last active admin" check is a count followed by an update. Two
@@ -326,7 +326,7 @@ holder's summary) and the day's waitlist **whole**, ordered by `createdAt` then 
 counted in memory because three of the five per-spot fields come from those same rows — the count,
 whether the caller is queued, and their position. A `groupBy` for the counts plus a second query
 for the position would be two reads of the same data with nothing keeping them consistent, and the
-position *is* the row order — the same order Task 13 promotes in.
+position _is_ the row order — the same order Task 13 promotes in.
 
 ### `canReserve` and `canReserveMonth`
 
@@ -344,7 +344,7 @@ canReserve      = canReserveMonth && isReservableDay
   the window and the admin exemption, and nothing about `date` itself. Admins are exempt from the
   reservation window (`plan.md` §Byznys pravidla, `doc/decision/0004-*`).
 - **`isReservableDay`** — a past day, or a weekend or Czech public holiday, is not bookable by
-  anyone. The lot is a workplace car park (`isBusinessDay`). The admin exemption is in the *other*
+  anyone. The lot is a workplace car park (`isBusinessDay`). The admin exemption is in the _other_
   half, so it cannot rescue a Saturday.
 - **`canReserve`** — whether this caller may reserve **this** day: both halves.
 
@@ -356,7 +356,7 @@ anywhere in the payload, so a client computing the answer from the window alone 
 may a month-scoped screen fall back to `canReserve`: it says "no" on a third of the calendar of an
 open month, which is how the bulk modal first shipped and what `doc/decision/0175-*` records.
 
-Deliberately *not* folded in: whether the caller already holds a reservation that day. That is the
+Deliberately _not_ folded in: whether the caller already holds a reservation that day. That is the
 one-per-day rule, enforced by a unique constraint at write time, and the screen can see it directly
 in `viewerReservationId`. Including it would make `canReserve` mean two things at once.
 
@@ -364,9 +364,12 @@ in `viewerReservationId`. Including it would make `canReserve` mean two things a
 
 ## 9. Reservations and the waitlist
 
-`apps/lets-park/api/src/reservations/`. Routes: `reservation.create`, `reservation.cancel`, `waitlist.join`,
-`waitlist.leave`, plus the bulk pair below — all open to any authenticated user, because "may I
-cancel this?" is a fact about a row, not about a route, and lives in the service with the row.
+`apps/lets-park/api/src/reservations/`. Routes: `reservation.create`, `reservation.cancel`,
+`reservation.myMonth`, `waitlist.join`, `waitlist.leave`, plus the bulk pair below — open to any
+authenticated user, because "may I cancel this?" is a fact about a row, not about a route, and
+lives in the service with the row. `admin.reservation.month` is the exception: reading somebody
+else's month _is_ a rule about the route, since there is no row-level decision left to make once
+the subject is a parameter, so it is `@Roles('ADMIN')`.
 
 **`doc/waitlist.md` is the document for this module.** It has the cancel + promote sequence diagram,
 why the queue is read `FOR UPDATE`, what happens under concurrency, and what happens after the
@@ -435,12 +438,12 @@ Two specs test the composition rather than a service:
 
 Four claims were verified by breaking them and watching the tests fail, then restoring:
 
-| Claim removed | Result |
-| --- | --- |
-| The audit write in `SpotsService.create` | 2 failures across the spots spec and the pipeline spec (`Received: Array []`) |
-| The `monthLockState` delegation, replaced by a hand-rolled rule | 2 failures; the delegation test reported `["OPEN", …]` against `["LOCKED", "LOCKED", "NOT_YET_OPEN", …]` |
-| `@Roles('ADMIN')` on `admin.spot.list` | 2 failures; parity `Expected ["ADMIN"], Received undefined`, pipeline `Expected 403, Received 200` |
-| `admin.spot.list`'s implementation swapped for `create`'s, route left mounted | 1 failure; the schema-identity check in the parity spec |
+| Claim removed                                                                 | Result                                                                                                   |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| The audit write in `SpotsService.create`                                      | 2 failures across the spots spec and the pipeline spec (`Received: Array []`)                            |
+| The `monthLockState` delegation, replaced by a hand-rolled rule               | 2 failures; the delegation test reported `["OPEN", …]` against `["LOCKED", "LOCKED", "NOT_YET_OPEN", …]` |
+| `@Roles('ADMIN')` on `admin.spot.list`                                        | 2 failures; parity `Expected ["ADMIN"], Received undefined`, pipeline `Expected 403, Received 200`       |
+| `admin.spot.list`'s implementation swapped for `create`'s, route left mounted | 1 failure; the schema-identity check in the parity spec                                                  |
 
 ### The database-contract suite
 
@@ -511,7 +514,7 @@ reading the rest of this file:
 - It is `@Public()` and `@StrictThrottle()`. The 32-byte `randomBytes` token in the path is the
   whole credential, so this is the one route an unauthenticated stranger can reach with input of
   their choosing.
-- **Every unservable token is a `404` with a constant body**, including a *deactivated* user's
+- **Every unservable token is a `404` with a constant body**, including a _deactivated_ user's
   otherwise valid token — the `active: true` filter sits in the `WHERE` clause so that case takes
   the identical code path. A 401 would let somebody enumerate tokens by response code:
   `doc/decision/0080-*`.

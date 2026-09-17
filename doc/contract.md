@@ -11,10 +11,10 @@ contract); Task 4 added the oRPC procedures and Task 5 the realtime events.
 
 ## Two libs, a sharp division
 
-| lib | tags | what it is | what it **must not** contain |
-| --- | --- | --- | --- |
-| `libs/lets-park/shared-types` | `type:util`, `scope:shared`, `layer:foundation` | domain constants and pure date-only logic for `Europe/Prague` | Zod, next-intl, any runtime dependency |
-| `libs/lets-park/contract` | `type:contract`, `scope:shared` | Zod schemas + the oRPC contract + realtime events | anything from npm besides `zod`, `@orpc/contract`, `tslib` |
+| lib                           | tags                                            | what it is                                                    | what it **must not** contain                               |
+| ----------------------------- | ----------------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------- |
+| `libs/lets-park/shared-types` | `type:util`, `scope:shared`, `layer:foundation` | domain constants and pure date-only logic for `Europe/Prague` | Zod, next-intl, any runtime dependency                     |
+| `libs/lets-park/contract`     | `type:contract`, `scope:shared`                 | Zod schemas + the oRPC contract + realtime events             | anything from npm besides `zod`, `@orpc/contract`, `tslib` |
 
 The split isn't cosmetic. `libs/lets-park/shared-types` is imported by both `apps/lets-park/api`
 and `libs/shared/i18n`, so it must not pull in Zod or frontend libraries (see
@@ -78,7 +78,9 @@ was still part of the lib's compiled program.
 Every type comes from `z.infer`; it is never hand-written next to a schema:
 
 ```ts
-export const reservationSchema = z.object({ /* ... */ });
+export const reservationSchema = z.object({
+  /* ... */
+});
 export type Reservation = z.infer<typeof reservationSchema>;
 ```
 
@@ -108,11 +110,11 @@ in `enums.spec.ts` also type-checks that the two sides haven't drifted apart.
 
 ## Dates and time
 
-| what | schema | note |
-| --- | --- | --- |
-| the reservation day | `dateOnlySchema` (`z.iso.date()`) | `YYYY-MM-DD`, `DATE` in Postgres, never a timestamp |
-| a month | `yearMonthSchema` | `YYYY-MM` |
-| a timestamp | `timestampSchema` (`z.iso.datetime()`) | an ISO string in UTC, not `Date` (`doc/decision/0015-*`) |
+| what                | schema                                 | note                                                     |
+| ------------------- | -------------------------------------- | -------------------------------------------------------- |
+| the reservation day | `dateOnlySchema` (`z.iso.date()`)      | `YYYY-MM-DD`, `DATE` in Postgres, never a timestamp      |
+| a month             | `yearMonthSchema`                      | `YYYY-MM`                                                |
+| a timestamp         | `timestampSchema` (`z.iso.datetime()`) | an ISO string in UTC, not `Date` (`doc/decision/0015-*`) |
 
 `dateOnlySchema` validates **format and calendar validity** (neither
 `2023-02-29` nor `2026-04-31` passes) — and **nothing else**. Specifically it
@@ -150,10 +152,10 @@ copy is keyed by code (`libs/shared/i18n`).
 Two "window" codes are deliberately distinguished, because they tell the user
 something different:
 
-| code | target month's state | what happened |
-| --- | --- | --- |
-| `OUT_OF_HORIZON` | `NOT_YET_OPEN` | reservations for that month aren't open yet |
-| `RESERVATIONS_LOCKED` | `LOCKED` | the window has already closed (including any month that has started) |
+| code                  | target month's state | what happened                                                        |
+| --------------------- | -------------------- | -------------------------------------------------------------------- |
+| `OUT_OF_HORIZON`      | `NOT_YET_OPEN`       | reservations for that month aren't open yet                          |
+| `RESERVATIONS_LOCKED` | `LOCKED`             | the window has already closed (including any month that has started) |
 
 Both are returned by the service layer based on `monthLockState()`, never by
 a schema.
@@ -199,15 +201,15 @@ fine, but it violates a domain rule that requires a database lookup" — not a
 bad format, which the schema catches and oRPC returns as its own error. Every
 procedure that declares it has a specific trigger:
 
-| procedure | what triggers it |
-| --- | --- |
-| `reservation.create`, `waitlist.join` | the spot exists but is deactivated |
-| `reservation.create`, `waitlist.join` | `date` isn't a business day (a weekend or a Czech public holiday) |
-| `reservation.previewBulk`, `reservation.confirmBulk` | the same, for the user's preferred spot |
-| `me.updateSettings` | the preferred spot is deactivated |
-| `admin.spot.create`, `admin.spot.update` | `group` outside the parking lot's allowed set of groups |
-| `admin.user.update` | a role change that can't be made (the last admin) |
-| `admin.window.update` | a combination of `openDaysBefore` and `lockMode` that can't be applied |
+| procedure                                            | what triggers it                                                       |
+| ---------------------------------------------------- | ---------------------------------------------------------------------- |
+| `reservation.create`, `waitlist.join`                | the spot exists but is deactivated                                     |
+| `reservation.create`, `waitlist.join`                | `date` isn't a business day (a weekend or a Czech public holiday)      |
+| `reservation.previewBulk`, `reservation.confirmBulk` | the same, for the user's preferred spot                                |
+| `me.updateSettings`                                  | the preferred spot is deactivated                                      |
+| `admin.spot.create`, `admin.spot.update`             | `group` outside the parking lot's allowed set of groups                |
+| `admin.user.update`                                  | a role change that can't be made (the last admin)                      |
+| `admin.window.update`                                | a combination of `openDaysBefore` and `lockMode` that can't be applied |
 
 `waitlist.join` appears twice in the table deliberately: both rules can only
 be discovered from the database (a deactivated spot) or the holiday calendar,
@@ -234,9 +236,9 @@ returning an undeclared one.
 
 ### Day overview
 
-| procedure | input | output | other errors |
-| --- | --- | --- | --- |
-| `overview.day` | `{ date }` | `{ date, window, canReserve, canReserveMonth, spots[], viewerReservationId }` | — |
+| procedure      | input      | output                                                                        | other errors |
+| -------------- | ---------- | ----------------------------------------------------------------------------- | ------------ |
+| `overview.day` | `{ date }` | `{ date, window, canReserve, canReserveMonth, spots[], viewerReservationId }` | —            |
 
 Everything the parking lot screen needs, in one query: every active spot, who
 holds it, how many people are behind it on the waitlist, where the caller
@@ -271,10 +273,12 @@ never reach another user's browser.
 
 ### Reservations
 
-| procedure | input | output | other errors |
-| --- | --- | --- | --- |
-| `reservation.create` | `{ parkingSpotId, date }` | `Reservation` | `NOT_FOUND`, `SPOT_ALREADY_RESERVED`, `RESERVATION_LIMIT_REACHED`, `PAST_DATE`, `OUT_OF_HORIZON`, `RESERVATIONS_LOCKED`, `VALIDATION_FAILED`, `CONFLICT` |
-| `reservation.cancel` | `{ reservationId }` | `{ reservationId, date, parkingSpotId, promoted }` | `NOT_FOUND`, `CONFLICT` |
+| procedure                 | input                     | output                                             | other errors                                                                                                                                             |
+| ------------------------- | ------------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `reservation.create`      | `{ parkingSpotId, date }` | `Reservation`                                      | `NOT_FOUND`, `SPOT_ALREADY_RESERVED`, `RESERVATION_LIMIT_REACHED`, `PAST_DATE`, `OUT_OF_HORIZON`, `RESERVATIONS_LOCKED`, `VALIDATION_FAILED`, `CONFLICT` |
+| `reservation.cancel`      | `{ reservationId }`       | `{ reservationId, date, parkingSpotId, promoted }` | `NOT_FOUND`, `CONFLICT`                                                                                                                                  |
+| `reservation.myMonth`     | `{ month }`               | `{ month, reservedDates[], count }`                | —                                                                                                                                                        |
+| `admin.reservation.month` | `{ userId, month }`       | `{ month, reservedDates[], count }`                | —                                                                                                                                                        |
 
 `reservation.cancel` **deliberately declares no window error.** Per
 `doc/decision/0004-*`, a regular user may cancel their own reservation at any
@@ -291,12 +295,18 @@ lock doesn't apply to it, so it can happen even in a locked month.
 insert, which the unique constraint on (spot, day) turns into an error
 instead of a double booking.
 
+`reservation.myMonth` is caller-scoped — there is no `userId` input, so it can
+only ever answer for whoever is calling. `admin.reservation.month` answers the
+same question about a named user instead and is `@Roles('ADMIN')`: unlike the
+rest of this table, reading somebody else's month is a rule about the route,
+not about a row.
+
 ### Waitlist
 
-| procedure | input | output | other errors |
-| --- | --- | --- | --- |
-| `waitlist.join` | `{ parkingSpotId, date }` | `{ entry, position }` | `NOT_FOUND`, `ALREADY_IN_WAITLIST`, `CANNOT_WAITLIST_OWN_SPOT`, `SPOT_NOT_OCCUPIED`, `RESERVATION_LIMIT_REACHED`, `PAST_DATE`, `OUT_OF_HORIZON`, `RESERVATIONS_LOCKED`, `VALIDATION_FAILED`, `CONFLICT` |
-| `waitlist.leave` | `{ waitlistEntryId }` | `{ waitlistEntryId, parkingSpotId, date }` | `NOT_FOUND`, `OUT_OF_HORIZON`, `RESERVATIONS_LOCKED`, `CONFLICT` |
+| procedure        | input                     | output                                     | other errors                                                                                                                                                                                            |
+| ---------------- | ------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `waitlist.join`  | `{ parkingSpotId, date }` | `{ entry, position }`                      | `NOT_FOUND`, `ALREADY_IN_WAITLIST`, `CANNOT_WAITLIST_OWN_SPOT`, `SPOT_NOT_OCCUPIED`, `RESERVATION_LIMIT_REACHED`, `PAST_DATE`, `OUT_OF_HORIZON`, `RESERVATIONS_LOCKED`, `VALIDATION_FAILED`, `CONFLICT` |
+| `waitlist.leave` | `{ waitlistEntryId }`     | `{ waitlistEntryId, parkingSpotId, date }` | `NOT_FOUND`, `OUT_OF_HORIZON`, `RESERVATIONS_LOCKED`, `CONFLICT`                                                                                                                                        |
 
 Both are writes, so both are blocked by a locked window —
 `doc/decision/0004-*` names "leaving the waitlist" explicitly, since leaving
@@ -316,10 +326,10 @@ a cancellation occurs, and it's reported via a realtime event (Task 5).
 
 ### Bulk reservation
 
-| procedure | input | output | other errors |
-| --- | --- | --- | --- |
-| `reservation.previewBulk` | `{ dates[] }` | `{ month, preferredParkingSpotId, days[], summary }` | `PAST_DATE`, `OUT_OF_HORIZON`, `RESERVATIONS_LOCKED`, `VALIDATION_FAILED` |
-| `reservation.confirmBulk` | `{ dates[] }` (the same) | the same + ids of the written rows | additionally `CONFLICT` |
+| procedure                 | input                    | output                                               | other errors                                                              |
+| ------------------------- | ------------------------ | ---------------------------------------------------- | ------------------------------------------------------------------------- |
+| `reservation.previewBulk` | `{ dates[] }`            | `{ month, preferredParkingSpotId, days[], summary }` | `PAST_DATE`, `OUT_OF_HORIZON`, `RESERVATIONS_LOCKED`, `VALIDATION_FAILED` |
+| `reservation.confirmBulk` | `{ dates[] }` (the same) | the same + ids of the written rows                   | additionally `CONFLICT`                                                   |
 
 `previewBulk` **writes nothing** — no reservation, no waitlist entry, no
 audit record. It declares the same window errors as `confirmBulk`: proposing
@@ -328,11 +338,11 @@ can never confirm.
 
 A day is a discriminated union on `outcome`:
 
-| outcome | carries |
-| --- | --- |
-| `SPOT_ASSIGNED` | `parkingSpotId`, `parkingSpotLabel`, `isPreferredSpot` |
-| `QUEUED` | `parkingSpotId`, `parkingSpotLabel`, `waitlistPosition` |
-| `UNAVAILABLE` | `reason` (`ALREADY_HAS_RESERVATION` / `NOT_A_BUSINESS_DAY` / `NO_SPOTS_AVAILABLE`) |
+| outcome         | carries                                                                            |
+| --------------- | ---------------------------------------------------------------------------------- |
+| `SPOT_ASSIGNED` | `parkingSpotId`, `parkingSpotLabel`, `isPreferredSpot`                             |
+| `QUEUED`        | `parkingSpotId`, `parkingSpotLabel`, `waitlistPosition`                            |
+| `UNAVAILABLE`   | `reason` (`ALREADY_HAS_RESERVATION` / `NOT_A_BUSINESS_DAY` / `NO_SPOTS_AVAILABLE`) |
 
 In `confirmBulk`'s result, `SPOT_ASSIGNED` additionally carries
 `reservationId` and `QUEUED` additionally carries `waitlistEntryId` — every
@@ -350,13 +360,13 @@ service layer, same as the window (ruling window-2).
 
 ### Spots
 
-| procedure | input | output | other errors |
-| --- | --- | --- | --- |
-| `spot.list` | — | `{ spots[] }` | — |
-| `admin.spot.list` | `{ includeInactive = false, group? }` | `{ spots[] }` | — |
-| `admin.spot.create` | `{ label, group }` | `ParkingSpot` | `CONFLICT`, `VALIDATION_FAILED` |
-| `admin.spot.update` | `{ id, label?, group?, active? }` | `ParkingSpot` | `NOT_FOUND`, `CONFLICT`, `VALIDATION_FAILED` |
-| `admin.spot.deactivate` | `{ id }` | `ParkingSpot` | `NOT_FOUND`, `CONFLICT` |
+| procedure               | input                                 | output        | other errors                                 |
+| ----------------------- | ------------------------------------- | ------------- | -------------------------------------------- |
+| `spot.list`             | —                                     | `{ spots[] }` | —                                            |
+| `admin.spot.list`       | `{ includeInactive = false, group? }` | `{ spots[] }` | —                                            |
+| `admin.spot.create`     | `{ label, group }`                    | `ParkingSpot` | `CONFLICT`, `VALIDATION_FAILED`              |
+| `admin.spot.update`     | `{ id, label?, group?, active? }`     | `ParkingSpot` | `NOT_FOUND`, `CONFLICT`, `VALIDATION_FAILED` |
+| `admin.spot.deactivate` | `{ id }`                              | `ParkingSpot` | `NOT_FOUND`, `CONFLICT`                      |
 
 `spot.list` exists for a regular user too, because the settings screen needs
 a picker for `preferredParkingSpotId`. It returns only active spots and takes
@@ -370,10 +380,10 @@ the audit log.
 
 ### Users
 
-| procedure | input | output | other errors |
-| --- | --- | --- | --- |
-| `admin.user.list` | `{ role?, active?, search? }` | `{ users[] }` | — |
-| `admin.user.update` | `{ id, role?, active? }` | `AdminUser` | `NOT_FOUND`, `CONFLICT`, `VALIDATION_FAILED` |
+| procedure           | input                         | output        | other errors                                 |
+| ------------------- | ----------------------------- | ------------- | -------------------------------------------- |
+| `admin.user.list`   | `{ role?, active?, search? }` | `{ users[] }` | —                                            |
+| `admin.user.update` | `{ id, role?, active? }`      | `AdminUser`   | `NOT_FOUND`, `CONFLICT`, `VALIDATION_FAILED` |
 
 Users **aren't created** through the API (provisioning happens from the Okta
 token on first login) or deleted (offboarding is `active: false`).
@@ -391,22 +401,22 @@ yourself.
 
 ### User settings
 
-| procedure | input | output | other errors |
-| --- | --- | --- | --- |
-| `me.get` | — | `User` (own, including `icsToken`) | — |
-| `me.updateSettings` | `{ licensePlate?, preferredParkingSpotId? }` | `User` | `NOT_FOUND`, `VALIDATION_FAILED` |
-| `me.regenerateIcsToken` | — | `{ icsToken }` | — |
+| procedure               | input                                        | output                             | other errors                     |
+| ----------------------- | -------------------------------------------- | ---------------------------------- | -------------------------------- |
+| `me.get`                | —                                            | `User` (own, including `icsToken`) | —                                |
+| `me.updateSettings`     | `{ licensePlate?, preferredParkingSpotId? }` | `User`                             | `NOT_FOUND`, `VALIDATION_FAILED` |
+| `me.regenerateIcsToken` | —                                            | `{ icsToken }`                     | —                                |
 
 `me.get` returns `icsToken`, because it's the caller's own token, and the
 settings screen builds the feed address from it.
 
 `me.updateSettings` is a partial update with **three** states per field:
 
-| value | meaning |
-| --- | --- |
-| field absent | don't change it |
-| `null` | clear it (no license plate / no preferred spot) |
-| a value | set it |
+| value        | meaning                                         |
+| ------------ | ----------------------------------------------- |
+| field absent | don't change it                                 |
+| `null`       | clear it (no license plate / no preferred spot) |
+| a value      | set it                                          |
 
 Both fields are nullable on the entity, so "clear" must be expressible;
 `.partial()` alone couldn't distinguish it from "don't change". `NOT_FOUND` is
@@ -429,10 +439,10 @@ The contract therefore doesn't own an endpoint, but **the URL's shape**, so
 apart:
 
 ```ts
-ICS_FEED_BASE_PATH        // '/api/calendar'   (including apps/lets-park/api's global prefix)
-ICS_FEED_FILE_EXTENSION   // '.ics'
-buildIcsFeedPath(token)   // '/api/calendar/<token>.ics'
-buildIcsFeedUrl(base, token)  // 'https://host/api/calendar/<token>.ics'
+ICS_FEED_BASE_PATH; // '/api/calendar'   (including apps/lets-park/api's global prefix)
+ICS_FEED_FILE_EXTENSION; // '.ics'
+buildIcsFeedPath(token); // '/api/calendar/<token>.ics'
+buildIcsFeedUrl(base, token); // 'https://host/api/calendar/<token>.ics'
 ```
 
 `buildIcsFeedUrl` trims trailing slashes from `base` and percent-encodes the
@@ -454,11 +464,11 @@ rather than surface an error the UI has no copy for. Reasoning:
 
 ### Reservation window (admin)
 
-| procedure | input | output | other errors |
-| --- | --- | --- | --- |
-| `admin.window.get` | — | `ReservationWindowSettings` | — |
+| procedure             | input                            | output                      | other errors                    |
+| --------------------- | -------------------------------- | --------------------------- | ------------------------------- |
+| `admin.window.get`    | —                                | `ReservationWindowSettings` | —                               |
 | `admin.window.update` | `{ openDaysBefore?, lockMode? }` | `ReservationWindowSettings` | `VALIDATION_FAILED`, `CONFLICT` |
-| `admin.window.months` | `{ from, to }` (`YYYY-MM`) | `{ months[], settings }` | — |
+| `admin.window.months` | `{ from, to }` (`YYYY-MM`)       | `{ months[], settings }`    | —                               |
 
 `admin.window.update` is a **replacement, not a patch**: the input is
 directly `reservationWindowSettingsSchema`, so an omitted field falls back to
@@ -515,14 +525,14 @@ be taken on faith.
 All of these are sent **only after** a transaction commits (Task 15) and go
 to the entire day room.
 
-| event | payload | when |
-| --- | --- | --- |
-| `cell:locked` | `{ date, parkingSpotId, lockedBy, expiresAt }` | someone started editing a cell; the UI shows "currently being edited by …" |
-| `cell:unlocked` | `{ date, parkingSpotId }` | the lock was released, expired, or dropped with the socket |
-| `reservation:created` | `{ date, parkingSpotId, reservation }` | a free spot is now occupied |
-| `reservation:cancelled` | `{ date, parkingSpotId, reservationId }` | the spot is free and **stays** free |
-| `reservation:reassigned` | `{ date, parkingSpotId, cause, previousReservationId, reservation, fromWaitlistEntryId }` | the spot changed holder within a single transaction |
-| `waitlist:updated` | `{ date, parkingSpotId, waitlistCount }` | the waitlist on a cell got longer or shorter |
+| event                    | payload                                                                                   | when                                                                       |
+| ------------------------ | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `cell:locked`            | `{ date, parkingSpotId, lockedBy, expiresAt }`                                            | someone started editing a cell; the UI shows "currently being edited by …" |
+| `cell:unlocked`          | `{ date, parkingSpotId }`                                                                 | the lock was released, expired, or dropped with the socket                 |
+| `reservation:created`    | `{ date, parkingSpotId, reservation }`                                                    | a free spot is now occupied                                                |
+| `reservation:cancelled`  | `{ date, parkingSpotId, reservationId }`                                                  | the spot is free and **stays** free                                        |
+| `reservation:reassigned` | `{ date, parkingSpotId, cause, previousReservationId, reservation, fromWaitlistEntryId }` | the spot changed holder within a single transaction                        |
+| `waitlist:updated`       | `{ date, parkingSpotId, waitlistCount }`                                                  | the waitlist on a cell got longer or shorter                               |
 
 **Names.** `<subject>:<past-participle>`, a colon, lowercase, subject in the
 singular. The past tense is information: an event announces something that
@@ -561,12 +571,12 @@ like a window violation. That it wasn't a user action is said by the name;
 
 ### Client → server commands
 
-| command | payload | ack |
-| --- | --- | --- |
-| `day:subscribe` | `{ date }` | — |
-| `day:unsubscribe` | `{ date }` | — |
-| `cell:lock` | `{ date, parkingSpotId }` | `{ result: 'ACQUIRED', expiresAt }` or `{ result: 'HELD_BY_OTHER', lockedBy, expiresAt }` |
-| `cell:unlock` | `{ date, parkingSpotId }` | — |
+| command           | payload                   | ack                                                                                       |
+| ----------------- | ------------------------- | ----------------------------------------------------------------------------------------- |
+| `day:subscribe`   | `{ date }`                | —                                                                                         |
+| `day:unsubscribe` | `{ date }`                | —                                                                                         |
+| `cell:lock`       | `{ date, parkingSpotId }` | `{ result: 'ACQUIRED', expiresAt }` or `{ result: 'HELD_BY_OTHER', lockedBy, expiresAt }` |
+| `cell:unlock`     | `{ date, parkingSpotId }` | —                                                                                         |
 
 **The server always validates incoming client→server events.** The gateway
 (Task 15) looks up the event name in `CLIENT_TO_SERVER_EVENT_SCHEMAS`, runs
@@ -687,15 +697,15 @@ layer.
 
 The contract builds on it, but the backend and `libs/shared/i18n` use it too.
 
-| area | functions |
-| --- | --- |
-| date-only | `isDateOnly`, `assertDateOnly`, `parseDateOnly`, `formatDateOnly`, `addDays`, `addMonths`, `differenceInDays`, `compareDateOnly`, `isBefore/isAfter/isSameDay`, `startOfMonth`, `endOfMonth`, `toYearMonth`, `startOfYearMonth`, `dayOfWeek`, `isWeekend`, `daysInMonth` |
-| Europe/Prague | `PRAGUE_TIME_ZONE`, `todayInPrague`, `toDateOnlyInPrague`, `startOfDayInPrague`, `endOfDayExclusiveInPrague` |
-| Czech public holidays | `czechPublicHolidayOn`, `isCzechPublicHoliday`, `isBusinessDay`, and the type `CzechHoliday` |
-| enums and defaults | `PARKING_GROUPS`, `USER_ROLES`, `RESERVATION_LOCK_MODES`, `MONTH_LOCK_STATES`, `DEFAULT_OPEN_DAYS_BEFORE`, `MIN/MAX_OPEN_DAYS_BEFORE`, `DEFAULT_RESERVATION_LOCK_MODE` |
-| bulk reservation | `BULK_DAY_OUTCOMES`, `BULK_UNAVAILABLE_REASONS`, `MAX_BULK_BOOKING_DAYS` |
-| reservation window | `isMonthOpen`, `monthLockState`, `reservationWindowRange`, `MAX_MONTH_WINDOW_SPAN` |
-| realtime | `RESERVATION_REASSIGN_CAUSES`, `CELL_LOCK_RESULTS` |
+| area                  | functions                                                                                                                                                                                                                                                                |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| date-only             | `isDateOnly`, `assertDateOnly`, `parseDateOnly`, `formatDateOnly`, `addDays`, `addMonths`, `differenceInDays`, `compareDateOnly`, `isBefore/isAfter/isSameDay`, `startOfMonth`, `endOfMonth`, `toYearMonth`, `startOfYearMonth`, `dayOfWeek`, `isWeekend`, `daysInMonth` |
+| Europe/Prague         | `PRAGUE_TIME_ZONE`, `todayInPrague`, `toDateOnlyInPrague`, `startOfDayInPrague`, `endOfDayExclusiveInPrague`                                                                                                                                                             |
+| Czech public holidays | `czechPublicHolidayOn`, `isCzechPublicHoliday`, `isBusinessDay`, and the type `CzechHoliday`                                                                                                                                                                             |
+| enums and defaults    | `PARKING_GROUPS`, `USER_ROLES`, `RESERVATION_LOCK_MODES`, `MONTH_LOCK_STATES`, `DEFAULT_OPEN_DAYS_BEFORE`, `MIN/MAX_OPEN_DAYS_BEFORE`, `DEFAULT_RESERVATION_LOCK_MODE`                                                                                                   |
+| bulk reservation      | `BULK_DAY_OUTCOMES`, `BULK_UNAVAILABLE_REASONS`, `MAX_BULK_BOOKING_DAYS`                                                                                                                                                                                                 |
+| reservation window    | `isMonthOpen`, `monthLockState`, `reservationWindowRange`, `MAX_MONTH_WINDOW_SPAN`                                                                                                                                                                                       |
+| realtime              | `RESERVATION_REASSIGN_CAUSES`, `CELL_LOCK_RESULTS`                                                                                                                                                                                                                       |
 
 Arithmetic is calendar-based, and the timezone is resolved at a single
 boundary — see `doc/decision/0013-calendar-arithmetic-and-single-timezone-boundary.md`. Movable holidays (Good Friday, Easter
@@ -706,7 +716,7 @@ The holiday row is a **named** export list rather than a star, and it is
 shorter than the module behind it. The Easter arithmetic (`easterSunday`,
 `goodFriday`, `easterMonday`, `GOOD_FRIDAY_FIRST_YEAR`) and the year's holiday
 table (`czechPublicHolidays`, `CZECH_HOLIDAY_IDS`, `CzechHolidayId`) stay
-module-scoped: they are how the calendar is *computed*, not what a caller asks
+module-scoped: they are how the calendar is _computed_, not what a caller asks
 it, nothing outside the lib names any of them, and `czech-holidays.spec.ts`
 imports the module directly. The narrowness matters more here than elsewhere
 because this barrel is also `@lets-park/i18n`'s, re-exported wholesale under
