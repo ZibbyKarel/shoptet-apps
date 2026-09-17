@@ -733,6 +733,42 @@ describe('BulkReservationModal — the cap follows the holder, not the viewer', 
     });
     expect(apiMocks.adminReservationMonth).not.toHaveBeenCalled();
   });
+
+  it('never fires a holder-month query while `holderForm` still holds the empty default (I5)', async () => {
+    // `holderOptions: []` reproduces exactly what `LotScreen` passes while its
+    // own `admin.user.list` fetch is still in flight: `showHolderForm` is
+    // `false` and `holderForm`'s `userId` is seeded to `''`
+    // (`defaultBulkHolderId`, empty options). The options then "arrive" —
+    // the parent re-renders with a real list, without remounting this
+    // component (`BulkReservationModal`'s `key` is `open`+month only) — which
+    // is the one moment `holderId !== ''` guards: `showHolderForm` flips to
+    // `true` on this render before the reset effect has caught the form up.
+    const { rerender } = asAdminBookingFor({ holderOptions: [] });
+    expect(screen.queryByLabelText('holderField')).not.toBeInTheDocument();
+
+    rerender(
+      <BulkReservationModal
+        open
+        onClose={jest.fn()}
+        anchorDate={ANCHOR}
+        canReserveMonth
+        isAdmin
+        viewerUserId="admin-1"
+        holderOptions={ADMIN_OPTIONS}
+        holderPending={false}
+      />
+    );
+
+    // Give the modal a real window to have fired the query, so this negative
+    // assertion could actually fail: wait for the holder selector — driven by
+    // the same now-populated `holderOptions` — to appear before asserting
+    // that no call with an empty `userId` ever went out.
+    await screen.findByLabelText('holderField');
+    expect(apiMocks.adminReservationMonth).not.toHaveBeenCalledWith(
+      expect.objectContaining({ userId: '' }),
+      expect.anything()
+    );
+  });
 });
 
 describe('BulkReservationModal — the admin holder selector', () => {

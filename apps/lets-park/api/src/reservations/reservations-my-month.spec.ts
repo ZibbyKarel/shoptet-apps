@@ -137,9 +137,13 @@ describe('ReservationsService.userMonth', () => {
 
   it('answers an empty month for an id that holds nothing, rather than throwing', async () => {
     const admin = double.seedUser();
+    // A well-formed but unassigned `userId`: the contract's `idSchema` is a
+    // uuid, and the sibling database spec notes the real `@db.Uuid` column
+    // would reject an arbitrary string before it ever reached this path.
+    const noSuchUser = '00000000-0000-0000-0000-000000000000';
 
     const result = await reservations.userMonth(
-      { userId: 'no-such-user', month: '2026-09' },
+      { userId: noSuchUser, month: '2026-09' },
       authenticated(admin.id)
     );
 
