@@ -56,7 +56,8 @@ export const ModelName = {
   Reservation: 'Reservation',
   WaitlistEntry: 'WaitlistEntry',
   AuditLog: 'AuditLog',
-  ReservationWindowSettings: 'ReservationWindowSettings'
+  ReservationWindowSettings: 'ReservationWindowSettings',
+  ReservationLimitSettings: 'ReservationLimitSettings'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -149,6 +150,15 @@ export const ReservationWindowSettingsScalarFieldEnum = {
 } as const
 
 export type ReservationWindowSettingsScalarFieldEnum = (typeof ReservationWindowSettingsScalarFieldEnum)[keyof typeof ReservationWindowSettingsScalarFieldEnum]
+
+
+export const ReservationLimitSettingsScalarFieldEnum = {
+  id: 'id',
+  monthlyReservationCap: 'monthlyReservationCap',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ReservationLimitSettingsScalarFieldEnum = (typeof ReservationLimitSettingsScalarFieldEnum)[keyof typeof ReservationLimitSettingsScalarFieldEnum]
 
 
 export const SortOrder = {

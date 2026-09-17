@@ -224,6 +224,18 @@ export const AUDIT_LOG_ACTIONS = [
    * behalf.
    */
   'WAITLIST_JOINED_BY_ADMIN',
+  /**
+   * An admin changed a reservation limit — today, the monthly cap. Added by
+   * TODO item 2, the change that made it possible: the cap became an admin
+   * setting, and a single row that decides how much *every* user may book is
+   * exactly the kind of change `plan.md` requires audited.
+   *
+   * `RESERVATION_WINDOW_UPDATED` could not describe it: that member names the
+   * window singleton, whose fields decide whether a month is open at all, and
+   * an audit action shared between two unrelated settings tables is not an
+   * audit trail. See `doc/decision/0312-*`.
+   */
+  'RESERVATION_LIMITS_UPDATED',
 ] as const;
 
 export const auditLogActionSchema = z.enum(AUDIT_LOG_ACTIONS);

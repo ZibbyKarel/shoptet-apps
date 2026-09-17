@@ -46,5 +46,6 @@ export {
 export * from './spots';
 export * from './users';
 export * from './me';
+export * from './reservation-limits';
 export * from './reservation-window';
 export * from './router';

@@ -16,6 +16,10 @@ import { confirmBulkContract, previewBulkContract } from './bulk';
 import { getMyProfileContract, regenerateIcsTokenContract, updateMySettingsContract } from './me';
 import { getDayOverviewContract } from './overview';
 import {
+  getReservationLimitSettingsContract,
+  updateReservationLimitSettingsContract,
+} from './reservation-limits';
+import {
   cancelReservationContract,
   createReservationContract,
   getMyMonthReservationsContract,
@@ -72,6 +76,12 @@ export const contract = {
        * modal's cap when an admin books on somebody else's behalf.
        */
       month: getUserMonthReservationsContract,
+    },
+    reservationLimits: {
+      /** The singleton reservation limits — today just the monthly cap. */
+      get: getReservationLimitSettingsContract,
+      /** Full replacement of the singleton. Audited. */
+      update: updateReservationLimitSettingsContract,
     },
     spot: {
       list: adminListSpotsContract,

@@ -44,6 +44,7 @@ import { ROLES_KEY } from '../auth/roles.decorator';
 import { PrismaService } from '../database/prisma.service';
 import { MeController } from '../me/me.controller';
 import { OverviewController } from '../overview/overview.controller';
+import { ReservationLimitsController } from '../reservation-limits/reservation-limits.controller';
 import { ReservationWindowController } from '../reservation-window/reservation-window.controller';
 import { BulkReservationController } from '../reservations/bulk-reservation.controller';
 import { ReservationsController } from '../reservations/reservations.controller';
@@ -69,6 +70,7 @@ const CONTROLLERS = [
   UsersController,
   MeController,
   ReservationWindowController,
+  ReservationLimitsController,
   OverviewController,
   ReservationsController,
   WaitlistController,

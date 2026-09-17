@@ -1053,8 +1053,8 @@ describe('LotScreen — an admin naming a holder', () => {
 
   it('shows the holder-scoped copy — never the plain self-facing one — when naming a colleague who is at their monthly cap hits MONTHLY_RESERVATION_LIMIT_REACHED', async () => {
     // The same wrong-audience problem as the case above, one code along: the
-    // catalogue string says "V tomto měsíci už *máte* 5 rezervovaných míst",
-    // which is addressed to the admin about somebody else's budget.
+    // catalogue string says "Vyčerpali jste měsíční limit rezervací" — second
+    // person, addressed to the admin about somebody else's budget.
     const other: AdminUser = {
       id: OTHER_USER,
       email: 'jana@firma.cz',

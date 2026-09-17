@@ -39,6 +39,7 @@ function renderAdminScreen(
           users: <p>panel-uzivatele</p>,
           spots: <p>panel-mista</p>,
           window: <p>panel-okno</p>,
+          limits: <p>panel-limity</p>,
         }}
       />
     </IntlProvider>
@@ -66,7 +67,7 @@ describe('AdminScreen', () => {
     expect(screen.queryByText('panel-uzivatele')).not.toBeInTheDocument();
   });
 
-  it('names the four tabs from the design, in the design’s order', () => {
+  it('names the five tabs from the design, in the design’s order', () => {
     renderAdminScreen({ role: 'ADMIN' });
 
     expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
@@ -74,6 +75,7 @@ describe('AdminScreen', () => {
       'tabUsers',
       'tabSpots',
       'tabWindow',
+      'tabLimits',
     ]);
   });
 
@@ -84,12 +86,14 @@ describe('AdminScreen', () => {
     expect(screen.queryByText('panel-uzivatele')).not.toBeInTheDocument();
     expect(screen.queryByText('panel-mista')).not.toBeInTheDocument();
     expect(screen.queryByText('panel-okno')).not.toBeInTheDocument();
+    expect(screen.queryByText('panel-limity')).not.toBeInTheDocument();
   });
 
   it.each([
     ['tabUsers', 'panel-uzivatele'],
     ['tabSpots', 'panel-mista'],
     ['tabWindow', 'panel-okno'],
+    ['tabLimits', 'panel-limity'],
   ])('shows the %s panel when its tab is chosen', async (tab, body) => {
     const { user } = renderAdminScreen({ role: 'ADMIN' });
 

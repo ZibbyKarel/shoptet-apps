@@ -16,6 +16,7 @@
  * | `admin.spot.update`      | a duplicate label **or** a spot still held today  |
  * | `admin.spot.deactivate`  | somebody holds the spot from today onwards        |
  * | `admin.window.update`    | nothing the client can cause; a concurrent write  |
+ * | `admin.reservationLimits.update` | nothing the client can cause; a concurrent write |
  *
  * The `errors` namespace has one sentence per code, written for a reader with
  * no context — right for a screen that failed to load (`ScreenError`), wrong
@@ -58,7 +59,8 @@ export type AdminWrite =
   | 'spotRename'
   | 'spotRetire'
   | 'spotRevive'
-  | 'windowUpdate';
+  | 'windowUpdate'
+  | 'limitsUpdate';
 
 /**
  * A write that failed, and which write it was.
@@ -161,6 +163,14 @@ const MESSAGES: Record<
       ...FORBIDDEN_ROW,
       CONFLICT: 'errWindowConflict',
       VALIDATION_FAILED: 'errWindowValidation',
+    },
+  },
+  limitsUpdate: {
+    fallback: 'errFallbackLimits',
+    byCode: {
+      ...FORBIDDEN_ROW,
+      CONFLICT: 'errLimitsConflict',
+      VALIDATION_FAILED: 'errLimitsValidation',
     },
   },
 };

@@ -32,6 +32,7 @@ import {
   AUDIT_LOG_ACTIONS,
   auditLogSchema,
   parkingSpotSchema,
+  reservationLimitSettingsSchema,
   reservationSchema,
   reservationWindowSettingsSchema,
   userSchema,
@@ -129,11 +130,21 @@ describe('Prisma models mirror the contract entities', () => {
     );
   });
 
+  it('ReservationLimitSettings adds only storage-local columns', () => {
+    // Same arrangement as the window singleton beside it: the contract schema
+    // has no `id`, because the row is never addressed by id over the wire, and
+    // `updatedAt` is bookkeeping.
+    expect(Object.keys(Prisma.ReservationLimitSettingsScalarFieldEnum).sort()).toEqual(
+      [...Object.keys(reservationLimitSettingsSchema.shape), 'id', 'updatedAt'].sort()
+    );
+  });
+
   it('has no models beyond the ones the contract knows about', () => {
     expect(Object.values(Prisma.ModelName).sort()).toEqual([
       'AuditLog',
       'ParkingSpot',
       'Reservation',
+      'ReservationLimitSettings',
       'ReservationWindowSettings',
       'User',
       'WaitlistEntry',

@@ -71,6 +71,7 @@ import { Prisma as PrismaNamespace } from '@lets-park/database';
 import type { DateOnly, YearMonth } from '@lets-park/shared-types';
 import { endOfMonth, startOfYearMonth, todayInPrague } from '@lets-park/shared-types';
 import { AuditLogService } from '../audit/audit-log.service';
+import { ReservationLimitsService } from '../reservation-limits/reservation-limits.service';
 import type { AuthenticatedUser } from '../auth/authenticated-user';
 import { DomainError } from '../common/errors/domain-error';
 import {
@@ -87,7 +88,10 @@ import {
 import { PrismaService } from '../database/prisma.service';
 import { ReservationWindowService } from '../reservation-window/reservation-window.service';
 import { assertActiveUser } from './active-user';
-import { assertWithinMonthlyReservationCap } from './monthly-reservation-cap';
+import {
+  assertWithinMonthlyReservationCap,
+  readMonthlyReservationCap,
+} from './monthly-reservation-cap';
 import type { DomainEvent, WaitlistPromotionNotice } from './reservation-events';
 import { DomainEventPublisher } from './reservation-events';
 import { ReservationPolicy } from './reservation-policy';
@@ -121,7 +125,8 @@ export class ReservationsService {
     private readonly policy: ReservationPolicy,
     private readonly promotion: WaitlistPromotionService,
     private readonly audit: AuditLogService,
-    private readonly publisher: DomainEventPublisher
+    private readonly publisher: DomainEventPublisher,
+    private readonly limits: ReservationLimitsService
   ) {}
 
   /**
@@ -176,7 +181,8 @@ export class ReservationsService {
     // to prevent. No locks are taken and no queue is read, so this is short.
     const reservation = await this.prisma.client.$transaction(async (tx) => {
       if (holder.kind === 'USER') {
-        await assertWithinMonthlyReservationCap(tx, holder.userId, input.date);
+        const cap = await readMonthlyReservationCap(tx);
+        await assertWithinMonthlyReservationCap(tx, holder.userId, input.date, 1, cap);
       }
 
       // `include` rather than a second read: the broadcast needs the holder's
@@ -284,29 +290,38 @@ export class ReservationsService {
    * a concurrent writer to race against in a way that matters: a reservation
    * created a moment after this read simply is not reflected yet, the same
    * staleness every other read in this app tolerates.
+   *
+   * The `cap` it reports is the same admin setting the check enforces, read
+   * through `ReservationLimitsService` — this runs outside any transaction, so
+   * it is not the transaction-scoped `readMonthlyReservationCap` the writers
+   * use. Both default a missing row to `DEFAULT_MONTHLY_RESERVATION_CAP`.
    */
   private async monthSummary(userId: string, month: YearMonth): Promise<MonthReservations> {
     const from = startOfYearMonth(month);
     const to = endOfMonth(from);
 
-    const rows = await this.prisma.client.reservation.findMany({
-      where: {
-        userId,
-        date: { gte: toDateColumn(from), lte: toDateColumn(to) },
-      },
-      select: { date: true },
-      // `id` is a tiebreaker that can never fire: `Reservation (userId, date)`
-      // is a unique index, so this `userId` has at most one row per `date`.
-      // Included anyway because it is the one `orderBy` shape `PrismaDouble`
-      // (`../testing/prisma-double.ts`) has been taught for this table, and a
-      // deterministic order is free to ask for.
-      orderBy: [{ date: 'asc' }, { id: 'asc' }],
-    });
+    const [rows, cap] = await Promise.all([
+      this.prisma.client.reservation.findMany({
+        where: {
+          userId,
+          date: { gte: toDateColumn(from), lte: toDateColumn(to) },
+        },
+        select: { date: true },
+        // `id` is a tiebreaker that can never fire: `Reservation (userId, date)`
+        // is a unique index, so this `userId` has at most one row per `date`.
+        // Included anyway because it is the one `orderBy` shape `PrismaDouble`
+        // (`../testing/prisma-double.ts`) has been taught for this table, and a
+        // deterministic order is free to ask for.
+        orderBy: [{ date: 'asc' }, { id: 'asc' }],
+      }),
+      this.limits.monthlyCap(),
+    ]);
 
     return {
       month,
       reservedDates: rows.map((row) => toDateOnly(row.date)),
       count: rows.length,
+      cap,
     };
   }
 

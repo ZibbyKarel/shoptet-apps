@@ -32,11 +32,17 @@ belongs:
   one spec file each. What earns a file here is a claim no lower layer can
   make: two people disagreeing over the same bay, a setting saved on one
   screen changing another, a URL that stops answering. What does **not** is a
-  server rule with no screen in it — the monthly reservation cap and the
-  `FORCE_LOCKED` lockdown are both deliberately absent, because they are
-  decided in `reservation-policy.ts` and asserted in the unit and database
-  layers, and reproducing them here would cost a browser and a shared-state
-  collision to re-test arithmetic.
+  rule the lower layers already settle on their own — the monthly reservation
+  cap and the `FORCE_LOCKED` lockdown are both deliberately absent. The cap is
+  decided in `monthly-reservation-cap.ts` and the lockdown in
+  `reservation-policy.ts`; both are asserted in the unit and database layers,
+  the cap including each of its three writers driven with an
+  admin-configured number, and reproducing them here would cost a browser and a
+  shared-state collision to re-test arithmetic. The cap does now have screens —
+  the admin tab that sets it and the bulk-booking modal that renders it — and
+  neither has a browser spec; whether that fifth admin tab earns a file of its
+  own is an open question for this section, not a statement that the rule is
+  untested.
 
 ---
 

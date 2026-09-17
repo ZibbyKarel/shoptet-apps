@@ -2,13 +2,15 @@ import {
   BULK_DAY_OUTCOMES,
   BULK_UNAVAILABLE_REASONS,
   CELL_LOCK_RESULTS,
+  DEFAULT_MONTHLY_RESERVATION_CAP,
   DEFAULT_OPEN_DAYS_BEFORE,
   DEFAULT_RESERVATION_LOCK_MODE,
   MAX_BULK_BOOKING_DAYS,
+  MAX_MONTHLY_RESERVATION_CAP,
   MAX_MONTH_WINDOW_SPAN,
   MAX_OPEN_DAYS_BEFORE,
+  MIN_MONTHLY_RESERVATION_CAP,
   MIN_OPEN_DAYS_BEFORE,
-  MONTHLY_RESERVATION_CAP,
   MONTH_LOCK_STATES,
   PARKING_GROUPS,
   RESERVATION_LOCK_MODES,
@@ -101,14 +103,28 @@ describe('structural caps', () => {
     expect(MAX_BULK_BOOKING_DAYS).toBe(31);
   });
 
-  it('caps a calendar month at 5 confirmed reservations', () => {
-    expect(MONTHLY_RESERVATION_CAP).toBe(5);
+  it('caps a calendar month at 5 confirmed reservations by default', () => {
+    expect(DEFAULT_MONTHLY_RESERVATION_CAP).toBe(5);
+  });
+
+  it('bounds the configurable monthly cap the way the migration will', () => {
+    expect(MIN_MONTHLY_RESERVATION_CAP).toBe(1);
+    expect(MAX_MONTHLY_RESERVATION_CAP).toBe(31);
+  });
+
+  it('keeps the default inside the accepted bounds', () => {
+    expect(DEFAULT_MONTHLY_RESERVATION_CAP).toBeGreaterThanOrEqual(MIN_MONTHLY_RESERVATION_CAP);
+    expect(DEFAULT_MONTHLY_RESERVATION_CAP).toBeLessThanOrEqual(MAX_MONTHLY_RESERVATION_CAP);
   });
 
   it('states all caps as positive integers the contract can enforce structurally', () => {
     // All exist so the limit lives in the schema instead of being discovered
     // by rejection (doc/decision/0021-*).
-    for (const cap of [MAX_MONTH_WINDOW_SPAN, MAX_BULK_BOOKING_DAYS, MONTHLY_RESERVATION_CAP]) {
+    for (const cap of [
+      MAX_MONTH_WINDOW_SPAN,
+      MAX_BULK_BOOKING_DAYS,
+      DEFAULT_MONTHLY_RESERVATION_CAP,
+    ]) {
       expect(Number.isInteger(cap) && cap > 0).toBe(true);
     }
   });

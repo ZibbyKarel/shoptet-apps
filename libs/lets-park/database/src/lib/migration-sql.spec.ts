@@ -230,6 +230,38 @@ describe('init migration — column types the contract depends on', () => {
   });
 });
 
+describe('reservation-limit-settings migration — hand-written constraints', () => {
+  const limitsSql = readMigration('20260917120000_reservation_limit_settings').replace(/\s+/g, ' ');
+
+  it('creates the table with the singleton primary key', () => {
+    expect(limitsSql).toContain('CREATE TABLE "ReservationLimitSettings"');
+    expect(limitsSql).toContain('CONSTRAINT "ReservationLimitSettings_pkey" PRIMARY KEY ("id")');
+  });
+
+  it('enforces the singleton with a CHECK on the primary key, like the window settings', () => {
+    expect(limitsSql).toContain(
+      'ADD CONSTRAINT "ReservationLimitSettings_singleton_check" CHECK ("id" = 1)'
+    );
+  });
+
+  it('bounds monthlyReservationCap the way the contract does', () => {
+    expect(limitsSql).toContain(
+      'ADD CONSTRAINT "ReservationLimitSettings_monthlyReservationCap_range_check" CHECK ("monthlyReservationCap" BETWEEN 1 AND 31)'
+    );
+  });
+
+  it('seeds the singleton row so the table is never empty', () => {
+    expect(limitsSql).toContain('INSERT INTO "ReservationLimitSettings"');
+    expect(limitsSql).toContain('ON CONFLICT ("id") DO NOTHING');
+  });
+
+  it('adds the audit action without recreating the append-only enum', () => {
+    expect(limitsSql).toContain(
+      `ALTER TYPE "AuditLogAction" ADD VALUE IF NOT EXISTS 'RESERVATION_LIMITS_UPDATED'`
+    );
+  });
+});
+
 describe('migration_lock.toml', () => {
   it('pins the provider to postgresql', () => {
     const lock = readFileSync(join(MIGRATIONS_DIR, 'migration_lock.toml'), 'utf8');

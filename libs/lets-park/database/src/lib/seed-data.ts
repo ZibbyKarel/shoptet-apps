@@ -51,6 +51,10 @@ export interface SeedReservationWindowSettings {
   lockMode: ReservationLockMode;
 }
 
+export interface SeedReservationLimitSettings {
+  monthlyReservationCap: number;
+}
+
 /**
  * The real layout of the office car park: four IT spots and five shared ones.
  * Order is the order they are shown in, and the order the seed inserts them.
@@ -123,3 +127,15 @@ export const SEED_RESERVATION_WINDOW_SETTINGS: SeedReservationWindowSettings = {
 
 /** Fixed primary key of the settings singleton — see `doc/database.md`. */
 export const RESERVATION_WINDOW_SETTINGS_ID = 1;
+
+/**
+ * The migration already inserts this row (the table must never be empty); the
+ * seed re-asserts it so a hand-edited dev database returns to a known state —
+ * the same arrangement as the window settings above.
+ */
+export const SEED_RESERVATION_LIMIT_SETTINGS: SeedReservationLimitSettings = {
+  monthlyReservationCap: 5,
+};
+
+/** Fixed primary key of the limits singleton — see `doc/database.md`. */
+export const RESERVATION_LIMIT_SETTINGS_ID = 1;

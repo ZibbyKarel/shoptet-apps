@@ -13,9 +13,10 @@ import { AdminDayPanel } from './admin-day-panel';
 import { AdminSpotsPanel } from './admin-spots-panel';
 import { AdminUsersPanel } from './admin-users-panel';
 import { AdminWindowPanel } from './admin-window-panel';
+import { AdminLimitsPanel } from './admin-limits-panel';
 
 /**
- * The four connected halves of the administration tabs.
+ * The five connected halves of the administration tabs.
  *
  * The screens are covered exhaustively by their own specs, which hand them
  * props. Everything *between* a screen and the contract is only here: which
@@ -66,6 +67,7 @@ interface FakeApi {
   readonly me: { readonly get: FakeProcedure };
   readonly spot: { readonly key: () => string[] };
   readonly overview: { readonly key: () => string[]; readonly day: FakeProcedure };
+  readonly reservation: { readonly key: () => string[] };
   readonly admin: {
     readonly user: {
       readonly key: () => string[];
@@ -84,6 +86,12 @@ interface FakeApi {
       readonly months: FakeProcedure;
       readonly update: FakeProcedure;
     };
+    readonly reservationLimits: {
+      readonly key: () => string[];
+      readonly get: FakeProcedure;
+      readonly update: FakeProcedure;
+    };
+    readonly reservation: { readonly key: () => string[] };
   };
 }
 
@@ -129,6 +137,7 @@ function makeApi(responders: Record<string, Responder>) {
     me: { get: procedure('me.get') },
     spot: { key: () => ['spot'] },
     overview: { key: () => ['overview'], day: procedure('overview.day') },
+    reservation: { key: () => ['reservation'] },
     admin: {
       user: {
         key: () => ['admin', 'user'],
@@ -147,6 +156,12 @@ function makeApi(responders: Record<string, Responder>) {
         months: procedure('admin.window.months'),
         update: procedure('admin.window.update'),
       },
+      reservationLimits: {
+        key: () => ['admin', 'reservationLimits'],
+        get: procedure('admin.reservationLimits.get'),
+        update: procedure('admin.reservationLimits.update'),
+      },
+      reservation: { key: () => ['admin', 'reservation'] },
     },
   };
 
@@ -710,6 +725,90 @@ describe('AdminWindowPanel', () => {
 
     expect(await screen.findByText('errWindowValidation')).toBeInTheDocument();
     expect(screen.queryByText('windowSaved')).not.toBeInTheDocument();
+  });
+});
+
+// --- the reservation limits tab ---------------------------------------------
+
+/**
+ * Renders the panel with its own `QueryClient`, exposed so a test can spy on
+ * `invalidateQueries` directly — the window panel's tests infer invalidation
+ * from an observable refetch, but nothing here subscribes to
+ * `reservation.key()`/`admin.reservation.key()` (no other panel is mounted
+ * alongside this one), so there is no refetch to observe. The panel's own
+ * query still refetches, as `renderPanel`'s tests would show it doing.
+ */
+function renderLimitsPanel() {
+  const client = createQueryClient();
+  const invalidate = jest.spyOn(client, 'invalidateQueries');
+  render(
+    <IntlProvider locale="cs" messages={cs}>
+      <QueryClientProvider client={client}>
+        <ToastProvider>
+          <AdminLimitsPanel />
+        </ToastProvider>
+      </QueryClientProvider>
+    </IntlProvider>
+  );
+  return { user: userEvent.setup(), invalidate };
+}
+
+describe('AdminLimitsPanel', () => {
+  it('renders the stored cap', async () => {
+    const fake = makeApi({
+      'admin.reservationLimits.get': () => ({ monthlyReservationCap: 7 }),
+    });
+    mockApi = fake.api;
+
+    renderLimitsPanel();
+
+    expect(await screen.findByText('limitsCapValue: count=7')).toBeInTheDocument();
+  });
+
+  it('sends the new cap to admin.reservationLimits.update, and invalidates the month summaries too', async () => {
+    const fake = makeApi({
+      'admin.reservationLimits.get': () => ({ monthlyReservationCap: 7 }),
+      'admin.reservationLimits.update': () => ({ monthlyReservationCap: 8 }),
+    });
+    mockApi = fake.api;
+
+    const { user, invalidate } = renderLimitsPanel();
+    await screen.findByText('limitsCapValue: count=7');
+
+    await user.click(screen.getByRole('button', { name: 'limitsCapIncrement' }));
+
+    await waitFor(() =>
+      expect(fake.inputsTo('admin.reservationLimits.update')).toEqual([
+        { monthlyReservationCap: 8 },
+      ])
+    );
+    expect(await screen.findByText('limitsSaved')).toBeInTheDocument();
+
+    // Every month summary carries the cap, and the bulk modal's greyed-out
+    // cells are derived from it, so all three are stale the moment it changes
+    // — not just the panel's own query.
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['admin', 'reservationLimits'] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['reservation'] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['admin', 'reservation'] });
+  });
+
+  it('explains a refused save rather than confirming it', async () => {
+    const failure = await failureWithCode('VALIDATION_FAILED');
+    const fake = makeApi({
+      'admin.reservationLimits.get': () => ({ monthlyReservationCap: 7 }),
+      'admin.reservationLimits.update': () => {
+        throw failure;
+      },
+    });
+    mockApi = fake.api;
+
+    const { user } = renderLimitsPanel();
+    await screen.findByText('limitsCapValue: count=7');
+
+    await user.click(screen.getByRole('button', { name: 'limitsCapIncrement' }));
+
+    expect(await screen.findByText('errLimitsValidation')).toBeInTheDocument();
+    expect(screen.queryByText('limitsSaved')).not.toBeInTheDocument();
   });
 });
 

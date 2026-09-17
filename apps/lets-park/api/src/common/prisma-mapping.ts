@@ -53,11 +53,12 @@ import type {
   Reservation as ReservationRow,
   User as UserRow,
   WaitlistEntry as WaitlistEntryRow,
+  ReservationLimitSettings as ReservationLimitSettingsRow,
   ReservationWindowSettings as ReservationWindowSettingsRow,
 } from '@lets-park/database';
 import type { DateOnly } from '@lets-park/shared-types';
 import { fromUtcMidnight, toUtcMidnight } from '@lets-park/shared-types';
-import type { ReservationWindowSettings } from '@lets-park/contract';
+import type { ReservationLimitSettings, ReservationWindowSettings } from '@lets-park/contract';
 
 /** A `@db.Timestamptz` column as the contract's ISO 8601 string. */
 export function toTimestamp(value: Date): string {
@@ -212,4 +213,14 @@ export function toContractWindowSettings(
   row: ReservationWindowSettingsRow
 ): ReservationWindowSettings {
   return { openDaysBefore: row.openDaysBefore, lockMode: row.lockMode };
+}
+
+/**
+ * The limits singleton row. Like its neighbour above, `id` and `updatedAt` are
+ * storage-only — the contract's `reservationLimitSettingsSchema` has neither.
+ */
+export function toContractLimitSettings(
+  row: ReservationLimitSettingsRow
+): ReservationLimitSettings {
+  return { monthlyReservationCap: row.monthlyReservationCap };
 }

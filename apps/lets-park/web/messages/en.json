@@ -74,7 +74,7 @@
     "plateField": "License plate",
     "guestHolder": "Guest",
     "errHolderLimitReached": "This user already has a reservation for the selected day — only one per day is allowed.",
-    "errHolderMonthlyLimitReached": "This user already has 5 reserved spots this month — that is the maximum allowed per month.",
+    "errHolderMonthlyLimitReached": "This user has already used up their monthly reservation limit — they cannot have more this month.",
     "queueHolderField": "Add to the queue",
     "errQueueLimitReached": "This user already has a reservation for the selected day — they cannot be added to the queue.",
     "errQueueAlreadyQueued": "This user is already queued for this spot and day.",
@@ -146,6 +146,7 @@
     "tabUsers": "Users",
     "tabSpots": "Parking spots",
     "tabWindow": "Reservation window",
+    "tabLimits": "Reservation limits",
     "cancel": "Cancel",
     "dayEyebrow": "Parking lot overview",
     "dayFree": "{count} free",
@@ -237,6 +238,14 @@
     "windowStateLOCKED": "Locked",
     "windowStateNOT_YET_OPEN": "Not open yet",
     "windowSaved": "Settings saved.",
+    "limitsTitle": "Monthly reservation limit",
+    "limitsDescription": "How many reservations one user may create in a single calendar month",
+    "limitsCapLabel": "Reservations per month",
+    "limitsCapValue": "{count, plural, one {# reservation} other {# reservations}}",
+    "limitsCapDecrement": "Lower the limit",
+    "limitsCapIncrement": "Raise the limit",
+    "limitsHint": "The change applies only to new reservations — ones users already hold stay as they are.",
+    "limitsSaved": "Saved",
     "errForbidden": "You don’t have permission for this action.",
     "errUserConflict": "The last active admin can’t lose the role or be deactivated.",
     "errUserNotFound": "This account no longer exists. Please refresh the page.",
@@ -247,12 +256,15 @@
     "errFallbackSpot": "The spot change couldn’t be saved. Please try again.",
     "errWindowConflict": "Somebody else changed the settings in the meantime. Please refresh the page.",
     "errWindowValidation": "The number of days must be between 1 and 31.",
-    "errFallbackWindow": "The settings couldn’t be saved. Please try again."
+    "errFallbackWindow": "The settings couldn’t be saved. Please try again.",
+    "errLimitsConflict": "Somebody else changed the limit in the meantime. Please refresh the page.",
+    "errLimitsValidation": "The monthly reservation limit must be between 1 and 31.",
+    "errFallbackLimits": "The reservation limit couldn’t be changed. Please try again."
   },
   "errors": {
     "SPOT_ALREADY_RESERVED": "This parking spot is already reserved for that day.",
     "RESERVATION_LIMIT_REACHED": "You already have a reservation for this day — only one per day is allowed.",
-    "MONTHLY_RESERVATION_LIMIT_REACHED": "You already have 5 reserved spots this month — that is the maximum allowed per month.",
+    "MONTHLY_RESERVATION_LIMIT_REACHED": "You have used up your monthly reservation limit — you cannot have more this month.",
     "PAST_DATE": "This day can no longer be reserved, because it is in the past.",
     "OUT_OF_HORIZON": "Reservations for this month haven’t opened yet.",
     "RESERVATIONS_LOCKED": "The reservation window for this month is already locked.",
@@ -322,7 +334,7 @@
     "errorValidation": "The day selection didn’t pass validation — select at least one day, and all of them within one month.",
     "errorConflict": "Somebody else took the spots the schedule counted on in the meantime. We didn’t sign you up for anything — generate the schedule again.",
     "errorForbidden": "You don’t have permission for a bulk reservation.",
-    "errorMonthlyCapReached": "You already have {cap} reserved spots this month — that is the maximum allowed per month.",
+    "errorMonthlyCapReached": "You already have {cap, plural, one {# reserved spot} other {# reserved spots}} this month — that is the maximum allowed per month.",
     "errorUnknown": "The bulk reservation couldn’t be completed. Please try again in a moment."
   }
 }

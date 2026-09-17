@@ -36,6 +36,7 @@ import type {
   AuditLog as AuditLogRow,
   ParkingSpot as ParkingSpotRow,
   Reservation as ReservationRow,
+  ReservationLimitSettings as LimitSettingsRow,
   ReservationWindowSettings as WindowSettingsRow,
   User as UserRow,
   WaitlistEntry as WaitlistEntryRow,
@@ -202,6 +203,14 @@ const EPOCH = new Date('2026-01-01T00:00:00.000Z');
  */
 const WINDOW_SETTINGS_ID = 1;
 
+/**
+ * The only id `ReservationLimitSettings` ever has. Its own constant rather than
+ * a reuse of {@link WINDOW_SETTINGS_ID}: the two tables happen to share the
+ * number 1, and a single constant would make one table's id depend on the
+ * other's. Spelled out here for the same reason the window one is.
+ */
+const LIMIT_SETTINGS_ID = 1;
+
 export class PrismaDouble {
   readonly spots: ParkingSpotRow[] = [];
   readonly users: UserRow[] = [];
@@ -218,6 +227,7 @@ export class PrismaDouble {
    */
   auditLogCreateManyCalls = 0;
   windowSettings: WindowSettingsRow | null = null;
+  limitSettings: LimitSettingsRow | null = null;
 
   /**
    * How many of the next `user.update` calls carrying an `icsToken` should be
@@ -249,6 +259,7 @@ export class PrismaDouble {
     this.auditLogs.length = 0;
     this.auditLogCreateManyCalls = 0;
     this.windowSettings = null;
+    this.limitSettings = null;
     this.icsTokenCollisions = 0;
   }
 
@@ -324,6 +335,15 @@ export class PrismaDouble {
     return this.windowSettings;
   }
 
+  seedLimitSettings(settings: Partial<Omit<LimitSettingsRow, 'id'>> = {}): LimitSettingsRow {
+    this.limitSettings = {
+      id: LIMIT_SETTINGS_ID,
+      monthlyReservationCap: settings.monthlyReservationCap ?? 5,
+      updatedAt: EPOCH,
+    };
+    return this.limitSettings;
+  }
+
   /** Drop it in with `{ provide: PrismaService, useValue: double.asPrismaService() }`. */
   asPrismaService(): PrismaService {
     return { client: this.client() } as unknown as PrismaService;
@@ -338,6 +358,7 @@ export class PrismaDouble {
       reservation: this.reservationDelegate(),
       waitlistEntry: this.waitlistDelegate(),
       reservationWindowSettings: this.windowSettingsDelegate(),
+      reservationLimitSettings: this.limitSettingsDelegate(),
       auditLog: this.auditLogDelegate(),
     };
   }
@@ -629,6 +650,37 @@ export class PrismaDouble {
           this.windowSettings = { ...this.windowSettings, ...args.update, updatedAt: new Date() };
         }
         return copy(this.windowSettings);
+      },
+    };
+  }
+
+  private limitSettingsDelegate() {
+    return {
+      findUnique: async (args: { where: { id?: number }; select?: unknown }) => {
+        const { id, ...rest } = args.where ?? {};
+        if (Object.keys(rest).length > 0) {
+          return unsupported('this limit settings lookup', args.where);
+        }
+        // Same singleton rule as the window settings above: answering a lookup
+        // for any other id with the singleton's row would be a silent lie.
+        if (id !== LIMIT_SETTINGS_ID) {
+          return unsupported('a limit settings row other than the singleton', args.where);
+        }
+        // `select` is accepted and ignored — `readMonthlyReservationCap`
+        // projects `monthlyReservationCap`, and a whole row is a safe superset
+        // for every current reader, exactly as `parkingSpot.findMany` argues.
+        return this.limitSettings === null ? null : copy(this.limitSettings);
+      },
+      upsert: async (args: {
+        create: { id: number; monthlyReservationCap: number };
+        update: { monthlyReservationCap: number };
+      }) => {
+        if (this.limitSettings === null) {
+          this.limitSettings = { ...args.create, updatedAt: new Date() };
+        } else {
+          this.limitSettings = { ...this.limitSettings, ...args.update, updatedAt: new Date() };
+        }
+        return copy(this.limitSettings);
       },
     };
   }

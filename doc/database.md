@@ -14,9 +14,9 @@ differs, it's deliberate and described below in the section
 
 ## Files
 
-| file                                            | what it's for                                                                                     |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `prisma.config.ts` (root)                       | Prisma CLI configuration: the path to the schema, to migrations, `DATABASE_URL`, the seed command |
+| file                                                      | what it's for                                                                                     |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `prisma.config.ts` (root)                                 | Prisma CLI configuration: the path to the schema, to migrations, `DATABASE_URL`, the seed command |
 | `libs/lets-park/database/prisma/schema.prisma`            | the domain model                                                                                  |
 | `libs/lets-park/database/prisma/migrations/`              | SQL migrations + `migration_lock.toml`                                                            |
 | `libs/lets-park/database/src/generated/prisma/`           | the **generated** Prisma Client (committed, never hand-edited)                                    |
@@ -100,10 +100,17 @@ erDiagram
         ReservationLockMode lockMode "AUTO | FORCE_OPEN | FORCE_LOCKED"
         timestamptz updatedAt
     }
+
+    ReservationLimitSettings {
+        int id PK "always 1 (CHECK)"
+        int monthlyReservationCap "CHECK 1..31"
+        timestamptz updatedAt
+    }
 ```
 
-`ReservationWindowSettings` stands off to the side in the diagram – it has no
-relationship to anything; it's a global setting (see `doc/decision/0004-*`).
+`ReservationWindowSettings` and `ReservationLimitSettings` both stand off to
+the side in the diagram – neither has a relationship to anything; each is a
+global setting (`doc/decision/0004-*`, `doc/decision/0312-*`).
 
 ---
 
@@ -113,18 +120,20 @@ These indexes aren't optimizations, they're **business rules enforced by the
 database**. Without them, a concurrent write from two requests can produce a
 double booking no matter how careful the application code is.
 
-| constraint                                                            | what it guarantees                                                                                                                                                                                                                        |
-| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Reservation (parkingSpotId, date)` UNIQUE                            | one spot has at most one reservation per day; a violation (`P2002`) is mapped by Task 10 onto the contract error `SPOT_ALREADY_RESERVED`                                                                                                  |
-| `Reservation (userId, date)` UNIQUE                                   | one user has at most one reservation per day (guest reservations, with `userId` null, are exempt — a guest has no identity beyond `guestName`, so one guest name can be given every bay in the lot on one day; see `doc/decision/0305-a-reservation-holder-is-a-user-or-a-guest-never-neither`) |
-| `Reservation_holder_check` CHECK                                      | `("userId" IS NULL) <> ("guestName" IS NULL)` – a reservation names exactly one holder, a user or a guest, never neither and never both (`doc/decision/0305-a-reservation-holder-is-a-user-or-a-guest-never-neither`)                                                                           |
-| `WaitlistEntry (parkingSpotId, userId, date)` UNIQUE                  | can't join the same waitlist twice                                                                                                                                                                                                        |
-| `User.email`, `User.oktaId`, `User.icsToken` UNIQUE                   | Okta login and the ICS feed must each resolve to exactly one user; `oktaId` is the key used for provisioning                                                                                                                              |
-| `ParkingSpot.label` UNIQUE                                            | the label is the spot's natural key (and the key the seed upserts on)                                                                                                                                                                     |
-| `ReservationWindowSettings` `CHECK (id = 1)`                          | the singleton – see below                                                                                                                                                                                                                 |
-| `ReservationWindowSettings` `CHECK (openDaysBefore BETWEEN 1 AND 31)` | mirrors `MIN_OPEN_DAYS_BEFORE`/`MAX_OPEN_DAYS_BEFORE` from the contract                                                                                                                                                                   |
-| the `AuditLog_append_only` trigger                                    | `UPDATE`/`DELETE` on `AuditLog` throws an exception                                                                                                                                                                                       |
-| the `AuditLog_append_only_truncate` trigger                           | `TRUNCATE "AuditLog"` throws an exception (a row-level trigger never sees it)                                                                                                                                                             |
+| constraint                                                                  | what it guarantees                                                                                                                                                                                                                                                                              |
+| --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Reservation (parkingSpotId, date)` UNIQUE                                  | one spot has at most one reservation per day; a violation (`P2002`) is mapped by Task 10 onto the contract error `SPOT_ALREADY_RESERVED`                                                                                                                                                        |
+| `Reservation (userId, date)` UNIQUE                                         | one user has at most one reservation per day (guest reservations, with `userId` null, are exempt — a guest has no identity beyond `guestName`, so one guest name can be given every bay in the lot on one day; see `doc/decision/0305-a-reservation-holder-is-a-user-or-a-guest-never-neither`) |
+| `Reservation_holder_check` CHECK                                            | `("userId" IS NULL) <> ("guestName" IS NULL)` – a reservation names exactly one holder, a user or a guest, never neither and never both (`doc/decision/0305-a-reservation-holder-is-a-user-or-a-guest-never-neither`)                                                                           |
+| `WaitlistEntry (parkingSpotId, userId, date)` UNIQUE                        | can't join the same waitlist twice                                                                                                                                                                                                                                                              |
+| `User.email`, `User.oktaId`, `User.icsToken` UNIQUE                         | Okta login and the ICS feed must each resolve to exactly one user; `oktaId` is the key used for provisioning                                                                                                                                                                                    |
+| `ParkingSpot.label` UNIQUE                                                  | the label is the spot's natural key (and the key the seed upserts on)                                                                                                                                                                                                                           |
+| `ReservationWindowSettings` `CHECK (id = 1)`                                | the singleton – see below                                                                                                                                                                                                                                                                       |
+| `ReservationWindowSettings` `CHECK (openDaysBefore BETWEEN 1 AND 31)`       | mirrors `MIN_OPEN_DAYS_BEFORE`/`MAX_OPEN_DAYS_BEFORE` from the contract                                                                                                                                                                                                                         |
+| `ReservationLimitSettings` `CHECK (id = 1)`                                 | a second singleton, same pattern – see below                                                                                                                                                                                                                                                    |
+| `ReservationLimitSettings` `CHECK (monthlyReservationCap BETWEEN 1 AND 31)` | mirrors `MIN_MONTHLY_RESERVATION_CAP`/`MAX_MONTHLY_RESERVATION_CAP` from the contract                                                                                                                                                                                                           |
+| the `AuditLog_append_only` trigger                                          | `UPDATE`/`DELETE` on `AuditLog` throws an exception                                                                                                                                                                                                                                             |
+| the `AuditLog_append_only_truncate` trigger                                 | `TRUNCATE "AuditLog"` throws an exception (a row-level trigger never sees it)                                                                                                                                                                                                                   |
 
 Additional indexes: `Reservation(date)` and `WaitlistEntry(date)` (the daily
 parking-lot overview), `WaitlistEntry(parkingSpotId, date, createdAt, id)`
@@ -202,6 +211,21 @@ manually messed-up dev database returns to a known state.
 
 More detail: `doc/decision/0026-singleton-settings-enforced-by-check-constraint.md`.
 
+### `ReservationLimitSettings` is a second singleton, same pattern
+
+`ReservationLimitSettings` — the admin-configurable monthly reservation cap,
+one field, `monthlyReservationCap` — is enforced exactly the same way: a fixed
+`INTEGER` primary key defaulting to `1`, a hand-written
+`CHECK ("id" = 1)`, a range `CHECK` mirroring the contract's bounds
+(`MIN_MONTHLY_RESERVATION_CAP`/`MAX_MONTHLY_RESERVATION_CAP`), and a seed row
+inserted by its own migration's `INSERT … ON CONFLICT DO NOTHING`. It is a
+**separate table from `ReservationWindowSettings`**, not a second column on it
+— the window decides whether a month is open to anybody, the cap decides how
+much one person may take while it is, and the two settings never had a common
+identity to share in the first place. `doc/decision/0312-*` has the reasoning,
+including why renaming the window model to hold both was rejected (its name is
+stored as a literal string in the append-only `AuditLog`).
+
 ---
 
 ## Hard delete + `AuditLog` instead of soft delete
@@ -275,6 +299,7 @@ Everything else is 1:1 (and guarded by
 | `Reservation.date`, `WaitlistEntry.date`     | `string` (`YYYY-MM-DD`)                    | `DATE` → `Date`              | see the section on `DATE` above                                                                                                                                                                                                             |
 | `*.createdAt`, `*.updatedAt`                 | `string` (ISO 8601, `doc/decision/0015-*`) | `TIMESTAMPTZ(3)` → `Date`    | the contract is transport-neutral; the database stores an instant including the zone                                                                                                                                                        |
 | `ReservationWindowSettings.id`, `.updatedAt` | doesn't exist                              | `INTEGER` / `TIMESTAMPTZ(3)` | the singleton isn't addressed through the API – see the section above                                                                                                                                                                       |
+| `ReservationLimitSettings.id`, `.updatedAt`  | doesn't exist                              | `INTEGER` / `TIMESTAMPTZ(3)` | same reason, same singleton pattern                                                                                                                                                                                                         |
 | `User.role`, `ParkingSpot.active`, …         | no default                                 | with `DEFAULT`               | database defaults are a safeguard; the values don't change                                                                                                                                                                                  |
 
 Identifiers are **UUID v7** (`@default(uuid(7))`, a `UUID` column). The
@@ -300,16 +325,16 @@ cp .env.example .env      # once
 Every command runs **from the repo root** – `prisma.config.ts` resolves the
 paths into `libs/lets-park/database` itself.
 
-| command                                | what it does                                                                          |
-| -------------------------------------- | ------------------------------------------------------------------------------------- |
-| `npx prisma validate`                  | validates the schema (no database needed)                                             |
-| `npx prisma format`                    | formats `schema.prisma` (no database needed)                                          |
+| command                                | what it does                                                                                    |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `npx prisma validate`                  | validates the schema (no database needed)                                                       |
+| `npx prisma format`                    | formats `schema.prisma` (no database needed)                                                    |
 | `npx prisma generate`                  | regenerates the client into `libs/lets-park/database/src/generated/prisma` (no database needed) |
-| `npx prisma migrate dev --name <name>` | dev: creates a new migration and applies it                                           |
-| `npx prisma migrate deploy`            | production/CI: applies existing migrations, generates nothing                         |
-| `npx prisma migrate status`            | what's applied and what's missing                                                     |
+| `npx prisma migrate dev --name <name>` | dev: creates a new migration and applies it                                                     |
+| `npx prisma migrate deploy`            | production/CI: applies existing migrations, generates nothing                                   |
+| `npx prisma migrate status`            | what's applied and what's missing                                                               |
 | `npx prisma db seed`                   | runs `libs/lets-park/database/src/scripts/seed.ts`                                              |
-| `npx prisma studio`                    | a data browser (dev)                                                                  |
+| `npx prisma studio`                    | a data browser (dev)                                                                            |
 
 A typical first run:
 
@@ -355,6 +380,8 @@ What it creates:
   the repo may look like a real identity (the same convention as in
   `.env.example`).
 - **Reservation window settings**: `openDaysBefore = 7`, `lockMode = AUTO`.
+- **Reservation limit settings**: `monthlyReservationCap = 5` — the default,
+  not a floor; an admin may change it from the "Limity rezervací" tab.
 
 Reservations and waitlist entries aren't seeded: they're bound to a date, and
 by the time anyone runs the seed, they'd already be in the past.
@@ -384,9 +411,11 @@ pg_restore --dbname="$DATABASE_URL" --clean --if-exists lets-park-2026-08-28.dum
 
 # restore data into a database where `prisma migrate deploy` has already run.
 # The init migration inserted `ReservationWindowSettings (id = 1)` there itself,
-# so that row has to be deleted first — otherwise the backed-up settings are
+# and the reservation-limits migration does the same for `ReservationLimitSettings`
+# — so both rows have to be deleted first, or the backed-up settings are
 # silently discarded (see below).
 psql "$DATABASE_URL" -c 'DELETE FROM "ReservationWindowSettings";'
+psql "$DATABASE_URL" -c 'DELETE FROM "ReservationLimitSettings";'
 pg_restore --dbname="$DATABASE_URL" --data-only lets-park-data-2026-08-28.dump
 ```
 

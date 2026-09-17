@@ -108,6 +108,7 @@ describe('the oRPC transport through the assembled application', () => {
   beforeEach(() => {
     double.reset();
     double.seedWindowSettings({ openDaysBefore: 7, lockMode: 'AUTO' });
+    double.seedLimitSettings({ monthlyReservationCap: 5 });
     double.seedUser({ oktaId: 'okta-admin', email: 'admin@example.test', role: 'ADMIN' });
     double.seedUser({ oktaId: 'okta-user', email: 'user@example.test' });
   });
@@ -202,6 +203,8 @@ describe('the oRPC transport through the assembled application', () => {
       'admin.window.get': () => undefined,
       'admin.window.update': () => ({ openDaysBefore: 21, lockMode: 'FORCE_OPEN' }),
       'admin.window.months': () => ({ from: '2026-09', to: '2026-10' }),
+      'admin.reservationLimits.get': () => undefined,
+      'admin.reservationLimits.update': () => ({ monthlyReservationCap: 9 }),
       'admin.reservation.month': () => ({ userId: double.users[0]?.id, month: '2026-09' }),
     };
 
@@ -222,6 +225,7 @@ describe('the oRPC transport through the assembled application', () => {
           spots: double.spots.map((spot) => ({ ...spot })),
           users: double.users.map((user) => ({ ...user })),
           settings: { ...double.windowSettings },
+          limits: { ...double.limitSettings },
         };
 
         const response = await call(procedure, ADMIN_CALLS[procedure]?.(), tokenFor('okta-user'));
@@ -241,6 +245,9 @@ describe('the oRPC transport through the assembled application', () => {
         expect(double.spots).toEqual(before.spots);
         expect(double.users).toEqual(before.users);
         expect(double.windowSettings).toEqual(before.settings);
+        // `admin.reservationLimits.update` would otherwise have changed how
+        // much every user in the company may book.
+        expect(double.limitSettings).toEqual(before.limits);
         expect(double.auditLogs).toHaveLength(0);
       }
     );

@@ -1,10 +1,10 @@
 'use client';
 
 /**
- * Administration: the day overview, users, parking spots and the reservation
- * window (Task 27). Task 23 routed the avatar menu's `Správa` entry here and
- * closed the door behind it; this file now hands `AdminScreen` the four tab
- * bodies.
+ * Administration: the day overview, users, parking spots, the reservation
+ * window (Task 27) and the reservation limits. Task 23 routed the avatar
+ * menu's `Správa` entry here and closed the door behind it; this file now
+ * hands `AdminScreen` the five tab bodies.
  *
  * The whole file is the wiring — where the profile comes from, what retry does,
  * and which connected panel goes in which tab. Every *rule*, the role gate
@@ -17,6 +17,7 @@ import { AdminDayPanel } from '../../../shell/admin/admin-day-panel';
 import { AdminSpotsPanel } from '../../../shell/admin/admin-spots-panel';
 import { AdminUsersPanel } from '../../../shell/admin/admin-users-panel';
 import { AdminWindowPanel } from '../../../shell/admin/admin-window-panel';
+import { AdminLimitsPanel } from '../../../shell/admin/admin-limits-panel';
 import { useCurrentUser } from '../../../shell/use-current-user';
 
 export default function AdminPage() {
@@ -34,6 +35,7 @@ export default function AdminPage() {
         users: <AdminUsersPanel />,
         spots: <AdminSpotsPanel />,
         window: <AdminWindowPanel />,
+        limits: <AdminLimitsPanel />,
       }}
     />
   );

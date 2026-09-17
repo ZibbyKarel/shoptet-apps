@@ -33,6 +33,7 @@
 import type {
   AuditLogAction,
   ParkingGroup,
+  ReservationLimitSettings,
   ReservationWindowSettings,
   UserRole,
 } from '@lets-park/contract';
@@ -53,6 +54,9 @@ type AuditCell = {
 
 /** The two fields an admin can change on the reservation window. */
 type WindowFields = Pick<ReservationWindowSettings, 'openDaysBefore' | 'lockMode'>;
+
+/** The one field `RESERVATION_LIMITS_UPDATED` records a before/after for. */
+type LimitFields = Pick<ReservationLimitSettings, 'monthlyReservationCap'>;
 
 /** A before/after pair, for the actions that record a field change. */
 type Change<TFields> = {
@@ -122,4 +126,5 @@ export type AuditPayloads = PayloadMap<{
   USER_UPDATED: UserUpdatedPayload;
   SPOT_UPDATED: SpotUpdatedPayload;
   RESERVATION_WINDOW_UPDATED: Change<WindowFields>;
+  RESERVATION_LIMITS_UPDATED: Change<LimitFields>;
 }>;
