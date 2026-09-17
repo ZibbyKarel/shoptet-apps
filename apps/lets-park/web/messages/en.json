@@ -74,7 +74,7 @@
     "plateField": "License plate",
     "guestHolder": "Guest",
     "errHolderLimitReached": "This user already has a reservation for the selected day — only one per day is allowed.",
-    "errHolderMonthlyLimitReached": "This user already has 5 reserved spots this month — that is the maximum allowed per month.",
+    "errHolderMonthlyLimitReached": "This user has already used up their monthly reservation limit — they cannot have more this month.",
     "queueHolderField": "Add to the queue",
     "errQueueLimitReached": "This user already has a reservation for the selected day — they cannot be added to the queue.",
     "errQueueAlreadyQueued": "This user is already queued for this spot and day.",
@@ -264,7 +264,7 @@
   "errors": {
     "SPOT_ALREADY_RESERVED": "This parking spot is already reserved for that day.",
     "RESERVATION_LIMIT_REACHED": "You already have a reservation for this day — only one per day is allowed.",
-    "MONTHLY_RESERVATION_LIMIT_REACHED": "You already have 5 reserved spots this month — that is the maximum allowed per month.",
+    "MONTHLY_RESERVATION_LIMIT_REACHED": "You have used up your monthly reservation limit — you cannot have more this month.",
     "PAST_DATE": "This day can no longer be reserved, because it is in the past.",
     "OUT_OF_HORIZON": "Reservations for this month haven’t opened yet.",
     "RESERVATIONS_LOCKED": "The reservation window for this month is already locked.",
