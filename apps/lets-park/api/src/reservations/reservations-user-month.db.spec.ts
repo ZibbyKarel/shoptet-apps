@@ -12,12 +12,14 @@
  * against `PrismaDouble` still passed.
  */
 import type { PrismaClient } from '@lets-park/database';
+import { DEFAULT_MONTHLY_RESERVATION_CAP } from '@lets-park/shared-types';
 import { AuditLogService } from '../audit/audit-log.service';
 import { toDateColumn } from '../common/prisma-mapping';
 import { ReservationPolicy } from './reservation-policy';
 import { ReservationsService } from './reservations.service';
 import { WaitlistPromotionService } from './waitlist-promotion.service';
 import { NoopDomainEventPublisher } from './reservation-events';
+import { ReservationLimitsService } from '../reservation-limits/reservation-limits.service';
 import { ReservationWindowService } from '../reservation-window/reservation-window.service';
 import {
   actorFor,
@@ -41,7 +43,8 @@ describe('ReservationsService.userMonth against a real PostgreSQL', () => {
       new ReservationPolicy(),
       new WaitlistPromotionService(audit),
       audit,
-      new NoopDomainEventPublisher()
+      new NoopDomainEventPublisher(),
+      new ReservationLimitsService(prisma, audit)
     );
   });
 
@@ -74,6 +77,9 @@ describe('ReservationsService.userMonth against a real PostgreSQL', () => {
       month: '2026-09',
       reservedDates: ['2026-09-07', '2026-09-14'],
       count: 2,
+      // The cap in force, read from the seeded `ReservationLimitSettings`
+      // singleton — which the seed writes at the documented default.
+      cap: DEFAULT_MONTHLY_RESERVATION_CAP,
     });
   });
 
@@ -92,7 +98,12 @@ describe('ReservationsService.userMonth against a real PostgreSQL', () => {
       actorFor(admin, 'ADMIN')
     );
 
-    expect(result).toEqual({ month: '2026-09', reservedDates: ['2026-09-30'], count: 1 });
+    expect(result).toEqual({
+      month: '2026-09',
+      reservedDates: ['2026-09-30'],
+      count: 1,
+      cap: DEFAULT_MONTHLY_RESERVATION_CAP,
+    });
   });
 
   it('answers an empty month for an id that holds nothing, rather than throwing', async () => {
@@ -108,6 +119,11 @@ describe('ReservationsService.userMonth against a real PostgreSQL', () => {
       actorFor(admin, 'ADMIN')
     );
 
-    expect(result).toEqual({ month: '2026-09', reservedDates: [], count: 0 });
+    expect(result).toEqual({
+      month: '2026-09',
+      reservedDates: [],
+      count: 0,
+      cap: DEFAULT_MONTHLY_RESERVATION_CAP,
+    });
   });
 });

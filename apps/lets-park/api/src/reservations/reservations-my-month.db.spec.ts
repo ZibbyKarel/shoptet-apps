@@ -7,6 +7,7 @@
  * `toDateColumn`/`toDateOnly` document, at real calendar-month boundaries.
  */
 import type { PrismaClient } from '@lets-park/database';
+import { DEFAULT_MONTHLY_RESERVATION_CAP } from '@lets-park/shared-types';
 import type { AuthenticatedUser } from '../auth/authenticated-user';
 import { AuditLogService } from '../audit/audit-log.service';
 import { toDateColumn } from '../common/prisma-mapping';
@@ -14,6 +15,7 @@ import { ReservationPolicy } from './reservation-policy';
 import { ReservationsService } from './reservations.service';
 import { WaitlistPromotionService } from './waitlist-promotion.service';
 import { NoopDomainEventPublisher } from './reservation-events';
+import { ReservationLimitsService } from '../reservation-limits/reservation-limits.service';
 import { ReservationWindowService } from '../reservation-window/reservation-window.service';
 import {
   asPrismaService,
@@ -47,7 +49,8 @@ describe('ReservationsService.myMonth against a real PostgreSQL', () => {
       new ReservationPolicy(),
       new WaitlistPromotionService(audit),
       audit,
-      new NoopDomainEventPublisher()
+      new NoopDomainEventPublisher(),
+      new ReservationLimitsService(prisma, audit)
     );
   });
 
@@ -67,6 +70,11 @@ describe('ReservationsService.myMonth against a real PostgreSQL', () => {
 
     const result = await reservations.myMonth({ month: '2026-09' }, authenticated(user.id));
 
-    expect(result).toEqual({ month: '2026-09', reservedDates: ['2026-09-30'], count: 1 });
+    expect(result).toEqual({
+      month: '2026-09',
+      reservedDates: ['2026-09-30'],
+      count: 1,
+      cap: DEFAULT_MONTHLY_RESERVATION_CAP,
+    });
   });
 });

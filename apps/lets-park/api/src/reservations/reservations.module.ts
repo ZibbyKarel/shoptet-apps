@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuditModule } from '../audit/audit.module';
 import { RealtimeModule } from '../realtime/realtime.module';
 import { RealtimeDomainEventPublisher } from '../realtime/realtime.publisher';
+import { ReservationLimitsModule } from '../reservation-limits/reservation-limits.module';
 import { ReservationWindowModule } from '../reservation-window/reservation-window.module';
 import { SlackDomainEventPublisher } from '../slack/slack-domain-event.publisher';
 import { SlackModule } from '../slack/slack.module';
@@ -29,7 +30,9 @@ import { WaitlistService } from './waitlist.service';
  *
  * The window settings come from `ReservationWindowModule` rather than being
  * re-read here, for the same reason the day overview borrows them: one
- * definition of whether a month is open.
+ * definition of whether a month is open. `ReservationLimitsModule` is imported
+ * on the same grounds: the month summary reports the monthly cap in force, and
+ * one definition of it is the point.
  *
  * ## The one after-commit seam, with both implementations behind it
  *
@@ -63,7 +66,13 @@ import { WaitlistService } from './waitlist.service';
  * `try`.
  */
 @Module({
-  imports: [AuditModule, ReservationWindowModule, RealtimeModule, SlackModule],
+  imports: [
+    AuditModule,
+    ReservationWindowModule,
+    ReservationLimitsModule,
+    RealtimeModule,
+    SlackModule,
+  ],
   controllers: [ReservationsController, WaitlistController, BulkReservationController],
   providers: [
     ReservationsService,

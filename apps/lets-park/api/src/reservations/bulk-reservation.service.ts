@@ -134,7 +134,10 @@ import { ReservationWindowService } from '../reservation-window/reservation-wind
 import { assertActiveUser } from './active-user';
 import type { AllocatableSpot, DayState } from './bulk-allocator';
 import { allocateBulk } from './bulk-allocator';
-import { assertWithinMonthlyReservationCap } from './monthly-reservation-cap';
+import {
+  assertWithinMonthlyReservationCap,
+  readMonthlyReservationCap,
+} from './monthly-reservation-cap';
 import type { DomainEvent } from './reservation-events';
 import { DomainEventPublisher } from './reservation-events';
 import { ReservationPolicy } from './reservation-policy';
@@ -379,7 +382,8 @@ export class BulkReservationService {
           message: 'A bulk booking must name at least one day.',
         });
       }
-      await assertWithinMonthlyReservationCap(tx, holderId, firstDate, assignedCount);
+      const cap = await readMonthlyReservationCap(tx);
+      await assertWithinMonthlyReservationCap(tx, holderId, firstDate, assignedCount, cap);
     }
 
     const created = await this.createReservations(tx, plans, holderId);

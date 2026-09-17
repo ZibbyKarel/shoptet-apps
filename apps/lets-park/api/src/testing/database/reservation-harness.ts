@@ -29,6 +29,7 @@ import { ReservationPolicy } from '../../reservations/reservation-policy';
 import { ReservationsService } from '../../reservations/reservations.service';
 import { WaitlistPromotionService } from '../../reservations/waitlist-promotion.service';
 import { WaitlistService } from '../../reservations/waitlist.service';
+import { ReservationLimitsService } from '../../reservation-limits/reservation-limits.service';
 import { ReservationWindowService } from '../../reservation-window/reservation-window.service';
 import { requireDatabaseUrl, unique } from './test-database';
 
@@ -96,6 +97,7 @@ export function buildHarness(client: PrismaClient): Harness {
   const prismaService = asPrismaService(client);
   const audit = new AuditLogService(prismaService);
   const window = new ReservationWindowService(prismaService, audit);
+  const limits = new ReservationLimitsService(prismaService, audit);
   const policy = new ReservationPolicy();
   const promotion = new WaitlistPromotionService(audit);
   const publisher = new RecordingPublisher();
@@ -110,7 +112,8 @@ export function buildHarness(client: PrismaClient): Harness {
       policy,
       promotion,
       audit,
-      publisher
+      publisher,
+      limits
     ),
     waitlist: new WaitlistService(prismaService, window, policy, publisher, audit),
     bulk: new BulkReservationService(prismaService, window, policy, audit, publisher),

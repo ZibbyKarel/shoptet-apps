@@ -1,11 +1,18 @@
 /**
  * The per-user, per-calendar-month cap on confirmed reservations.
  *
- * A request-time computation, not stored state: no new column, no migration.
- * Every path that inserts a `Reservation` row for a real user (never a guest —
- * a guest has no `userId`, so no budget applies) calls
- * `assertWithinMonthlyReservationCap` as the very last check before the
+ * The *count* is a request-time computation, not stored state: no column holds
+ * how much of the month somebody has used. The *cap* is an admin setting — the
+ * `ReservationLimitSettings` singleton (`doc/decision/0312-*`) — and every path
+ * that inserts a `Reservation` row for a real user (never a guest — a guest has
+ * no `userId`, so no budget applies) loads it with
+ * {@link readMonthlyReservationCap} and passes it to
+ * `assertWithinMonthlyReservationCap`, which runs as the last check before the
  * insert, inside the same transaction that will do the insert.
+ *
+ * The cap is read **inside** that transaction rather than before it: see
+ * {@link readMonthlyReservationCap}. `WaitlistPromotionService.promote` reads it
+ * once above its candidate loop for the reason the next paragraph is about.
  *
  * The `pg_advisory_xact_lock` this takes is a new lock resource, but it is not
  * a disjoint one, and an earlier version of this comment claiming it could not
@@ -31,7 +38,7 @@
  * authoritative check.
  */
 
-import type { Prisma } from '@lets-park/database';
+import { RESERVATION_LIMIT_SETTINGS_ID, type Prisma } from '@lets-park/database';
 import {
   endOfMonth,
   DEFAULT_MONTHLY_RESERVATION_CAP,
@@ -45,17 +52,46 @@ import { DomainError } from '../common/errors/domain-error';
 export { DEFAULT_MONTHLY_RESERVATION_CAP };
 
 /**
+ * The cap **in force**, read inside the caller's transaction.
+ *
+ * Inside, not before: the advisory lock plus recount below is documented as
+ * *the* authoritative check, and a cap read outside the transaction could be
+ * stale against an admin lowering it between the read and the insert. One more
+ * query in a path that already takes a lock is the right trade.
+ *
+ * A missing row answers the default rather than throwing, exactly as
+ * `ReservationWindowService.getSettings` does and for the same reason: the
+ * honest value for "the seed has not run" is the documented default, which is
+ * what the row would have contained.
+ */
+export async function readMonthlyReservationCap(tx: Prisma.TransactionClient): Promise<number> {
+  const row = await tx.reservationLimitSettings.findUnique({
+    where: { id: RESERVATION_LIMIT_SETTINGS_ID },
+    select: { monthlyReservationCap: true },
+  });
+
+  return row?.monthlyReservationCap ?? DEFAULT_MONTHLY_RESERVATION_CAP;
+}
+
+/**
  * Throws `DomainError('MONTHLY_RESERVATION_LIMIT_REACHED')` if `userId` already
- * holds `DEFAULT_MONTHLY_RESERVATION_CAP - additional` or more confirmed reservations
- * in `date`'s calendar month. `additional` is how many more the caller is
- * about to insert in this same transaction (default 1; bulk confirm passes the
- * count of days it is about to assign).
+ * holds `cap - additional` or more confirmed reservations in `date`'s calendar
+ * month. `additional` is how many more the caller is about to insert in this
+ * same transaction (default 1; bulk confirm passes the count of days it is
+ * about to assign).
+ *
+ * `cap` is a **required parameter**, not a constant read from the module: it is
+ * an admin setting now (`ReservationLimitSettings`), and a default here would
+ * let a caller that forgot to load it silently enforce 5 in a workspace that
+ * configured something else. {@link readMonthlyReservationCap} is how every
+ * caller gets it, inside the same transaction.
  */
 export async function assertWithinMonthlyReservationCap(
   tx: Prisma.TransactionClient,
   userId: string,
   date: DateOnly,
-  additional = 1
+  additional: number,
+  cap: number
 ): Promise<void> {
   const month = toYearMonth(date);
   await lockUserMonth(tx, userId, month);
@@ -67,9 +103,9 @@ export async function assertWithinMonthlyReservationCap(
     },
   });
 
-  if (count + additional > DEFAULT_MONTHLY_RESERVATION_CAP) {
+  if (count + additional > cap) {
     throw new DomainError('MONTHLY_RESERVATION_LIMIT_REACHED', {
-      details: { month, limit: DEFAULT_MONTHLY_RESERVATION_CAP },
+      details: { month, limit: cap },
     });
   }
 }

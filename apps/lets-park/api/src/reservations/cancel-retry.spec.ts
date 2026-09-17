@@ -83,7 +83,7 @@ function alwaysFailing(error: unknown): { prisma: PrismaService; attempts: () =>
 
 function serviceOver(prisma: PrismaService): ReservationsService {
   const unused = undefined as never;
-  return new ReservationsService(prisma, unused, unused, unused, unused, unused);
+  return new ReservationsService(prisma, unused, unused, unused, unused, unused, unused);
 }
 
 describe('a cancellation whose retries all lose', () => {

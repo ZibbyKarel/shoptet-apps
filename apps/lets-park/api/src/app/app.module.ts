@@ -17,6 +17,7 @@ import { buildLoggerOptions } from '../logging/logger.options';
 import { MeModule } from '../me/me.module';
 import { OverviewModule } from '../overview/overview.module';
 import { RealtimeModule } from '../realtime/realtime.module';
+import { ReservationLimitsModule } from '../reservation-limits/reservation-limits.module';
 import { ReservationWindowModule } from '../reservation-window/reservation-window.module';
 import { ReservationsModule } from '../reservations/reservations.module';
 import { ShutdownModule } from '../shutdown/shutdown.module';
@@ -67,6 +68,7 @@ import { UsersModule } from '../users/users.module';
     UsersModule,
     MeModule,
     ReservationWindowModule,
+    ReservationLimitsModule,
     OverviewModule,
     // Task 15. The Socket.io gateway and the editing-hold registry. Listed
     // explicitly even though `ReservationsModule` also imports it (for the

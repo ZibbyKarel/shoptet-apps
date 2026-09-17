@@ -1,6 +1,7 @@
 import type { AuthenticatedUser } from '../auth/authenticated-user';
 import { AuditLogService } from '../audit/audit-log.service';
 import { PrismaDouble } from '../testing/prisma-double';
+import { ReservationLimitsService } from '../reservation-limits/reservation-limits.service';
 import { ReservationWindowService } from '../reservation-window/reservation-window.service';
 import { ReservationsService } from './reservations.service';
 import { WaitlistPromotionService } from './waitlist-promotion.service';
@@ -33,7 +34,8 @@ describe('ReservationsService.myMonth', () => {
       new ReservationPolicy(),
       new WaitlistPromotionService(audit),
       audit,
-      new NoopDomainEventPublisher()
+      new NoopDomainEventPublisher(),
+      new ReservationLimitsService(prisma, audit)
     );
   });
 
@@ -49,6 +51,7 @@ describe('ReservationsService.myMonth', () => {
       month: '2026-09',
       reservedDates: ['2026-09-07', '2026-09-14'],
       count: 2,
+      cap: 5,
     });
   });
 
@@ -59,7 +62,16 @@ describe('ReservationsService.myMonth', () => {
 
     const result = await reservations.myMonth({ month: '2026-09' }, authenticated(viewer.id));
 
-    expect(result).toEqual({ month: '2026-09', reservedDates: [], count: 0 });
+    expect(result).toEqual({ month: '2026-09', reservedDates: [], count: 0, cap: 5 });
+  });
+
+  it('reports the configured cap, not the default, in the month summary', async () => {
+    const viewer = double.seedUser();
+    double.seedLimitSettings({ monthlyReservationCap: 3 });
+
+    const result = await reservations.myMonth({ month: '2026-09' }, authenticated(viewer.id));
+
+    expect(result.cap).toBe(3);
   });
 
   it('does not count a reservation in a different month', async () => {
@@ -69,7 +81,7 @@ describe('ReservationsService.myMonth', () => {
 
     const result = await reservations.myMonth({ month: '2026-09' }, authenticated(viewer.id));
 
-    expect(result).toEqual({ month: '2026-09', reservedDates: [], count: 0 });
+    expect(result).toEqual({ month: '2026-09', reservedDates: [], count: 0, cap: 5 });
   });
 });
 
@@ -88,7 +100,8 @@ describe('ReservationsService.userMonth', () => {
       new ReservationPolicy(),
       new WaitlistPromotionService(audit),
       audit,
-      new NoopDomainEventPublisher()
+      new NoopDomainEventPublisher(),
+      new ReservationLimitsService(prisma, audit)
     );
   });
 
@@ -108,6 +121,7 @@ describe('ReservationsService.userMonth', () => {
       month: '2026-09',
       reservedDates: ['2026-09-07', '2026-09-14'],
       count: 2,
+      cap: 5,
     });
   });
 
@@ -132,7 +146,7 @@ describe('ReservationsService.userMonth', () => {
       authenticated(admin.id)
     );
 
-    expect(result).toEqual({ month: '2026-09', reservedDates: [], count: 0 });
+    expect(result).toEqual({ month: '2026-09', reservedDates: [], count: 0, cap: 5 });
   });
 
   it('answers an empty month for an id that holds nothing, rather than throwing', async () => {
@@ -147,6 +161,6 @@ describe('ReservationsService.userMonth', () => {
       authenticated(admin.id)
     );
 
-    expect(result).toEqual({ month: '2026-09', reservedDates: [], count: 0 });
+    expect(result).toEqual({ month: '2026-09', reservedDates: [], count: 0, cap: 5 });
   });
 });

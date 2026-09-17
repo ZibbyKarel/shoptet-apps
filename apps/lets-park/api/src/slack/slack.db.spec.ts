@@ -27,6 +27,7 @@ import type { PrismaClient } from '@lets-park/database';
 import { AuditLogService } from '../audit/audit-log.service';
 import { WebClient } from '@slack/web-api';
 import { toDateColumn } from '../common/prisma-mapping';
+import { ReservationLimitsService } from '../reservation-limits/reservation-limits.service';
 import { ReservationWindowService } from '../reservation-window/reservation-window.service';
 import { ReservationPolicy } from '../reservations/reservation-policy';
 import { ReservationsService } from '../reservations/reservations.service';
@@ -117,7 +118,8 @@ describe('Slack over a real database', () => {
       new ReservationPolicy(),
       new WaitlistPromotionService(audit),
       audit,
-      publisher
+      publisher,
+      new ReservationLimitsService(prismaService, audit)
     );
   });
 

@@ -3,7 +3,7 @@
  *
  * Run with `nx run api:test-db` after `docker compose --profile dev up -d`.
  */
-import type { PrismaClient } from '@lets-park/database';
+import { RESERVATION_LIMIT_SETTINGS_ID, type PrismaClient } from '@lets-park/database';
 import { addDays, isBusinessDay, toYearMonth, type DateOnly } from '@lets-park/shared-types';
 import { toDateColumn } from '../common/prisma-mapping';
 import {
@@ -18,6 +18,7 @@ import {
 import {
   DEFAULT_MONTHLY_RESERVATION_CAP,
   assertWithinMonthlyReservationCap,
+  readMonthlyReservationCap,
 } from './monthly-reservation-cap';
 
 /**
@@ -72,6 +73,24 @@ describe('assertWithinMonthlyReservationCap against a real PostgreSQL', () => {
     client = connect();
   });
 
+  /**
+   * The three configured-cap tests below mutate the settings singleton every
+   * other test in this file reads, so it is put back after each one. There is no
+   * other cleanup convention in this file — the rest of it only ever appends
+   * rows — so this `afterEach` is new; `--runInBand` in `api:test-db` means one
+   * suite at a time, so restoring here is enough.
+   */
+  afterEach(async () => {
+    await client.reservationLimitSettings.upsert({
+      where: { id: RESERVATION_LIMIT_SETTINGS_ID },
+      create: {
+        id: RESERVATION_LIMIT_SETTINGS_ID,
+        monthlyReservationCap: DEFAULT_MONTHLY_RESERVATION_CAP,
+      },
+      update: { monthlyReservationCap: DEFAULT_MONTHLY_RESERVATION_CAP },
+    });
+  });
+
   afterAll(async () => {
     await client.$disconnect();
   });
@@ -87,7 +106,9 @@ describe('assertWithinMonthlyReservationCap against a real PostgreSQL', () => {
     }
 
     await expect(
-      client.$transaction((tx) => assertWithinMonthlyReservationCap(tx, user.id, dates[0]))
+      client.$transaction((tx) =>
+        assertWithinMonthlyReservationCap(tx, user.id, dates[0], 1, DEFAULT_MONTHLY_RESERVATION_CAP)
+      )
     ).resolves.toBeUndefined();
   });
 
@@ -102,7 +123,9 @@ describe('assertWithinMonthlyReservationCap against a real PostgreSQL', () => {
     }
 
     const code = await codeOf(
-      client.$transaction((tx) => assertWithinMonthlyReservationCap(tx, user.id, dates[0]))
+      client.$transaction((tx) =>
+        assertWithinMonthlyReservationCap(tx, user.id, dates[0], 1, DEFAULT_MONTHLY_RESERVATION_CAP)
+      )
     );
     expect(code).toBe('MONTHLY_RESERVATION_LIMIT_REACHED');
   });
@@ -118,7 +141,15 @@ describe('assertWithinMonthlyReservationCap against a real PostgreSQL', () => {
     }
 
     await expect(
-      client.$transaction((tx) => assertWithinMonthlyReservationCap(tx, userA.id, dates[0]))
+      client.$transaction((tx) =>
+        assertWithinMonthlyReservationCap(
+          tx,
+          userA.id,
+          dates[0],
+          1,
+          DEFAULT_MONTHLY_RESERVATION_CAP
+        )
+      )
     ).resolves.toBeUndefined();
   });
 
@@ -143,7 +174,9 @@ describe('assertWithinMonthlyReservationCap against a real PostgreSQL', () => {
     });
 
     await expect(
-      client.$transaction((tx) => assertWithinMonthlyReservationCap(tx, user.id, inMonth))
+      client.$transaction((tx) =>
+        assertWithinMonthlyReservationCap(tx, user.id, inMonth, 1, DEFAULT_MONTHLY_RESERVATION_CAP)
+      )
     ).resolves.toBeUndefined();
   });
 
@@ -162,7 +195,13 @@ describe('assertWithinMonthlyReservationCap against a real PostgreSQL', () => {
     try {
       // A: passes at CAP-1, inserts the CAP-th row, then holds its locks.
       const held = holdTransaction(client, async (tx) => {
-        await assertWithinMonthlyReservationCap(tx, user.id, dates[0]);
+        await assertWithinMonthlyReservationCap(
+          tx,
+          user.id,
+          dates[0],
+          1,
+          DEFAULT_MONTHLY_RESERVATION_CAP
+        );
         await tx.reservation.create({
           data: { parkingSpotId: spot.id, userId: user.id, date: toDateColumn(lastDate) },
         });
@@ -171,7 +210,15 @@ describe('assertWithinMonthlyReservationCap against a real PostgreSQL', () => {
 
       // B: must block on the advisory lock, not read a stale count of CAP-1.
       const second = codeOf(
-        other.$transaction((tx) => assertWithinMonthlyReservationCap(tx, user.id, dates[0]))
+        other.$transaction((tx) =>
+          assertWithinMonthlyReservationCap(
+            tx,
+            user.id,
+            dates[0],
+            1,
+            DEFAULT_MONTHLY_RESERVATION_CAP
+          )
+        )
       );
       await waitForBlockedBackend(other);
       held.release();
@@ -181,5 +228,59 @@ describe('assertWithinMonthlyReservationCap against a real PostgreSQL', () => {
     } finally {
       await other.$disconnect();
     }
+  });
+
+  it('enforces the configured cap, not the default, once an admin has lowered it', async () => {
+    const user = await seedUser(client);
+    const spot = await seedSpot(client);
+    await client.reservationLimitSettings.update({
+      where: { id: RESERVATION_LIMIT_SETTINGS_ID },
+      data: { monthlyReservationCap: 2 },
+    });
+    const dates = businessDaysInMonth(2);
+    for (const date of dates) {
+      await client.reservation.create({
+        data: { parkingSpotId: spot.id, userId: user.id, date: toDateColumn(date) },
+      });
+    }
+
+    const code = await codeOf(
+      client.$transaction(async (tx) => {
+        const cap = await readMonthlyReservationCap(tx);
+        return assertWithinMonthlyReservationCap(tx, user.id, nth(dates, 0), 1, cap);
+      })
+    );
+
+    expect(code).toBe('MONTHLY_RESERVATION_LIMIT_REACHED');
+  });
+
+  it('allows a sixth reservation once an admin has raised the cap above the default', async () => {
+    const user = await seedUser(client);
+    const spot = await seedSpot(client);
+    await client.reservationLimitSettings.update({
+      where: { id: RESERVATION_LIMIT_SETTINGS_ID },
+      data: { monthlyReservationCap: 6 },
+    });
+    const dates = businessDaysInMonth(6);
+    for (const date of dates.slice(0, 5)) {
+      await client.reservation.create({
+        data: { parkingSpotId: spot.id, userId: user.id, date: toDateColumn(date) },
+      });
+    }
+
+    await expect(
+      client.$transaction(async (tx) => {
+        const cap = await readMonthlyReservationCap(tx);
+        return assertWithinMonthlyReservationCap(tx, user.id, nth(dates, 5), 1, cap);
+      })
+    ).resolves.toBeUndefined();
+  });
+
+  it('reads the default when the singleton row is absent', async () => {
+    await client.reservationLimitSettings.deleteMany({});
+
+    const cap = await client.$transaction((tx) => readMonthlyReservationCap(tx));
+
+    expect(cap).toBe(DEFAULT_MONTHLY_RESERVATION_CAP);
   });
 });
