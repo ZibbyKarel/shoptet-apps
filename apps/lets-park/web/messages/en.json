@@ -334,7 +334,7 @@
     "errorValidation": "The day selection didn’t pass validation — select at least one day, and all of them within one month.",
     "errorConflict": "Somebody else took the spots the schedule counted on in the meantime. We didn’t sign you up for anything — generate the schedule again.",
     "errorForbidden": "You don’t have permission for a bulk reservation.",
-    "errorMonthlyCapReached": "You already have {cap} reserved spots this month — that is the maximum allowed per month.",
+    "errorMonthlyCapReached": "You already have {cap, plural, one {# reserved spot} other {# reserved spots}} this month — that is the maximum allowed per month.",
     "errorUnknown": "The bulk reservation couldn’t be completed. Please try again in a moment."
   }
 }
