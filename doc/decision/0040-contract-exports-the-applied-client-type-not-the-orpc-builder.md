@@ -1,4 +1,4 @@
-# 0040 – `libs/lets-park/contract` exports the applied client type; `@orpc/contract` stays out of `type:util`
+# 0040 – `libs/garage/contract` exports the applied client type; `@orpc/contract` stays out of `type:util`
 
 **Date:** 2026-09-02 · **Status:** accepted · **Task:** 19 (`libs/shared/api-client`)
 **Follows on from:** `doc/decision/0007-*`, `doc/decision/0017-*`
@@ -8,10 +8,10 @@
 `libs/shared/api-client` needs `ContractRouterClient<Contract>` to type its client. That generic
 lives in `@orpc/contract`, which `NPM_ALLOWLIST` grants to the **`type:contract` tag only**.
 
-`libs/lets-park/contract` applies the generic itself and exports the result:
+`libs/garage/contract` applies the generic itself and exports the result:
 
 ```ts
-// libs/lets-park/contract/src/api/router.ts
+// libs/garage/contract/src/api/router.ts
 export type Contract = typeof contract;
 export type ContractClient = ContractRouterClient<Contract>;
 ```
@@ -28,8 +28,8 @@ Review rejected it, correctly.
 
 **The allow-lists hang off `type:`, and that tag is shared.** `NPM_ALLOWLIST.util` applies to
 every `type:util` project at once — today `libs/shared/form`, `libs/shared/i18n`, `libs/shared/api-client`,
-`libs/query`, and `libs/lets-park/shared-types`; tomorrow `libs/lets-park/realtime-client`, `libs/lets-park/auth`,
-`libs/lets-park/calendar-export`. Adding a package to serve one of them hands it to all of them. The
+`libs/query`, and `libs/garage/shared-types`; tomorrow `libs/garage/realtime-client`, `libs/garage/auth`,
+`libs/garage/calendar-export`. Adding a package to serve one of them hands it to all of them. The
 reviewer's probe confirmed the consequence directly: with that entry in place, an
 `@orpc/contract` import from `libs/shared/i18n` passed lint.
 
@@ -59,8 +59,8 @@ reintroduce exactly the drift contract-first is for.
 
 ## How
 
-The type is exported from `libs/lets-park/contract/src/api/router.ts`, next to `Contract`, and reaches
-`@lets-park/contract` through the existing `src/api/index.ts` barrel — no new entry point.
+The type is exported from `libs/garage/contract/src/api/router.ts`, next to `Contract`, and reaches
+`@garage/contract` through the existing `src/api/index.ts` barrel — no new entry point.
 
 Verified by probe rather than by lint passing green (`doc/workspace.md` warns this trap has
 already fired three times). A temporary `import type { ContractRouterClient } from '@orpc/contract'`
@@ -79,11 +79,11 @@ path either.
 
 ## Risk if this is wrong
 
-`libs/lets-park/contract` now names a type from the client half of oRPC's type surface. That is a smaller
+`libs/garage/contract` now names a type from the client half of oRPC's type surface. That is a smaller
 step than it looks — `ContractRouterClient` is defined in `@orpc/contract`, the package the
 contract already depends on, and `NPM_ALLOWLIST.contract` still bans `@orpc/client` and
 `@orpc/server` outright, so the contract still cannot reach a transport. The line to hold is
-that one: if a future task finds itself wanting `@orpc/client` inside `libs/lets-park/contract`, that is
+that one: if a future task finds itself wanting `@orpc/client` inside `libs/garage/contract`, that is
 not an extension of this decision, it is `doc/decision/0007-*` being overturned.
 
 The second risk is the pattern being over-applied. "Re-export it from the contract lib" is the

@@ -2,7 +2,7 @@
  * Mapping a failure that came back over the wire onto the contract's closed
  * error enum.
  *
- * `libs/lets-park/contract` defines the domain errors (`ERROR_CODES`, `errorShapeSchema`,
+ * `libs/garage/contract` defines the domain errors (`ERROR_CODES`, `errorShapeSchema`,
  * `doc/decision/0016-*`, `0018-*`); oRPC carries them as `ORPCError`
  * (`{ code, status, message, data }`, where `data` is the contract's
  * `details` — `doc/decision/0018-*`). This module is the one place that turns
@@ -12,7 +12,7 @@
  * ## Why not `isDefinedError`
  *
  * oRPC ships `isDefinedError`, which narrows by the runtime `defined` flag.
- * That flag is **always `false`** for this backend: `apps/lets-park/api`'s global filter
+ * That flag is **always `false`** for this backend: `apps/garage/api`'s global filter
  * serialises every domain failure with `defined: false`, because an error that
  * reached the filter is by definition one the procedure did not declare
  * (`doc/decision/0033-*`, `contractErrorBody()`). Narrowing on `defined` would
@@ -25,8 +25,8 @@
  */
 
 import { ORPCError } from '@orpc/client';
-import type { ErrorCode, ErrorDetails } from '@lets-park/contract';
-import { errorCodeSchema, errorDetailsSchema } from '@lets-park/contract';
+import type { ErrorCode, ErrorDetails } from '@garage/contract';
+import { errorCodeSchema, errorDetailsSchema } from '@garage/contract';
 
 /**
  * A failure that carries a code from the contract's closed enum.

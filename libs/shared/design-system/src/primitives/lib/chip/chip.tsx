@@ -3,7 +3,7 @@ import { forwardRef, type HTMLAttributes, type Ref } from 'react';
 import { cx } from '../cx';
 
 /**
- * Fixed-height, pill-shaped label — the shape `apps/lets-park/web` currently
+ * Fixed-height, pill-shaped label — the shape `apps/garage/web` currently
  * hand-rolls at three call sites (an admin day-view legend chip, the lot
  * header's filter pill, and the admin spots screen's category band). All
  * three share `rounded-cta` + `gap-2` + a border-or-muted surface; they

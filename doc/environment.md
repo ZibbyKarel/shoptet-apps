@@ -3,8 +3,8 @@
 This document describes **what env variables the applications need**, **how to
 start the local Docker stack**, and **how dev/e2e differ from production**
 (only in variable values, never in code). The source of truth for the shape
-of the variables is the Zod schema in `apps/lets-park/api/src/env.ts` and
-`apps/lets-park/web/src/env.ts` – this document is descriptive, not authoritative; when
+of the variables is the Zod schema in `apps/garage/api/src/env.ts` and
+`apps/garage/web/src/env.ts` – this document is descriptive, not authoritative; when
 they disagree, trust the code.
 
 ---
@@ -16,16 +16,16 @@ schema. If a variable is missing or has the wrong shape, the application
 **crashes immediately** with a readable message naming the variable (never its
 value):
 
-- **`apps/lets-park/api`** – validation runs inside
+- **`apps/garage/api`** – validation runs inside
   `ConfigModule.forRoot({ validate: validateApiEnv })`
-  (`apps/lets-park/api/src/app/app.module.ts`). A validation failure throws before
+  (`apps/garage/api/src/app/app.module.ts`). A validation failure throws before
   `app.listen()`, so the process never starts accepting requests with an
   invalid configuration.
-- **`apps/lets-park/web`** – validation runs in `apps/lets-park/web/src/instrumentation.ts` →
+- **`apps/garage/web`** – validation runs in `apps/garage/web/src/instrumentation.ts` →
   `register()`, which Next.js calls exactly once at server startup (`next
   dev` / `next start`). Next.js itself doesn't terminate the process on an
   error from there (it would keep running and returning 500s), so
-  `apps/lets-park/web/src/instrumentation-node.ts` calls `process.exit(1)` after logging
+  `apps/garage/web/src/instrumentation-node.ts` calls `process.exit(1)` after logging
   the error – making the process just as "dead" as the API's. Details, and
   why this isn't in `next.config.ts`, are in
   `doc/decision/0008-web-env-validation-instrumentation-hook.md`.
@@ -40,7 +40,7 @@ shortcut for auth.
 
 ## Env variables
 
-### `apps/lets-park/api` (`apps/lets-park/api/src/env.ts`)
+### `apps/garage/api` (`apps/garage/api/src/env.ts`)
 
 | variable | shape | what it's for |
 | --- | --- | --- |
@@ -69,7 +69,7 @@ used. They all belong to the operational baseline described in
 | `THROTTLE_STRICT_LIMIT` | positive integer | `20` | requests per window for the stricter tier |
 | `BODY_LIMIT` | a size **with a unit**, e.g. `100kb` | `100kb` | the maximum request body size |
 | `HEALTH_DB_TIMEOUT_MS` | positive integer (ms) | `3000` | how long `/health/ready` waits for `SELECT 1` |
-| `REALTIME_LOCK_TTL_MS` | positive integer (ms) | `30000` | how long a cell's editing hold lasts before it lapses – see `doc/realtime.md` and `doc/decision/0110-*` before changing it, because `libs/lets-park/realtime-client`'s renewal budget is sized against it |
+| `REALTIME_LOCK_TTL_MS` | positive integer (ms) | `30000` | how long a cell's editing hold lasts before it lapses – see `doc/realtime.md` and `doc/decision/0110-*` before changing it, because `libs/garage/realtime-client`'s renewal budget is sized against it |
 
 Two things that are easy to miss:
 
@@ -83,7 +83,7 @@ Two things that are easy to miss:
 **Why these have defaults instead of being required.** `.env.example` belongs to
 another task's file set, so a required key would have broken every existing
 `.env` with no way to update the example alongside it. The defaults in
-`apps/lets-park/api/src/env.ts` (`ENV_DEFAULTS`) are also the production values, so leaving
+`apps/garage/api/src/env.ts` (`ENV_DEFAULTS`) are also the production values, so leaving
 these keys out of a `.env` entirely is legitimate.
 
 #### Slack and scheduled jobs (Task 16)
@@ -118,7 +118,7 @@ Four things that are easy to miss:
   weekday-only cron expression would have covered Saturday and Sunday but not
   28 September.
 
-### `apps/lets-park/web` (`apps/lets-park/web/src/env.ts`)
+### `apps/garage/web` (`apps/garage/web/src/env.ts`)
 
 | variable | shape | what it's for |
 | --- | --- | --- |
@@ -151,16 +151,16 @@ directories (the detailed reasoning is in
 `doc/decision/0009-env-file-topology-and-compose-profiles.md`):
 
 - **root `.env`** – read by `docker compose` (substitution in
-  `docker-compose.yml`) and by `apps/lets-park/api` when run via `nx serve api` (NestJS's
+  `docker-compose.yml`) and by `apps/garage/api` when run via `nx serve api` (NestJS's
   `ConfigModule` reads `.env` relative to `process.cwd()`, which for this Nx
   executor is the repo root).
-- **`apps/lets-park/web/.env`** – read by `apps/lets-park/web` when run via `nx run web:dev` /
+- **`apps/garage/web/.env`** – read by `apps/garage/web` when run via `nx run web:dev` /
   `next build` / `next start` (Next.js loads env files relative to its own
   directory, not the repo root).
 
 ```bash
 cp .env.example .env
-cp .env.example apps/lets-park/web/.env
+cp .env.example apps/garage/web/.env
 ```
 
 The actual `.env` files are in `.gitignore` – they are never committed.
@@ -187,7 +187,7 @@ The actual `.env` files are in `.gitignore` – they are never committed.
    (`doc/decision/0201-the-issuer-url-must-be-one-name-on-both-sides-of-the-network`).
 
    `web` and `api` sit behind the **`app`** profile and now build real
-   production images (`apps/lets-park/api/Dockerfile`, `apps/lets-park/web/Dockerfile`), together
+   production images (`apps/garage/api/Dockerfile`, `apps/garage/web/Dockerfile`), together
    with a one-shot `migrate` job that applies pending migrations before the
    API starts. They need their own env file, because the addresses inside the
    compose network are not the host's — see `README.md`, §"The containerised
@@ -202,7 +202,7 @@ The actual `.env` files are in `.gitignore` – they are never committed.
 
    ```bash
    npx nx run api:serve   # NestJS, port per PORT in .env (default 3000)
-   npx nx run web:dev     # Next.js on 4200 — the port is pinned in apps/lets-park/web/project.json
+   npx nx run web:dev     # Next.js on 4200 — the port is pinned in apps/garage/web/project.json
    ```
 
 3. Verify Postgres is healthy:
@@ -250,7 +250,7 @@ docker compose --env-file .env.docker --profile dev --profile app config
 NODE_ENV=development PORT=3000 \
 AUTH_OKTA_ISSUER=http://localhost:8080/default AUTH_OKTA_AUDIENCE=api://default \
 CORS_ALLOWED_ORIGINS=http://localhost:4200 LOG_LEVEL=info \
-node dist/apps/lets-park/api/main.js
+node dist/apps/garage/api/main.js
 ```
 
 The process exits with `exit code 1` and an `ExceptionHandler` error that
@@ -262,7 +262,7 @@ variable" – including the note that this particular output is not JSON yet.
 ### Web
 
 ```bash
-cd apps/lets-park/web
+cd apps/garage/web
 env -i PATH="$PATH" HOME="$HOME" ../../node_modules/.bin/next start -p 4310
 ```
 

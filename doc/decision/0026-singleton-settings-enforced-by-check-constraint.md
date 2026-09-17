@@ -74,7 +74,7 @@ database is cheap and guards against writes that bypass the API.
 
 Both `CHECK` constraints and the `INSERT` are **hand-appended to the end** of
 the generated `migration.sql` – Prisma's schema language can't express them.
-The test `libs/lets-park/database/src/lib/migration-sql.spec.ts` asserts their presence
+The test `libs/garage/database/src/lib/migration-sql.spec.ts` asserts their presence
 directly, so they can't be lost when the migration is regenerated.
 
 **Trap:** `prisma migrate dev` compares the post-migration state against

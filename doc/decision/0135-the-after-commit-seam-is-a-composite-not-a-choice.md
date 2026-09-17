@@ -6,7 +6,7 @@
 
 ## Context
 
-`DomainEventPublisher` (`apps/lets-park/api/src/reservations/reservation-events.ts`) is
+`DomainEventPublisher` (`apps/garage/api/src/reservations/reservation-events.ts`) is
 the after-commit seam Task 13 left: the reservation services compute events
 inside the transaction, return them, and publish strictly after `COMMIT`,
 outside the cancel retry loop.
@@ -25,7 +25,7 @@ could name the other's class.
 ## Decision
 
 The token is bound to a new `CompositeDomainEventPublisher`
-(`apps/lets-park/api/src/reservations/composite-domain-event.publisher.ts`), which fans
+(`apps/garage/api/src/reservations/composite-domain-event.publisher.ts`), which fans
 every fact out to a list of delegates. `RealtimeModule` and `SlackModule` each
 provide and export their **concrete** publisher class; `ReservationsModule` —
 the module that declares the token, and the only one that can name both
@@ -69,7 +69,7 @@ an abstract `publish(...): void`, so an `async` delegate *compiles* — the
 abstract-class token, chosen so a replacement "cannot silently have the wrong
 shape", does not catch this one. Measured on the first version of this class: a
 rejecting async delegate's rejection was **not** caught by `forward`'s `try`,
-and `apps/lets-park/api` installs no `unhandledRejection` handler, so under Node's default
+and `apps/garage/api` installs no `unhandledRejection` handler, so under Node's default
 it would terminate the API process — after `COMMIT`, on a user's cancellation
 path. That is a strictly worse version of the outcome the whole seam exists to
 prevent, and it would have arrived the first time someone added the obvious

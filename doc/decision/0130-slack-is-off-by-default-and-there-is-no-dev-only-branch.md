@@ -67,15 +67,15 @@ production makes.
 
 ## How
 
-- `apps/lets-park/api/src/env.ts` — `SLACK_ENABLED` (enum, default `false`) and the
+- `apps/garage/api/src/env.ts` — `SLACK_ENABLED` (enum, default `false`) and the
   `superRefine` that requires the token and channel when it is on.
-- `apps/lets-park/api/src/slack/slack-client.service.ts` — the one gate.
-- `apps/lets-park/api/src/slack/slack.config.ts` — `target` is present exactly when Slack
+- `apps/garage/api/src/slack/slack-client.service.ts` — the one gate.
+- `apps/garage/api/src/slack/slack.config.ts` — `target` is present exactly when Slack
   is on, so the compiler carries the invariant instead of a `?? ''`.
-- `apps/lets-park/api/src/slack/slack-client.service.spec.ts` — disabled sends nothing at
+- `apps/garage/api/src/slack/slack-client.service.spec.ts` — disabled sends nothing at
   all (`server.requests` is empty), and is neither a `warn` nor an `error`.
-- `apps/lets-park/api/src/slack/slack.db.spec.ts` — disabled still runs the database read.
-- `apps/lets-park/api/src/slack/slack-env.spec.ts` — the rejected spellings, and that the
+- `apps/garage/api/src/slack/slack.db.spec.ts` — disabled still runs the database read.
+- `apps/garage/api/src/slack/slack-env.spec.ts` — the rejected spellings, and that the
   boot error names the variable and never the token. The original version of
   this last check supplied an *empty* `SLACK_BOT_TOKEN` and looked for the
   wrong constant, so it could not have failed even if the formatter started

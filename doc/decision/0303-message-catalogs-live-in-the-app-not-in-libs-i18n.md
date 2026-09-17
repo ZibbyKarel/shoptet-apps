@@ -9,9 +9,9 @@
 The UI copy is two JSON files in the application:
 
 ```
-apps/lets-park/web/messages/cs.json      280 keys, the source of truth
-apps/lets-park/web/messages/en.json      the same 280 keys
-apps/lets-park/web/messages/messages.spec.ts   the parity guard over both
+apps/garage/web/messages/cs.json      280 keys, the source of truth
+apps/garage/web/messages/en.json      the same 280 keys
+apps/garage/web/messages/messages.spec.ts   the parity guard over both
 ```
 
 `libs/shared/i18n` holds **no copy at all**. It kept `next-intl` — it is still the
@@ -26,15 +26,15 @@ consumers of it became locale-parameterised.
 | eight module-level `format*(…)` functions                              | `createDateFormatters(locale)` / `useDateFormatters()`      |
 
 The app resolves the locale and loads the catalog once per request
-(`apps/lets-park/web/src/app/layout.tsx` → `resolve-locale.ts`, `load-messages.ts`) and
-hands both down through `apps/lets-park/web/src/app/providers.tsx` to `IntlProvider`.
+(`apps/garage/web/src/app/layout.tsx` → `resolve-locale.ts`, `load-messages.ts`) and
+hands both down through `apps/garage/web/src/app/providers.tsx` to `IntlProvider`.
 The one Czech-only table `Intl` cannot produce, `MONTH_LOCATIVE_CS`, stays in
 `libs/shared/i18n/src/lib/dates.ts`: it is not copy a translator writes, it is
 linguistic data the formatter needs.
 
 ## Why it could not be otherwise
 
-`TODO.md` item 9 puts the JSON in `apps/lets-park/web/messages`, which is also
+`TODO.md` item 9 puts the JSON in `apps/garage/web/messages`, which is also
 `next-intl`'s own documented layout. That alone would be a preference. What
 makes it structural is Nx: `libs/shared/i18n` is a library tagged `type:util`,
 `scope:web`, and **a library may not import from an application**. So a lib
@@ -55,7 +55,7 @@ rendering of it, key for key, for the colleagues who do not read Czech.
 
 ### `cs.json` is the source of truth for keys, through a type augmentation
 
-`apps/lets-park/web/next-intl.d.ts` is the whole mechanism:
+`apps/garage/web/next-intl.d.ts` is the whole mechanism:
 
 ```ts
 import type csMessages from "./messages/cs.json";
@@ -76,8 +76,8 @@ bogus key fails to compile with TS2345, and the reported parameter type lists
 type system, and is a type error at any reference site rather than in the JSON.
 That asymmetry is intended, and it is why `messages/messages.spec.ts` exists.
 
-The file lives in `apps/lets-park/web` and not in the lib for the same Nx reason as
-everything above: `libs/shared/i18n` may not read `apps/lets-park/web/messages/cs.json`. And
+The file lives in `apps/garage/web` and not in the lib for the same Nx reason as
+everything above: `libs/shared/i18n` may not read `apps/garage/web/messages/cs.json`. And
 **a `declare module` is a type augmentation, not an import** — no value from
 `next-intl` is reachable from that file — so the wrapper rule
 (`no-restricted-imports` in the root `eslint.config.mjs`) is intact, which
@@ -106,14 +106,14 @@ Both were given up deliberately, and neither was allowed to just evaporate:
    ```
 
    `tsc` fails it if `cs.errors` ever loses a key `ErrorCode` requires. It
-   works because `apps/lets-park/web/tsconfig.spec.json` includes
+   works because `apps/garage/web/tsconfig.spec.json` includes
    `messages/**/*.spec.ts` in the typecheck program — if that include is ever
    narrowed, this guarantee goes silently, which is the one thing to know
    before editing that file.
 
 ## How it is verified
 
-- `apps/lets-park/web/messages/messages.spec.ts` — key parity in **both** directions, no
+- `apps/garage/web/messages/messages.spec.ts` — key parity in **both** directions, no
   empty message in any locale, ICU-argument parity per key, typographic
   apostrophes only, per-locale `ERROR_CODES` coverage,
   `OUT_OF_HORIZON` ≠ `RESERVATIONS_LOCKED`, and a "still Czech" check with an

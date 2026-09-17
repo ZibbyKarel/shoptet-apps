@@ -1,4 +1,4 @@
-import { cx } from '@lets-park/design-system/primitives';
+import { cx } from '@garage/design-system/primitives';
 import type { ReactNode } from 'react';
 
 export type EmptyStateSize = 'sm' | 'md';

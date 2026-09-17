@@ -7,7 +7,7 @@
  * is put Tailwind into Next's CSS pipeline; `autoprefixer` and `postcss-import`
  * are not listed because `@tailwindcss/postcss` already does both.
  *
- * Identical to `apps/lets-park/web/postcss.config.mjs`, and that is the point:
+ * Identical to `apps/garage/web/postcss.config.mjs`, and that is the point:
  * two applications, one stylesheet pipeline, no second source of theme values.
  */
 export default {

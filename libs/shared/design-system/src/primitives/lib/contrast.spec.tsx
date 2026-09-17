@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 
-import { COLOR_UTILITIES } from '@lets-park/design-system/tokens';
+import { COLOR_UTILITIES } from '@garage/design-system/tokens';
 
 import { Avatar, type AvatarTone } from './avatar/avatar';
 import { Badge, type BadgeTone } from './badge/badge';

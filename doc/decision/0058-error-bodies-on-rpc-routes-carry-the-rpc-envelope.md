@@ -26,8 +26,8 @@ output differ, byte for byte, from the handler's for no reason.
 ## Why
 
 **`doc/decision/0039-*` predicted this defect and routed it here.** Its closing section says the
-guard that would catch it "belongs in `apps/lets-park/api`'s filter spec, asserting the serialised body is
-enveloped — a test that fails today". Task 12 is the first task to own `apps/lets-park/api`'s filter, so
+guard that would catch it "belongs in `apps/garage/api`'s filter spec, asserting the serialised body is
+enveloped — a test that fails today". Task 12 is the first task to own `apps/garage/api`'s filter, so
 Task 12 pays it.
 
 The concrete failure: `@orpc/client` deserialises a response by reading `body.json`. Handed a

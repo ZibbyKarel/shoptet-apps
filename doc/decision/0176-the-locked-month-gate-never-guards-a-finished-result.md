@@ -1,6 +1,6 @@
 # 0176 – The locked-month gate guards entry and confirmation, never the display of a finished result
 
-**Date:** 2026-09-03 · **Status:** accepted · **Affects:** `apps/lets-park/web/src/lot/bulk-modal/bulk-modal.tsx`
+**Date:** 2026-09-03 · **Status:** accepted · **Affects:** `apps/garage/web/src/lot/bulk-modal/bulk-modal.tsx`
 **Follows on from:** `doc/decision/0170-*`, `doc/decision/0173-*`, `doc/decision/0175-*`
 
 ## What
@@ -54,7 +54,7 @@ screen"*. Stated that way, the placement follows without further argument.
 
 ## How
 
-- `apps/lets-park/web/src/lot/bulk-modal/bulk-modal.tsx` — the `if (result !== null)` block moved above
+- `apps/garage/web/src/lot/bulk-modal/bulk-modal.tsx` — the `if (result !== null)` block moved above
   `if (!canReserveMonth)`, both carrying the reasoning at the branch.
 - Two named tests in `bulk-modal.spec.tsx`, because nothing else distinguishes the two orderings:
   - *"keeps the comparison on screen when the window closes after the confirmation"* — drives a

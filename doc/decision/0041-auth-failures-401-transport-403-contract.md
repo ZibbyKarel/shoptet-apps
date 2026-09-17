@@ -18,7 +18,7 @@ Task 11 introduces two kinds of rejection, and they deliberately do **not** shar
 
 **No new member was added to `ERROR_CODES`.** The closed enum stays exactly as Task 3 left
 it. `FORBIDDEN` already exists and is already declared on *every* procedure by the `authed`
-builder in `libs/lets-park/contract/src/api/errors.ts`, whose own comment says why: "a deactivated
+builder in `libs/garage/contract/src/api/errors.ts`, whose own comment says why: "a deactivated
 user (`active: false`, how offboarding works) is rejected before any handler runs".
 
 ## Why
@@ -32,7 +32,7 @@ request and an oversized body: transport-level failures keep Nest's shape becaus
 enum has no member for them, and the client distinguishes them by status.
 
 **Why a deactivated user is not 401.** Because the token is *valid*. A 401 tells the browser
-"your credentials are missing or stale, go and get new ones" — so `apps/lets-park/web` would send the
+"your credentials are missing or stale, go and get new ones" — so `apps/garage/web` would send the
 person to Okta, Okta would authenticate them happily and reissue an equally valid token, and
 the API would answer 401 again. That is an infinite redirect loop, and the person would never
 see an explanation. 403 with `code: 'FORBIDDEN'` is a code `libs/shared/i18n` can key Czech copy
@@ -42,7 +42,7 @@ off, which is the entire point of having a closed enum.
 the enum's job is to enumerate the outcomes a *procedure* can produce so that the frontend's
 handling is exhaustive. Adding a code that no procedure declares and no handler throws is the
 mistake `doc/decision/0021-*` names ("a declared error must have a reachable trigger"), run
-in reverse. It would also force `apps/lets-park/web` to handle a code that can never appear in a
+in reverse. It would also force `apps/garage/web` to handle a code that can never appear in a
 successfully-routed response.
 
 **Why "no `code` field" is stated as a requirement and asserted in a test.**
@@ -86,10 +86,10 @@ be capable of failing.
 `package.json`. A caret range is precisely how that behaviour change arrives unannounced, on
 somebody else's `npm install`, in a task that has nothing to do with auth. Pinning does not
 prevent the change; it makes it a deliberate act with a diff to review. The reasoning is
-repeated in the class comment of `apps/lets-park/api/src/auth/jwt-auth.guard.ts`, because that is where
+repeated in the class comment of `apps/garage/api/src/auth/jwt-auth.guard.ts`, because that is where
 someone puzzled by the pin will actually be reading. When the pin is lifted, run
 `auth-pipeline.spec.ts` before anything else.
 
 The second risk is a well-meant "unify the error shapes" refactor. If a future task makes the
-401 branch emit `{ defined: false, code: … }`, `apps/lets-park/web` will switch on a code that
+401 branch emit `{ defined: false, code: … }`, `apps/garage/web` will switch on a code that
 `errorCodeSchema` rejects. The transport body must stay without `code`.

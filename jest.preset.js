@@ -34,7 +34,7 @@ const nxPreset = require('@nx/jest/preset').default;
 const ESM_ONLY_PACKAGES = [
   // `@orpc/client`, `@orpc/client/fetch`, `@orpc/contract`,
   // `@orpc/tanstack-query` — the contract-first stack, reached transitively by
-  // anything importing `@lets-park/contract` at runtime.
+  // anything importing `@garage/contract` at runtime.
   '@orpc',
   // next-intl and its transitive message-formatting dependencies.
   'next-intl',
@@ -59,7 +59,7 @@ const ESM_ONLY_PACKAGES = [
  * always treated as "ignore" there regardless of which package it is — the
  * second, correct segment further down the path is never reached because the
  * first match already decided the file's fate. Measured: `@nestjs/config` was
- * already named in `apps/lets-park/api/jest.config.cts`'s own
+ * already named in `apps/garage/api/jest.config.cts`'s own
  * `transformIgnorePatterns` and still failed with `SyntaxError: Unexpected
  * token 'export'`, because of exactly this.
  *

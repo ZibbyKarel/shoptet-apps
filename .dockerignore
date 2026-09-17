@@ -16,11 +16,11 @@
 #
 # `**/`, not a bare `.env`. A .dockerignore pattern with no wildcard is
 # anchored at the context root, so `.env` excludes `/.env` and nothing else —
-# and this repository has a *second* one, `apps/lets-park/web/.env`, because Next.js
+# and this repository has a *second* one, `apps/garage/web/.env`, because Next.js
 # resolves env files relative to its own directory (doc/decision/0009-*). It
 # was measured, not predicted: with a bare `.env` here, `docker build` shipped
-# the developer's `apps/lets-park/web/.env` — AUTH_SECRET, AUTH_OKTA_CLIENT_SECRET and
-# DATABASE_URL — into `.next/standalone/apps/lets-park/web/.env` inside the image, which
+# the developer's `apps/garage/web/.env` — AUTH_SECRET, AUTH_OKTA_CLIENT_SECRET and
+# DATABASE_URL — into `.next/standalone/apps/garage/web/.env` inside the image, which
 # `next build --output standalone` copies for you. Note that a later `RUN rm`
 # would not have fixed it: the file would still sit in the layer that added it.
 **/.env
@@ -32,13 +32,13 @@
 # issuer's own session cookie, so a leaked one is a working session.
 #
 # `**/` on both, for the same reason as `.env` above, and this pair is what
-# proves the rule is not pedantry. They were written `apps/lets-park/web-e2e/.auth/` and
+# proves the rule is not pedantry. They were written `apps/garage/web-e2e/.auth/` and
 # `storage-state*.json`, which reads like a belt and braces and was recorded as
 # such. Both are anchored at the context root, and `personas.ts` was resolving
 # the path against `process.cwd()` — the *project* root under Nx — so the files
-# landed at `apps/lets-park/web-e2e/apps/lets-park/web-e2e/.auth/`, three directories past anything
+# landed at `apps/garage/web-e2e/apps/garage/web-e2e/.auth/`, three directories past anything
 # either pattern could match. Measured, real `docker build` over a synthetic
-# context: `/ctx/apps/lets-park/web-e2e/apps/lets-park/web-e2e/.auth/storage-state-user.json` was
+# context: `/ctx/apps/garage/web-e2e/apps/garage/web-e2e/.auth/storage-state-user.json` was
 # **not** excluded, while every other rule in this file held. `COPY . .` in
 # both `builder` stages would have put it in a layer, and CI exports that layer
 # whole with `cache-to: type=gha,mode=max`.

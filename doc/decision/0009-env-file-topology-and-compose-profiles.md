@@ -14,8 +14,8 @@
 
 1. There is one `.env.example` at the repo root (exactly as Task 2 requires), but in
    practice **two** `.env` copies must be created from it, not one: `.env` at the
-   root (for `docker compose` and for `apps/lets-park/api` run via `nx serve api`) and
-   `apps/lets-park/web/.env` (for `nx run web:dev` / `next build` / `next start`).
+   root (for `docker compose` and for `apps/garage/api` run via `nx serve api`) and
+   `apps/garage/web/.env` (for `nx run web:dev` / `next build` / `next start`).
 2. The placeholder `web` and `api` services in `docker-compose.yml` have
    `profiles: ['app']`, so `docker compose up` (without `--profile`) doesn't start
    them.
@@ -27,16 +27,16 @@
 `@nx/js:node`, which runs `api:serve`, doesn't override the cwd — it stays the repo
 root — so the root `.env` is enough for the API. Next.js, however, reads env files
 (`.env`, `.env.local`, …) relative to the directory in which the `next` CLI runs, and
-`apps/lets-park/web`'s `dev` target (inferred by the `@nx/next` plugin, see `nx.json`)
-explicitly sets `"cwd": "apps/lets-park/web"`. So Next looks for `apps/lets-park/web/.env`, not the root
+`apps/garage/web`'s `dev` target (inferred by the `@nx/next` plugin, see `nx.json`)
+explicitly sets `"cwd": "apps/garage/web"`. So Next looks for `apps/garage/web/.env`, not the root
 `.env` – verified from the actual behavior of the build/serve targets in
 `project.json`, not guessed. A single shared `.env` at the root would simply be
-invisible to `apps/lets-park/web`.
+invisible to `apps/garage/web`.
 
 **2) `profiles: ['app']` for `web`/`api`.** The Task 2 brief calls for "placeholder
 services, build context ready, but real Dockerfiles only appear in Task 29". Without
 Dockerfiles, an unrestricted `docker compose up` would fail
-(`dockerfile: apps/lets-park/api/Dockerfile` doesn't exist). Today's dev workflow also runs
+(`dockerfile: apps/garage/api/Dockerfile` doesn't exist). Today's dev workflow also runs
 both apps on the host (`nx serve`/`nx dev`), not in a container — at this stage
 `docker-compose.yml` only provides infrastructure (`postgres`,
 `mock-oauth2-server`, optionally `adminer`). The `app` profile is therefore kept
@@ -49,7 +49,7 @@ every dev wants available at all times.
 - `.env.example` (root) opens with a comment explaining exactly this split and
   points to `doc/environment.md`.
 - `doc/environment.md`, the "How to start" section, has an explicit `cp .env.example
-  .env && cp .env.example apps/lets-park/web/.env`.
+  .env && cp .env.example apps/garage/web/.env`.
 - `docker-compose.yml`: `web`/`api` have `profiles: ['app']` and a comment pointing to
   Task 29; `adminer` keeps `profiles: ['dev']` unchanged; `postgres`/
   `mock-oauth2-server` have no profile.
@@ -61,7 +61,7 @@ every dev wants available at all times.
 
 ## Risk if this is wrong
 
-The split into two `.env` copies is easy to forget, leaving `apps/lets-park/web` running with
+The split into two `.env` copies is easy to forget, leaving `apps/garage/web` running with
 an empty env – but that immediately shows up as a fail-fast crash per
 `doc/decision/0008-web-env-validation-instrumentation-hook.md`, not as a silent bug,
 so the risk is low. Once Task 29 adds real Dockerfiles and both apps run in

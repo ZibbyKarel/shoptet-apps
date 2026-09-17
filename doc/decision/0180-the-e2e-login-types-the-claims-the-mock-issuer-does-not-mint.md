@@ -2,7 +2,7 @@
 
 ## What
 
-`apps/lets-park/web-e2e` signs in through the real OIDC authorization-code redirect
+`apps/garage/web-e2e` signs in through the real OIDC authorization-code redirect
 against `mock-oauth2-server`. On the issuer's sign-in form it fills two fields,
 not one:
 
@@ -11,7 +11,7 @@ not one:
 
 There is no other departure from what production does. No token is minted in
 the test process, no cookie is written by hand, no `isTest` branch exists
-anywhere in `apps/lets-park/web`, `apps/lets-park/api` or `libs/lets-park/auth`, and the second field is a
+anywhere in `apps/garage/web`, `apps/garage/api` or `libs/garage/auth`, and the second field is a
 control the mock server puts on its own login page — not something the
 application knows about.
 
@@ -58,15 +58,15 @@ so the suite cannot silently rewrite the `oktaId` of a seeded account.
 
 ## How
 
-- `apps/lets-park/web-e2e/src/support/personas.ts` — the three personas, each with its
+- `apps/garage/web-e2e/src/support/personas.ts` — the three personas, each with its
   `subject` and its `claims` object.
-- `apps/lets-park/web-e2e/src/support/oidc-login.ts` — `signInThroughOidc` fills
+- `apps/garage/web-e2e/src/support/oidc-login.ts` — `signInThroughOidc` fills
   `input[name="username"]` and `textarea[name="claims"]`, submits, and waits for
   the application's own URL.
-- `apps/lets-park/web-e2e/src/identity.spec.ts` — signs each persona in and asserts the
+- `apps/garage/web-e2e/src/identity.spec.ts` — signs each persona in and asserts the
   application shows the **seeded** name, email and role. This is what keeps the
   re-stated seed values in `personas.ts` honest; they cannot be imported,
-  because `libs/lets-park/database` is `scope:api` and `apps/lets-park/web-e2e` is `scope:web`.
+  because `libs/garage/database` is `scope:api` and `apps/garage/web-e2e` is `scope:web`.
 
 ## Risk
 

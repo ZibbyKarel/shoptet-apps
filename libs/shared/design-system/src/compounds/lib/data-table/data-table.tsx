@@ -1,4 +1,4 @@
-import { cx, FOCUS_RING } from '@lets-park/design-system/primitives';
+import { cx, FOCUS_RING } from '@garage/design-system/primitives';
 import {
   createSortedRowModel,
   rowSortingFeature,

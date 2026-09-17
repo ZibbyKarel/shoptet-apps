@@ -12,7 +12,7 @@ import {
 import { cx } from '../cx';
 import { resolveGap } from '../gap';
 import { resolvePadding, type Padding } from '../padding';
-import type { SpacingKey } from '@lets-park/design-system/tokens';
+import type { SpacingKey } from '@garage/design-system/tokens';
 import type { StackAlign, StackDirection, StackJustify } from '../stack/stack';
 
 const DIRECTION_CLASSES: Record<StackDirection, string> = {
@@ -81,12 +81,12 @@ export interface ListProps extends HTMLAttributes<HTMLUListElement | HTMLOListEl
  * `<ul>`/`<ol>` with `Stack`'s gap/align/justify/wrap surface.
  *
  * `Stack` itself cannot stand in for this: it always renders a `<div>`, and
- * `apps/lets-park/web-e2e/src/admin-window.spec.ts` locates rows with
+ * `apps/garage/web-e2e/src/admin-window.spec.ts` locates rows with
  * `getByRole('listitem')` — a `<div>` carries no implicit `listitem` role, so
  * the e2e suite would simply find nothing. `List`/`ListItem` render real
  * `<ul>`/`<ol>`/`<li>` so that role exists for free, replacing the
  * hand-rolled `<ul className="flex flex-col gap-2">` / `<li className="...">`
- * pairs scattered across `apps/lets-park/web`.
+ * pairs scattered across `apps/garage/web`.
  */
 export const List = forwardRef<HTMLUListElement | HTMLOListElement, ListProps>(function List(
   {

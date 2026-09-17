@@ -1,4 +1,4 @@
-# Let's Park — continuous integration.
+# Garage — continuous integration.
 #
 # Four jobs, run in parallel, each gating something the others structurally
 # cannot see:
@@ -10,7 +10,7 @@
 #             PostgreSQL 17 and a real OIDC issuer.
 #   images    the two production images actually build.
 #
-# `database` is not a nicety. `apps/lets-park/api/jest.config.cts` **excludes**
+# `database` is not a nicety. `apps/garage/api/jest.config.cts` **excludes**
 # `*.db.spec.ts` from `api:test`, so without this job a green build would mean
 # nothing about the part of the reservations module whose correctness *is* the
 # database: `SELECT … FOR UPDATE`, transaction isolation, and the waitlist
@@ -25,7 +25,7 @@
 # Sign-in through a real OIDC redirect, sign-out durability, the cell-lock
 # broadcast, waitlist promotion through the UI and the ICS feed's
 # token-only-credential model are exercised end to end **only** in
-# `apps/lets-park/web-e2e`, and `apps/lets-park/api-e2e` is the only place the API is spoken to
+# `apps/garage/web-e2e`, and `apps/garage/api-e2e` is the only place the API is spoken to
 # over HTTP with a real token. Neither ran here; both ran when a developer
 # remembered. `doc/decision/0286-*`.
 #
@@ -92,16 +92,16 @@ jobs:
       postgres:
         image: postgres:17
         env:
-          POSTGRES_USER: lets_park
-          POSTGRES_PASSWORD: lets_park_ci
-          POSTGRES_DB: lets_park
+          POSTGRES_USER: garage
+          POSTGRES_PASSWORD: garage_ci
+          POSTGRES_DB: garage
         ports:
           - 5432:5432
         # Without a health check the job would start `npm ci` and reach the
         # tests before Postgres finished its own initdb, and the failure would
         # look like a flaky test rather than a race in this file.
         options: >-
-          --health-cmd "pg_isready -U lets_park -d lets_park"
+          --health-cmd "pg_isready -U garage -d garage"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -111,7 +111,7 @@ jobs:
       # inside this job. They are not a secret and must not be turned into one:
       # a `secrets.` reference here would make the job unrunnable from a fork
       # and hide what it connects to.
-      DATABASE_URL: postgresql://lets_park:lets_park_ci@localhost:5432/lets_park
+      DATABASE_URL: postgresql://garage:garage_ci@localhost:5432/garage
 
     steps:
       - uses: actions/checkout@v4
@@ -123,7 +123,7 @@ jobs:
 
       - run: npm ci
 
-      # No migration step: `apps/lets-park/api/src/testing/database/global-setup.ts`
+      # No migration step: `apps/garage/api/src/testing/database/global-setup.ts`
       # creates a throwaway database per run, applies the committed migrations
       # to it and repoints `DATABASE_URL` at it — and **throws** when
       # `DATABASE_URL` is absent rather than skipping, which is what makes an
@@ -163,13 +163,13 @@ jobs:
       postgres:
         image: postgres:17
         env:
-          POSTGRES_USER: lets_park
-          POSTGRES_PASSWORD: lets_park_ci
-          POSTGRES_DB: lets_park
+          POSTGRES_USER: garage
+          POSTGRES_PASSWORD: garage_ci
+          POSTGRES_DB: garage
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U lets_park -d lets_park"
+          --health-cmd "pg_isready -U garage -d garage"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -201,7 +201,7 @@ jobs:
     env:
       NODE_ENV: development
       PORT: '3000'
-      DATABASE_URL: postgresql://lets_park:lets_park_ci@localhost:5432/lets_park
+      DATABASE_URL: postgresql://garage:garage_ci@localhost:5432/garage
       AUTH_OKTA_ISSUER: http://localhost:8080/default
       AUTH_OKTA_AUDIENCE: default
       CORS_ALLOWED_ORIGINS: http://localhost:4200
@@ -210,8 +210,8 @@ jobs:
       LOG_LEVEL: warn
       NEXT_PUBLIC_API_URL: http://localhost:3000/api
       AUTH_SECRET: ci-e2e-secret-not-a-real-secret-0123456789
-      AUTH_OKTA_CLIENT_ID: lets-park-web-dev
-      AUTH_OKTA_CLIENT_SECRET: lets-park-web-dev-secret
+      AUTH_OKTA_CLIENT_ID: garage-web-dev
+      AUTH_OKTA_CLIENT_SECRET: garage-web-dev-secret
 
     steps:
       - uses: actions/checkout@v4
@@ -268,7 +268,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: dist/.playwright/apps/lets-park/web-e2e
+          path: dist/.playwright/apps/garage/web-e2e
           retention-days: 7
 
   images:
@@ -287,7 +287,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: apps/lets-park/api/Dockerfile
+          file: apps/garage/api/Dockerfile
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -296,7 +296,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: apps/lets-park/api/Dockerfile
+          file: apps/garage/api/Dockerfile
           target: migrator
           push: false
           cache-from: type=gha
@@ -306,7 +306,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: apps/lets-park/web/Dockerfile
+          file: apps/garage/web/Dockerfile
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max

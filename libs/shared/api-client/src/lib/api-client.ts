@@ -1,5 +1,5 @@
 /**
- * The oRPC client, typed from `libs/lets-park/contract` and nothing else.
+ * The oRPC client, typed from `libs/garage/contract` and nothing else.
  *
  * This is the only place in the workspace allowed to import `@orpc/client`
  * (`eslint.config.mjs`, `WRAPPED_LIBRARIES`; `doc/wrappers.md`). Everything else
@@ -12,21 +12,21 @@
 import { createORPCClient } from '@orpc/client';
 import { RPCLink } from '@orpc/client/fetch';
 import type { RPCLinkOptions } from '@orpc/client/fetch';
-import type { ContractClient } from '@lets-park/contract';
+import type { ContractClient } from '@garage/contract';
 
 /**
  * The client's per-call context. Empty: every request carries the same bearer
  * token, resolved by {@link ApiClientOptions.getAccessToken}, so there is
  * nothing a call site needs to pass down. Named rather than inlined because
  * `RPCLink` and `createORPCClient` have to agree on it, and it must match the
- * default `ContractClient` was applied with in `libs/lets-park/contract`.
+ * default `ContractClient` was applied with in `libs/garage/contract`.
  */
 type ApiClientContext = Record<never, never>;
 
 /**
- * Every procedure in `libs/lets-park/contract`'s router, as a callable client.
+ * Every procedure in `libs/garage/contract`'s router, as a callable client.
  *
- * The `ContractRouterClient<Contract>` application lives in `libs/lets-park/contract`
+ * The `ContractRouterClient<Contract>` application lives in `libs/garage/contract`
  * (exported as `ContractClient`) rather than here, so that `@orpc/contract`
  * stays allow-listed for the `type:contract` tag alone instead of every
  * `type:util` lib in the workspace. Either way the type is derived from the Zod
@@ -43,7 +43,7 @@ export type ApiFetch = NonNullable<RPCLinkOptions<ApiClientContext>['fetch']>;
 /**
  * Supplies the access token for the `Authorization` header.
  *
- * `libs/lets-park/auth` (Task 20) provides the real implementation; until then any caller
+ * `libs/garage/auth` (Task 20) provides the real implementation; until then any caller
  * can inject one. It is a function rather than a string because the token is
  * refreshed independently of the client — reading it per request is what keeps
  * a long-lived client from pinning an expired token.

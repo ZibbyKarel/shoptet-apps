@@ -1,4 +1,4 @@
-import type { SpacingKey } from '@lets-park/design-system/tokens';
+import type { SpacingKey } from '@garage/design-system/tokens';
 
 /**
  * Every `gap-{step}` Tailwind class, spelled out as a literal — same

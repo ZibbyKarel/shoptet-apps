@@ -5,7 +5,7 @@
 
 ## What
 
-The global filter (`apps/lets-park/api/src/common/filters/contract-exception.filter.ts`) returns
+The global filter (`apps/garage/api/src/common/filters/contract-exception.filter.ts`) returns
 **two different body shapes**, depending on whether it's a domain error or not:
 
 1. **A domain error** (`DomainError`, a mapped Prisma error) → oRPC error JSON:
@@ -113,7 +113,7 @@ chain, so its behavior **cannot be verified by a test that calls the controller 
 directly**. The first version of this decision claimed that a body over the limit returned
 413, and that the terminus body passed through – both written from reasoning, and both were
 wrong (413 was returned as 500, the terminus body was overwritten with the constant). Only a
-real HTTP request exposed it. That's why `apps/lets-park/api/src/app/http-pipeline.spec.ts` exists,
+real HTTP request exposed it. That's why `apps/garage/api/src/app/http-pipeline.spec.ts` exists,
 firing requests against the built application, wired through the same `configureApp`
 function as `main.ts` – **any further claim about the filter's behavior belongs verified
 there**, not reasoned about.

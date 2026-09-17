@@ -90,7 +90,7 @@ phases so the contract-first order is preserved:
 
 | Where | What is added |
 | --- | --- |
-| Task 3 (schemas) | `ReservationWindowSettings`, `MonthLockState`, `User.preferredParkingSpotId`, error code `RESERVATIONS_LOCKED`, pure function `isMonthOpen` in `libs/lets-park/shared-types` |
+| Task 3 (schemas) | `ReservationWindowSettings`, `MonthLockState`, `User.preferredParkingSpotId`, error code `RESERVATIONS_LOCKED`, pure function `isMonthOpen` in `libs/garage/shared-types` |
 | Task 4 (oRPC contract) | reading/changing the window settings, an overview of month states, proposing and confirming a bulk reservation, setting the preferred spot |
 | Task 9 (Prisma) | settings table (singleton), FK `preferredParkingSpotId` |
 | Task 12 (modules) | admin management of the reservation window, preferred spot in user settings |

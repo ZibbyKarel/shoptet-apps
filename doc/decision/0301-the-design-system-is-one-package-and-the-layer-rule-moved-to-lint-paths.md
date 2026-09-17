@@ -15,13 +15,13 @@ libs/shared/design-system/src/{tokens,primitives,compounds}/
 ```
 
 The three import specifiers are **unchanged**:
-`@lets-park/design-system/tokens`, `@lets-park/design-system/primitives`,
-`@lets-park/design-system/compounds`. They were three `paths` entries in
+`@garage/design-system/tokens`, `@garage/design-system/primitives`,
+`@garage/design-system/compounds`. They were three `paths` entries in
 `tsconfig.base.json` before and they are three `paths` entries now; only the
 right-hand side moved. That is the whole point of the change and it is the one
 invariant everything below is arranged to protect: 109 files moved inside the
 package (121 renames, 153 files changed across the three commits) and **no line
-outside `libs/shared/design-system/` that mentions `@lets-park/design-system` changed
+outside `libs/shared/design-system/` that mentions `@garage/design-system` changed
 at all** — proved by diffing the workspace-wide grep for that string before and
 after, filtered to exclude the package's own files.
 
@@ -104,7 +104,7 @@ Each layer's group bans two spellings of the same reach:
 group: ['**/compounds', '**/compounds/**']
 ```
 
-- the **workspace alias**, `@lets-park/design-system/compounds` — what the
+- the **workspace alias**, `@garage/design-system/compounds` — what the
   existing cross-layer imports use and what a new one will copy;
 - a **relative escape**, `../../compounds/lib/data-table/data-table` — what
   someone sidestepping the alias would write.
@@ -146,7 +146,7 @@ now names React and exits 1. Before the glob change, the same probe passed.
 ## Why cross-layer imports keep the alias form
 
 Sixteen imports inside the package cross a layer, all written as
-`@lets-park/design-system/primitives`. They were **not** rewritten to relative
+`@garage/design-system/primitives`. They were **not** rewritten to relative
 paths. `@nx/enforce-module-boundaries` reads a project importing its own alias
 as a circular self-dependency, so the project's config sets
 `allowCircularSelfDependency: true` — the same thing `libs/shared/form`'s spec block in
@@ -180,7 +180,7 @@ claimed.
   `typecheck` target compiles — it is now done deliberately, by the target whose
   job it is, instead of accidentally, by the test runner.
 - **Storybook.** 25 stories before the merge, 25 after.
-- **CSS.** `apps/lets-park/web/.next` was wiped and rebuilt, and the emitted stylesheet
+- **CSS.** `apps/garage/web/.next` was wiped and rebuilt, and the emitted stylesheet
   was checked for three markers that only one source can produce: a token custom
   property (`--brand-blue`, which proves the `theme.css` import), a
   primitives-only utility (`peer-checked`), and a compounds-only one

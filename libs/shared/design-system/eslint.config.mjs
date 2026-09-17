@@ -27,7 +27,7 @@ const CLOSED_LAYER_BANS = [
   {
     group: ['clsx', 'clsx/*', 'classnames', 'tailwind-merge', 'class-variance-authority'],
     message:
-      'The design system installs no class-name helper — use `cx` from `@lets-park/design-system/primitives`. See doc/decision/0052-overlay-tokens-and-one-layering-scale.md.',
+      'The design system installs no class-name helper — use `cx` from `@garage/design-system/primitives`. See doc/decision/0052-overlay-tokens-and-one-layering-scale.md.',
   },
 ];
 
@@ -44,7 +44,7 @@ const CLOSED_LAYER_BANS = [
  *
  * Each group catches **both** spellings of a cross-layer reach:
  *
- * - the workspace alias, `@lets-park/design-system/primitives`, which is what
+ * - the workspace alias, `@garage/design-system/primitives`, which is what
  *   the existing cross-layer imports use and what new ones will copy;
  * - a relative escape, `../../../primitives/lib/button`, which is what someone
  *   sidestepping the alias would write.
@@ -148,7 +148,7 @@ export default [
   {
     /**
      * The layers import each other by their workspace alias
-     * (`@lets-park/design-system/primitives`), which they did as separate
+     * (`@garage/design-system/primitives`), which they did as separate
      * projects and still do as one. `@nx/enforce-module-boundaries` reads a
      * project importing its own alias as a circular self-dependency, so the
      * option below is what keeps those imports legal. `libs/shared/form`'s spec block

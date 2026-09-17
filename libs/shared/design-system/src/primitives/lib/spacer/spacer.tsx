@@ -1,7 +1,7 @@
 import { forwardRef, type HTMLAttributes } from 'react';
 
 import { cx } from '../cx';
-import type { SpacingKey } from '@lets-park/design-system/tokens';
+import type { SpacingKey } from '@garage/design-system/tokens';
 
 /**
  * `w-{n}`/`h-{n}` literals for a fixed-size `Spacer`, enumerated for the same

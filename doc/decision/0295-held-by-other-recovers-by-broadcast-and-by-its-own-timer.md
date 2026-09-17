@@ -5,7 +5,7 @@ I-2) · **Follows on from:** `doc/decision/0111-*`, `doc/decision/0124-*`
 
 ## What
 
-`useCellLock` (`libs/lets-park/realtime-client/src/lib/cell-lock.ts`) no longer treats `held-by-other` as
+`useCellLock` (`libs/garage/realtime-client/src/lib/cell-lock.ts`) no longer treats `held-by-other` as
 terminal. Two independent things now end it, and both are wired in the hook:
 
 - **`cell:unlocked` for this cell.** `useRealtimeEvent('cell:unlocked', …)` bumps a `contention`
@@ -28,7 +28,7 @@ changed, or the connection cycled.
 consumer following the docs would render a "právě upravuje …" badge that never clears — the
 precise failure `cell-lock.ts`'s own module header says the hook exists to prevent.
 
-It reached no user: `apps/lets-park/web` discards the return value (`lot-screen.tsx:132`) and drives tile
+It reached no user: `apps/garage/web` discards the return value (`lot-screen.tsx:132`) and drives tile
 badges from its own `useCellLocks`, which does subscribe and does prune (`doc/decision/0124-*`).
 The hook's advertised state was dead code that happened to be wrong.
 
@@ -41,11 +41,11 @@ implementation and for this one.
 
 The final-review report recommended the other option — drop `held-by-other` and `lockedBy`,
 narrow `CellLockState`, delete the row from `doc/realtime.md`. It is smaller, and it matches how
-`apps/lets-park/web` actually uses the hook. It was rejected for two reasons, both measured by grepping the
+`apps/garage/web` actually uses the hook. It was rejected for two reasons, both measured by grepping the
 workspace rather than argued:
 
 1. **Blast radius, almost all of it outside this task's file set.** `held-by-other` is load-bearing
-   in prose that justifies *server* behaviour: `apps/lets-park/api/src/realtime/lock.service.ts:176-177` and
+   in prose that justifies *server* behaviour: `apps/garage/api/src/realtime/lock.service.ts:176-177` and
    `realtime.gateway.ts:223-224` explain why there is one expiry timer per hold by saying that
    `useCellLock` "puts a contended cell into `held-by-other` and then **sits still**", and
    `realtime.gateway.spec.ts:524-525` says the same in a test that exists for it. Add
@@ -114,6 +114,6 @@ Each mechanism is independently load-bearing, which is the point of having two.
   ground and outside this task's edit set (only `0039` and this range were allocated), so the
   correction is left to the merge controller. Nothing 0111 *decides* changes: per-hold server
   timers are still right, and the expiry broadcast is still the fast path.
-- `apps/lets-park/web` still discards the return value and still drives tile badges from `useCellLocks`.
+- `apps/garage/web` still discards the return value and still drives tile badges from `useCellLocks`.
   That split is `doc/decision/0124-*` and is unchanged; what changed is that the hook's advertised
   state is now true, so a future consumer can rely on it.

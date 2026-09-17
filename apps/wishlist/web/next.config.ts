@@ -9,7 +9,7 @@ import type { NextConfig } from 'next';
  * written against them (`output` and `outputFileTracingRoot`, which together
  * decide the layout a Dockerfile would copy from).
  *
- * **Deliberately absent**, and to be taken from `apps/lets-park/web/next.config.ts`
+ * **Deliberately absent**, and to be taken from `apps/garage/web/next.config.ts`
  * when this app grows the corresponding surface — not invented afresh:
  * the security-header block (CSP, `X-Frame-Options`, `Referrer-Policy`) and
  * `poweredByHeader: false`. They are omitted rather than copied because that
@@ -31,7 +31,7 @@ const nextConfig: NextConfig = {
   // Where tracing starts. This app has no node_modules of its own — they are
   // hoisted to the workspace root — so a trace rooted here would miss all of
   // them. Three levels up from `apps/wishlist/web`, the same depth as
-  // `apps/lets-park/web`. Stating it also silences Next.js's root inference,
+  // `apps/garage/web`. Stating it also silences Next.js's root inference,
   // which walks up for a lockfile and would land in the same place.
   outputFileTracingRoot: resolve(__dirname, '..', '..', '..'),
 };

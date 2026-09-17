@@ -1,6 +1,6 @@
 # 0049 – `AuthProvider` polls the session, because rotation only happens when the session is read
 
-**Date:** 2026-09-02 · **Status:** accepted · **Task:** 20 (`libs/lets-park/auth`)
+**Date:** 2026-09-02 · **Status:** accepted · **Task:** 20 (`libs/garage/auth`)
 **Follows on from:** `doc/decision/0044-*`
 
 ## What
@@ -32,13 +32,13 @@ to Okta unless the token is actually due.
 when the user comes back to the tab, which is precisely not the idle-tab case.
 
 **Why a constant rather than a caller's decision.** The value is coupled to
-`REFRESH_SKEW_SECONDS`, which lives in this lib. Leaving it to `apps/lets-park/web` would put half of
+`REFRESH_SKEW_SECONDS`, which lives in this lib. Leaving it to `apps/garage/web` would put half of
 one mechanism in the app and half in the wrapper, and the wrapper's default would still have
 to be *something* — Auth.js's `0`, which is the wrong answer.
 
 ## How
 
-`SESSION_REFETCH_SECONDS` in `libs/lets-park/auth/src/lib/client.tsx`, exported so the number is
+`SESSION_REFETCH_SECONDS` in `libs/garage/auth/src/lib/client.tsx`, exported so the number is
 citable.
 
 Exercised in `client.spec.tsx` against the **real** `SessionProvider`, with fake timers and a

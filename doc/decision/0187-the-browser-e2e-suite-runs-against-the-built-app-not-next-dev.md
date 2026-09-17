@@ -2,7 +2,7 @@
 
 ## What
 
-`apps/lets-park/web-e2e/playwright.config.mts` starts the web app with
+`apps/garage/web-e2e/playwright.config.mts` starts the web app with
 
 ```
 npx nx run web:start -- --port 4200
@@ -23,7 +23,7 @@ user's tile read `Volné` when it should have read *"právě upravuje Dev User"*
 as though the broadcast had never arrived.
 
 It had arrived. Tracing every socket.io packet on both pages
-(`E2E_TRACE_REALTIME=1`, `apps/lets-park/web-e2e/src/support/realtime.ts`) produced this,
+(`E2E_TRACE_REALTIME=1`, `apps/garage/web-e2e/src/support/realtime.ts`) produced this,
 twice, on two independent failures:
 
 ```
@@ -82,7 +82,7 @@ mistaken for one page with two sockets:
 app.** Never three. So the duplicate connection is common, not rare, and
 `StrictMode` cannot explain the ones that remain: a production React build does
 not double-invoke effects. **The cause is unknown.** It is somewhere in
-`libs/lets-park/realtime-client/src/lib/connection.tsx`'s connection effect — its
+`libs/garage/realtime-client/src/lib/connection.tsx`'s connection effect — its
 `[url, path, enabled, generation]` dependency list against a cleanup whose
 `next.disconnect()` evidently does not always take the first socket down.
 
@@ -107,8 +107,8 @@ not double-invoke effects. **The cause is unknown.** It is somewhere in
 > calendar from today, which is what a fresh document does and what a
 > double-mounted React tree does not.
 >
-> Nothing in `libs/lets-park/realtime-client` needed changing, and nothing was changed.
-> `apps/lets-park/web-e2e/src/realtime-connection.spec.ts` now pins one-document-one-socket
+> Nothing in `libs/garage/realtime-client` needed changing, and nothing was changed.
+> `apps/garage/web-e2e/src/realtime-connection.spec.ts` now pins one-document-one-socket
 > in the built app.
 
 Two things are worth recording about the *consequences*, because they are milder
@@ -163,7 +163,7 @@ So the two candidate fixes, stated correctly:
   simply false, and is retracted. Whoever takes it should start from `acquire`'s
   same-user branch.
 - **Find out why a page ends up with two connections** — the root cause, in
-  `libs/lets-park/realtime-client/src/lib/connection.tsx`. Harder, and the one that makes
+  `libs/garage/realtime-client/src/lib/connection.tsx`. Harder, and the one that makes
   the first unnecessary.
 
 > **Both were addressed in Task 32; only one of them was a defect.** The first
@@ -188,7 +188,7 @@ change.
 > (`doc/decision/0220-*`). This finding turned out to be the *entire* defect the
 > "duplicate connection" was thought to be a symptom of: a user really can have
 > two live connections on one cell, and the way they get them is a second tab or
-> a reload rather than anything wrong in `libs/lets-park/realtime-client`.
+> a reload rather than anything wrong in `libs/garage/realtime-client`.
 >
 > What changed: `release` now matches `(user, socketId)`, so the tab whose
 > dialog opened **first** can no longer drop the hold. What did **not** change:
@@ -216,12 +216,12 @@ developer, in every feature. `StrictMode` did its job here.
 
 ## How
 
-- `apps/lets-park/web-e2e/playwright.config.mts` — the second `webServer` entry.
-- `apps/lets-park/web/project.json` needs no change: the `start` target inferred by
+- `apps/garage/web-e2e/playwright.config.mts` — the second `webServer` entry.
+- `apps/garage/web/project.json` needs no change: the `start` target inferred by
   `@nx/next` already depends on `build`; `--port 4200` is passed on the command
   line for the same reason `dev` pins it — the workspace `.env` carries
   `PORT=3000`, which belongs to the API.
-- `apps/lets-park/web-e2e/src/support/realtime.ts` — the tracing that found this, kept and
+- `apps/garage/web-e2e/src/support/realtime.ts` — the tracing that found this, kept and
   documented, behind `E2E_TRACE_REALTIME=1`.
 
 ## Risk

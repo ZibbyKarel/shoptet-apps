@@ -3,7 +3,7 @@
 ## What
 
 Every server → client event on the parking screen is handled the same way, in
-`apps/lets-park/web/src/lot/lot-screen/use-lot-realtime.ts`:
+`apps/garage/web/src/lot/lot-screen/use-lot-realtime.ts`:
 
 1. read the day overview out of the query cache, under the key
    `createApiQueryUtils` derives from the contract;
@@ -76,6 +76,6 @@ later, and only for the callers those fields moved for.
 
 ## Verified by
 
-`apps/lets-park/web/src/lot/lot-screen/day-overview-cache.spec.ts` (24 tests, the pure patches and
-the four predicates) and `apps/lets-park/web/src/lot/lot-screen/use-lot-realtime.spec.tsx` (14
+`apps/garage/web/src/lot/lot-screen/day-overview-cache.spec.ts` (24 tests, the pure patches and
+the four predicates) and `apps/garage/web/src/lot/lot-screen/use-lot-realtime.spec.tsx` (14
 tests, the wiring and the key).

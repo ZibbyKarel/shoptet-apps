@@ -64,19 +64,19 @@ byte-identical under `UTC`, `America/Los_Angeles`, `Europe/Prague` and
 `Pacific/Kiritimati`. This does not weaken the Europe/Prague rule: a reservation
 day is a calendar day (`doc/decision/0013-calendar-arithmetic-and-single-timezone-boundary`), an all-day `VALUE=DATE` event has
 no time and therefore no offset, and the `@db.Date` → `YYYY-MM-DD` conversion has
-already happened in `apps/lets-park/api`.
+already happened in `apps/garage/api`.
 
 Adding `timezone: 'Europe/Prague'` fails **2** tests; changing `DTSTAMP` to
 `new Date()` fails **3**.
 
 ## How
 
-- `libs/lets-park/calendar-export/src/lib/reservation-calendar.ts` — no clock, no calendar
+- `libs/garage/calendar-export/src/lib/reservation-calendar.ts` — no clock, no calendar
   `timezone`, `stamp: new Date(entry.createdAt)`.
-- `libs/lets-park/contract/src/api/ics.ts` — `createdAt` is part of `icsCalendarEntrySchema`
+- `libs/garage/contract/src/api/ics.ts` — `createdAt` is part of `icsCalendarEntrySchema`
   for this reason.
-- `apps/lets-park/api/src/calendar/calendar.controller.ts` — `@Res({ passthrough: true })`
+- `apps/garage/api/src/calendar/calendar.controller.ts` — `@Res({ passthrough: true })`
   and a returned string, so `res.send()` runs.
-- `apps/lets-park/api/src/calendar/calendar.service.ts` — `orderBy: [{ date: 'asc' }, { id:
+- `apps/garage/api/src/calendar/calendar.service.ts` — `orderBy: [{ date: 'asc' }, { id:
   'asc' }]`; without the `id` tiebreaker two reservations on the same day could
   swap places between reads and change the ETag for no reason.

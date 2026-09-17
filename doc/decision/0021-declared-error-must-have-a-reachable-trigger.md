@@ -12,7 +12,7 @@ Specifically, fixing findings N2 and N3 from the Task 4 review:
 
 - **`admin.window.months`** no longer declares `VALIDATION_FAILED`. The
   range-length limit is now structural: `MAX_MONTH_WINDOW_SPAN = 24` in
-  `libs/lets-park/shared-types`, plus a second `.refine()` on
+  `libs/garage/shared-types`, plus a second `.refine()` on
   `listMonthWindowsInputSchema`.
 - **`me.regenerateIcsToken`** no longer declares `CONFLICT`. A collision on the
   randomly generated token is handled by a **retry loop in the handler** (a
@@ -48,7 +48,7 @@ the same reason.
 ## How
 
 `MAX_MONTH_WINDOW_SPAN` lives in
-`libs/lets-park/shared-types/src/lib/domain-constants.ts` next to
+`libs/garage/shared-types/src/lib/domain-constants.ts` next to
 `MAX_BULK_BOOKING_DAYS`, because it's a domain constant, not a schema detail —
 Task 13 will reference it when paginating the admin table.
 
@@ -84,5 +84,5 @@ generous.
 
 **`monthSpan()` duplicates future calendar arithmetic.** Once there's a need
 to compute month ranges in more than one place, it belongs in
-`libs/lets-park/shared-types` next to `doc/decision/0013-calendar-arithmetic-and-single-timezone-boundary.md`; moving it there now would be
+`libs/garage/shared-types` next to `doc/decision/0013-calendar-arithmetic-and-single-timezone-boundary.md`; moving it there now would be
 premature abstraction.

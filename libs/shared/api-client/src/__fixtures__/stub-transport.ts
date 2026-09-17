@@ -9,7 +9,7 @@
  *
  * Lives in `__fixtures__/` because `tsconfig.lib.json` excludes that folder;
  * being unreferenced by `src/index.ts` is not enough to keep a file out of the
- * library's compilation program (see `libs/lets-park/contract/src/__fixtures__`).
+ * library's compilation program (see `libs/garage/contract/src/__fixtures__`).
  */
 
 import type { ApiFetch } from '../lib/api-client';

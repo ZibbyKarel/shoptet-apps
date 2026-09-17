@@ -8,7 +8,7 @@
   "// targets": "build, dev, start and lint are inferred (@nx/next/plugin, @nx/eslint/plugin). Only the two that need an option are spelled out.",
   "targets": {
     "build": {
-      "// env": "Nx injects the workspace-root and project-root `.env` files into every target's environment. Both carry NODE_ENV=development (they are dev env files — see doc/decision/0009-*), which would otherwise leak into `next build` and produce a mixed development/production React resolution. Measured here: without this pin, `next build` warns \"You are using a non-standard NODE_ENV value\". Same fix as `apps/lets-park/web`; see doc/decision/0028-*.",
+      "// env": "Nx injects the workspace-root and project-root `.env` files into every target's environment. Both carry NODE_ENV=development (they are dev env files — see doc/decision/0009-*), which would otherwise leak into `next build` and produce a mixed development/production React resolution. Measured here: without this pin, `next build` warns \"You are using a non-standard NODE_ENV value\". Same fix as `apps/garage/web`; see doc/decision/0028-*.",
       "options": {
         "env": {
           "NODE_ENV": "production"
@@ -24,7 +24,7 @@
       }
     },
     "dev": {
-      "// port": "4300, and it has to be stated. Nx injects the workspace-root `.env` into every target and that file carries PORT=3000 (the let's park API's); `next dev` reads PORT when no `--port` is given, so an unpinned dev target here would bind 3000 and collide. `apps/lets-park/web` is pinned to 4200 for the same reason — see its project.json and doc/decision/0009-*.",
+      "// port": "4300, and it has to be stated. Nx injects the workspace-root `.env` into every target and that file carries PORT=3000 (the let's park API's); `next dev` reads PORT when no `--port` is given, so an unpinned dev target here would bind 3000 and collide. `apps/garage/web` is pinned to 4200 for the same reason — see its project.json and doc/decision/0009-*.",
       "options": {
         "command": "next dev --port 4300"
       }

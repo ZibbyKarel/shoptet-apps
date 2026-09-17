@@ -1,8 +1,8 @@
 /**
- * `@lets-park/form` — the only place in the workspace allowed to import
+ * `@garage/form` — the only place in the workspace allowed to import
  * `react-hook-form` (enforced in `eslint.config.mjs`, see `doc/wrappers.md`).
  *
- * The bridge between `libs/lets-park/contract`'s Zod schemas and the design system's
+ * The bridge between `libs/garage/contract`'s Zod schemas and the design system's
  * input primitives (`Input`, `Select`, `Checkbox`, ...):
  *
  * - `useAppForm` — wires a Zod schema into react-hook-form via

@@ -2,7 +2,7 @@
 
 ## What
 
-`apps/lets-park/web/src/shell/admin/admin-errors.ts` holds a table from an **admin write**
+`apps/garage/web/src/shell/admin/admin-errors.ts` holds a table from an **admin write**
 (`userUpdate`, `spotCreate`, `spotRename`, `spotRetire`, `spotRevive`,
 `windowUpdate`) and a contract `ErrorCode` to a message key in the `admin`
 namespace, plus a per-operation fallback.
@@ -33,7 +33,7 @@ the `errors` namespace, which translates a code with no other context.
 
 - **A table can be checked against the contract; a chain of `if`s cannot.**
   `admin-errors.spec.tsx` reads each admin procedure's declared error map off
-  `libs/lets-park/contract` and asserts the table has a sentence for every code the
+  `libs/garage/contract` and asserts the table has a sentence for every code the
   procedure can raise. Adding an error code to a procedure fails that test until
   the copy is written.
 
@@ -52,7 +52,7 @@ the `errors` namespace, which translates a code with no other context.
   no code at all, gets `errFallback*`: "it did not save, try again". True of
   anything unexpected, and it never leaks the thrown error's own message.
 - **`FORBIDDEN` is spread into every row.** Every authenticated procedure
-  inherits it (`authed` in `libs/lets-park/contract/src/api/errors.ts`), and it is the one
+  inherits it (`authed` in `libs/garage/contract/src/api/errors.ts`), and it is the one
   code whose meaning does not change with the operation.
 - Every mutation resets the previous failure before starting
   (`updateUser.reset()`, `startWrite`), so a mutation that failed once cannot

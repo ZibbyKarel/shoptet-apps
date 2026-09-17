@@ -1,0 +1,20 @@
+{
+  "name": "calendar-export",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/garage/calendar-export/src",
+  "projectType": "library",
+  "tags": ["type:util", "scope:api", "app:garage"],
+  "// targets": "to see all targets run: nx show project calendar-export --web",
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "tsc --noEmit -p libs/garage/calendar-export/tsconfig.lib.json",
+          "tsc --noEmit -p libs/garage/calendar-export/tsconfig.spec.json"
+        ],
+        "parallel": false
+      }
+    }
+  }
+}

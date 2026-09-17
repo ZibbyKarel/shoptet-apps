@@ -7,7 +7,7 @@
 `libs/shared/design-system/tokens/assets/tokens.css` is a **generated** file (from the TS
 tokens in `src/lib/*.ts`, via the `generateTokensCss` function), but it is
 **committed to git** and excluded from Prettier formatting via `.prettierignore` —
-the same treatment as `apps/lets-park/web/next-env.d.ts`.
+the same treatment as `apps/garage/web/next-env.d.ts`.
 
 ## Why
 
@@ -17,9 +17,9 @@ the same treatment as `apps/lets-park/web/next-env.d.ts`.
    `compounds` in later tasks will import this file — they shouldn't have to wait on
    someone remembering to run the generator. **Note:** the exact import specifier
    (a relative path vs. some `exports` mapping) isn't resolved yet –
-   `@lets-park/design-system/tokens` is only a TS `tsconfig.paths` alias for module
+   `@garage/design-system/tokens` is only a TS `tsconfig.paths` alias for module
    resolution; a CSS `@import`/bundler doesn't know it automatically. How
-   apps/lets-park/web/Storybook actually import `theme.css` is up to whichever task first
+   apps/garage/web/Storybook actually import `theme.css` is up to whichever task first
    consumes this lib — see `doc/design-system.md`.
 2. **Excluded from Prettier.** `generateTokensCss` deliberately reproduces the style
    of the source `doc/design/ds/colors_and_type.css` 1:1 — uppercase hex codes

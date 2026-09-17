@@ -4,7 +4,7 @@
 
 `createSignOutRegistry` reads its revocation map from `sharedRevokedStore()`,
 which anchors a single `Map` to `globalThis` under
-`Symbol.for('@lets-park/auth:signed-out-sessions')`. That function **throws**
+`Symbol.for('@garage/auth:signed-out-sessions')`. That function **throws**
 when `process.env.NEXT_RUNTIME` is anything but the Node.js runtime.
 
 A module-level `Map` would be the obvious thing. It does not work, and it does
@@ -32,7 +32,7 @@ Temporary instrumentation in the running `next start` process said why:
 **Three `createAuthConfig` instances in one process.** Next.js compiles the
 proxy, the `/api/auth/*` route handlers and the server components into separate
 bundles, each with its own module registry, so `createAuth()` in
-`apps/lets-park/web/src/auth.ts` runs once per bundle. The sign-out event reached exactly
+`apps/garage/web/src/auth.ts` runs once per bundle. The sign-out event reached exactly
 one of them. Every authorization check that mattered — the proxy's, which is
 what issues the redirect — ran against a different, permanently empty registry.
 
@@ -88,7 +88,7 @@ visible at the call site instead of hidden in a module.
   `doc/decision/0246-*` records why it takes that shape, and applies the same
   test to the refresher's state (`doc/decision/0245-*`).
 - **Process-wide state is process-wide.** A second web instance would not see
-  the first's sign-outs, which makes horizontal scaling of `apps/lets-park/web` a change
+  the first's sign-outs, which makes horizontal scaling of `apps/garage/web` a change
   that must go through this file. `SignOutRegistry` is deliberately four methods
   wide so that moving it behind Redis or a table touches nothing else.
 - **A restart empties it.** Stated in `0230-*` under Risk; repeated here because

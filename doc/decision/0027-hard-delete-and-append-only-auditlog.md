@@ -78,7 +78,7 @@ as the `CHECK` constraints (see `doc/decision/0026-*` and `doc/database.md`).
 ## How
 
 - The trigger and its function live in
-  `libs/lets-park/database/prisma/migrations/*/migration.sql`; `migration-sql.spec.ts`
+  `libs/garage/database/prisma/migrations/*/migration.sql`; `migration-sql.spec.ts`
   asserts their presence.
 - The service layer (Task 13) must perform the deletion and the audit write
   **in a single transaction**, or you end up with either a reservation with no

@@ -2,8 +2,8 @@
 
 ## What
 
-`apps/lets-park/api/src/realtime/realtime-no-backdoor.spec.ts` now walks **all of
-`apps/lets-park/api/src`** recursively, skipping `**/testing/**` and `*.spec.ts`, instead
+`apps/garage/api/src/realtime/realtime-no-backdoor.spec.ts` now walks **all of
+`apps/garage/api/src`** recursively, skipping `**/testing/**` and `*.spec.ts`, instead
 of listing one directory. 85 files at the time of writing, against 5 before.
 
 The file keeps its name — four places in the code and the docs cite it by that
@@ -16,7 +16,7 @@ module"* for the assertions that really are about that module.
 `REALTIME_DIR = join(__dirname)` with a non-recursive `readdirSync` made the
 spec's whole subject five files in one directory. The rule it enforces — "a
 *value* may differ between environments and a *branch* may not" — is quoted from
-`apps/lets-park/api/src/auth`'s own header, and `apps/lets-park/api/src/auth` is where an
+`apps/garage/api/src/auth`'s own header, and `apps/garage/api/src/auth` is where an
 `if (isTest)` would actually let an unauthenticated caller in. The most
 security-critical directory in the application was guarded nowhere while a less
 critical one was guarded twice.

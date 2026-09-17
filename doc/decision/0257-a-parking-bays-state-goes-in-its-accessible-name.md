@@ -2,7 +2,7 @@
 
 ## What
 
-The tile `<button>` in `apps/lets-park/web/src/lot/lot-grid/lot-grid.tsx` labels itself with the
+The tile `<button>` in `apps/garage/web/src/lot/lot-grid/lot-grid.tsx` labels itself with the
 action *and* the state: "Rezervovat místo E2.93, Volné", "Otevřít místo E2.92,
 Petr Novák, 8SC 9012", "Otevřít místo E2.93, rezervace uzamčeny", "Otevřít místo
 E2.92, právě upravuje Jana Dvořáková". The fragments are the same message keys
@@ -37,21 +37,21 @@ the tile draws; no new copy was written.
 
 ## How
 
-- `apps/lets-park/web/src/lot/lot-grid/lot-grid.tsx` — `accessibleName` is built from the action
+- `apps/garage/web/src/lot/lot-grid/lot-grid.tsx` — `accessibleName` is built from the action
   key plus one fragment list per appearance, `null`s and empty strings filtered,
   joined with ", ". The editor case joins with a space, because "právě upravuje
   Jana Dvořáková" is one clause.
-- `apps/lets-park/web/src/lot/lot-grid/lot-grid.spec.tsx` — a new block, *"what a screen reader is
+- `apps/garage/web/src/lot/lot-grid/lot-grid.spec.tsx` — a new block, *"what a screen reader is
   told about a bay"*, asserts `toHaveAccessibleName` for each of the four
   states, plus a test that renders all four together and pins that no two names
   collide. The pre-existing role queries were updated to the new names.
-- `apps/lets-park/web/src/lot/lot-screen/lot-screen.spec.tsx` — its tile queries were loosened to
+- `apps/garage/web/src/lot/lot-screen/lot-screen.spec.tsx` — its tile queries were loosened to
   anchored prefix regexes (`/^Otevřít místo E2\.92,/u`). That suite's subject is
   behaviour, not wording; the wording is `lot-grid.spec.tsx`'s.
 
 ## Risk
 
-- **`apps/lets-park/web-e2e/src/support/lot-page.ts` still anchors its selector.**
+- **`apps/garage/web-e2e/src/support/lot-page.ts` still anchors its selector.**
   `spotTile()` matches `new RegExp('^(Rezervovat|Otevřít) místo ' + label + '$')`,
   and that `$` no longer matches. The file belongs to another shard, so the
   change is **not made here**: the regex needs its `$` relaxed (e.g.

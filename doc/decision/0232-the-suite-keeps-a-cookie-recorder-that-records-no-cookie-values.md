@@ -2,7 +2,7 @@
 
 ## What
 
-`apps/lets-park/web-e2e/src/support/auth-network-log.ts` records, for one page, every
+`apps/garage/web-e2e/src/support/auth-network-log.ts` records, for one page, every
 request and response in order: the request's cookie **names**, the response's
 `Set-Cookie` **names**, and whether each one is a set or a deletion. It is off
 unless `E2E_AUTH_LOG_DIR` is set, and it is kept in the repository rather than

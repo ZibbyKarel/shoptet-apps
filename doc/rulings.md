@@ -1,6 +1,6 @@
 # Rulings ledger
 
-Every ruling made during the `lets-park` implementation run, in the order it was
+Every ruling made during the `garage` implementation run, in the order it was
 made — **103 of them**, each with what was decided, why, and what it costs if the
 decision turns out wrong.
 
@@ -15,7 +15,7 @@ The short identifier in bold (`preflight-1`, `scope-2`, …) was the key back in
 the run's ledger, which was scratch and is gone. The identifiers are kept because
 they are how the decision records and code comments written during the run refer
 to these rulings — `ruling window-1`, for instance, is cited from
-`libs/lets-park/contract/src/api/router.spec.ts`.
+`libs/garage/contract/src/api/router.spec.ts`.
 
 A note on the count, because it is itself a ruling worth reading: an earlier
 extraction keyed on the literal string `Ruling:` and reported 52. The ledger also
@@ -39,7 +39,7 @@ pattern, not about the thing being counted.
    Why: the design chat shows the window rule was a deliberate, later request describing a real company rule, so the design postdates and supersedes plan.md's horizon.
    Cost if wrong: roughly two extra tasks (30, 31) plus fields on three existing entities.
 
-5. **npm scope is `@lets-park`, not `@myorg`** — `scope-2` (User ruling, Task 1)
+5. **npm scope is `@garage`, not `@myorg`** — `scope-2` (User ruling, Task 1)
    Why: `@myorg` in plan.md was a placeholder; changing it later touches every import.
    Cost if wrong: a mechanical rename, cheapest done now rather than later.
 
@@ -124,7 +124,7 @@ pattern, not about the thing being counted.
     Cost if wrong: one merge per task, with a conflict on shared workspace config (`tsconfig.base.json`, `nx.json`) as the expected, small, mechanical failure mode.
 
 26. **`type:contract` may depend on `@orpc/contract` (not `zod` alone), deliberately excluding all other `@orpc/*` packages** — `contract-tag-1` (Task 1, provisional; endorsed and made final at Task 1 review)
-    Why: the brief's literal "zod only" wording contradicts plan.md, which puts the oRPC contract definition inside `libs/lets-park/contract`; plan.md is the binding spec and wins over its own argument (the brief).
+    Why: the brief's literal "zod only" wording contradicts plan.md, which puts the oRPC contract definition inside `libs/garage/contract`; plan.md is the binding spec and wins over its own argument (the brief).
     Cost if wrong: one line in `eslint.config.mjs`.
 
 27. **An extra `ds:*` Nx tag dimension stands, for tokens → primitives → compounds layering** — `ds-tag-1` (Task 1, provisional; endorsed and made final at Task 1 review)
@@ -140,7 +140,7 @@ pattern, not about the thing being counted.
     Cost if wrong: one comparison in `dismissable-layer.ts` plus the tests pinning it.
 
 30. **Record BASE immediately before dispatch, and state which merged tasks it does and doesn't contain** — `task-20-base-1` (Task 20)
-    Why: Task 20's brief described `apps/lets-park/api/src/auth` state that its actual BASE (pre-Task-11-merge) did not have — a dispatch composed from merged main can silently diverge from the BASE recorded before that merge landed.
+    Why: Task 20's brief described `apps/garage/api/src/auth` state that its actual BASE (pre-Task-11-merge) did not have — a dispatch composed from merged main can silently diverge from the BASE recorded before that merge landed.
     Cost if wrong: exactly what happened — an implementer reconciling a brief against a contradicting tree, at the cost of its own time and the risk of a wrong reconciliation.
 
 31. **Overlay nesting is established at registration time via React context, not inferred from the DOM; outer focus traps pause while an inner layer is registered above them** — `overlay-stack-3` (Task 8, round 4)
@@ -152,8 +152,8 @@ pattern, not about the thing being counted.
     Cost if wrong: one line in `.env.example`, versus every API call and Socket.io handshake 401ing once Task 23 wires the two halves together.
 
 33. **Task 12 implements the contract via `@orpc/server` plus one per-procedure Nest route delegating to a shared `RPCHandler`, not `@orpc/nest`'s `@Implement`** — `orpc-nest-1` (Task 12; provisional, then confirmed final against the package source)
-    Why: `@Implement` serves only the OpenAPI protocol and throws without a `contract.route()`, which `libs/lets-park/contract` has none of, while the already-merged `libs/shared/api-client` speaks the RPC protocol — confirmed `@orpc/nest` also needs `express>=5` against this tree's `express@4`, making it harder than the brief assumed.
-    Cost if wrong: large — would mean rewriting `apps/lets-park/api`'s transport layer; guarded by a parity spec proven by mutation (a procedure with no route, an admin route with no guard).
+    Why: `@Implement` serves only the OpenAPI protocol and throws without a `contract.route()`, which `libs/garage/contract` has none of, while the already-merged `libs/shared/api-client` speaks the RPC protocol — confirmed `@orpc/nest` also needs `express>=5` against this tree's `express@4`, making it harder than the brief assumed.
+    Cost if wrong: large — would mean rewriting `apps/garage/api`'s transport layer; guarded by a parity spec proven by mutation (a procedure with no route, an admin route with no guard).
 
 34. **The controller starts Docker Desktop itself** — `docker-1` (Controller ruling)
     Why: four tasks had accumulated unverifiable claims blocked on it, two reviewers named it the most serious open item, and Tasks 13/28 could not be written honestly without it.
@@ -184,7 +184,7 @@ pattern, not about the thing being counted.
     Cost if wrong: one more review round on a task that already passed its spec gate.
 
 41. **Dispatch Task 22 (design-system compounds) concurrently with Task 13 (backend) and the Task 21 fix round (realtime-client)** — `parallel-3` (Task 22 dispatch)
-    Why: the user's explicit instruction to parallelize independent phases, and the three agents' file sets (`apps/lets-park/api`, `libs/lets-park/realtime-client`, `libs/shared/design-system/compounds`) are disjoint, so the conflict risk the serial default guards against does not apply.
+    Why: the user's explicit instruction to parallelize independent phases, and the three agents' file sets (`apps/garage/api`, `libs/garage/realtime-client`, `libs/shared/design-system/compounds`) are disjoint, so the conflict risk the serial default guards against does not apply.
     Cost if wrong: not recorded (each dispatch carries an explicit stay-in-your-lane instruction).
 
 42. **Task 21's fix round keeps decision numbers `0060`–`0063`; Task 13's three colliding records renumber to `0064`–`0066` at merge** — `decision-collision-1` (Tasks 13/21)
@@ -248,7 +248,7 @@ pattern, not about the thing being counted.
     Cost if wrong: not recorded (the re-review independently confirmed no emitted line carries the token on either path).
 
 57. **Correct the local `.env` files (still carrying `AUTH_OKTA_AUDIENCE=api://default`) to match the already-correct committed `.env.example`** — `t23-env-1` (Task 23)
-    Why: the implementer refused to loosen validation, edit `.env`, or touch `apps/lets-park/api` to work around the mismatch, running its own API on a spare port instead — the right call, but the local files were still simply wrong.
+    Why: the implementer refused to loosen validation, edit `.env`, or touch `apps/garage/api` to work around the mismatch, running its own API on a spare port instead — the right call, but the local files were still simply wrong.
     Cost if wrong: none — the change only aligns local files with the committed example.
 
 58. **The `t30-m15` conclusion (keep the redundant sort) stands, but its reasoning was wrong — the interleaving CAN be forced, via a test-only `BEFORE INSERT` trigger** — `t30-m15-resolved` (Task 30 review)
@@ -272,7 +272,7 @@ pattern, not about the thing being counted.
     Cost if wrong: not recorded — settled on the standard applied three times before: measured, not argued.
 
 63. **Dispatch Task 24 (main lot screen) while Task 15 (realtime gateway) is still being implemented, rather than serialising behind it** — `t24-parallel-with-15` (Task 24 dispatch)
-    Why: the wire protocol already exists in `@lets-park/contract/realtime` and the client honours it, so the screen can be built contract-first even without a live server to exercise against.
+    Why: the wire protocol already exists in `@garage/contract/realtime` and the client honours it, so the screen can be built contract-first even without a live server to exercise against.
     Cost if wrong: Task 24's review re-runs after Task 15 merges.
 
 64. **Task 30's four residual items (all prose/documentation accuracy, no behaviour change) go to a no-behaviour fix round on sonnet** — `t30-fix-2` (Task 30 fix round 2)
@@ -339,7 +339,7 @@ pattern, not about the thing being counted.
     Why: these tests exercise real HTTP, so a flake is either a harness race or a real timing bug in the retry/backoff path Task 16's whole story rests on.
     Cost if wrong: one re-reviewer loop confirming a harness race — reversed at #81: the answer was the bad one.
 
-80. **Reject the claim that a `web:typecheck` failure predates Task 24 and is out-of-scope cross-cutting work; the branch owns it** — `t24-typecheck-not-preexisting` (Task 24 fix round 1; confirmed — an `apps/lets-park/web/tsconfig.json` `exclude` glob missing `.spec.tsx`/`.test.tsx` let a new spec trigger a dual-declaration `@tanstack/query-core` hazard)
+80. **Reject the claim that a `web:typecheck` failure predates Task 24 and is out-of-scope cross-cutting work; the branch owns it** — `t24-typecheck-not-preexisting` (Task 24 fix round 1; confirmed — an `apps/garage/web/tsconfig.json` `exclude` glob missing `.spec.tsx`/`.test.tsx` let a new spec trigger a dual-declaration `@tanstack/query-core` hazard)
     Why: `nx run web:typecheck` exits 0 on merged main, which contains everything Task 24's base contains plus more — a latent defect the branch is first to trigger is still the branch's gate to clear.
     Cost if wrong: one fix round spent proving a genuine upstream incompatibility, which would then be documented rather than hidden.
 
@@ -347,11 +347,11 @@ pattern, not about the thing being counted.
     Why: an isolated 20× loop is the wrong instrument for a contention bug, and is exactly the instrument that returned "non-issue" — under 4-way concurrent stress, 13 of 20 runs failed, because the per-attempt timeout can fire while a request is still in flight and `withRetries` never aborts it.
     Cost if wrong: routed to its own fix round because it's a named requirement of Task 16's brief, causes user-visible harm (a duplicated promotion DM), and `doc/slack.md`'s "Exactly once" claim is false as shipped.
 
-82. **The re-review must probe Task 24's round-2 typecheck fix (widening the `exclude` glob) by injecting a deliberate type error, not accept it on reading** — `t24-exclude-could-hide-errors` (Task 24 fix round 2; the probe fired and the answer was the bad one — round 2 had silently emptied the entire `apps/lets-park/web` spec typecheck program to 0 of 18 files)
+82. **The re-review must probe Task 24's round-2 typecheck fix (widening the `exclude` glob) by injecting a deliberate type error, not accept it on reading** — `t24-exclude-could-hide-errors` (Task 24 fix round 2; the probe fired and the answer was the bad one — round 2 had silently emptied the entire `apps/garage/web` spec typecheck program to 0 of 18 files)
     Why: excluding files from a typecheck program is exactly how type errors get hidden — the same bargain that let the ICS bearer token reach the logs, where every spec pinned `LOG_LEVEL: 'fatal'` so nothing ever read log output.
     Cost if wrong: round 3 had to give `tsconfig.spec.json` its own empty `exclude` and prove both halves with `--listFiles` and a live canary — which also unmasked a second, independent `@tanstack/query-core` hazard sitting invisible behind the empty program.
 
-83. **Dispatch a prose-only fix for decision record `0126`, which is right in its conclusion (`module: esnext` is safe) but cites the wrong evidence (`apps/lets-park/web/.swcrc`, which Jest never consults)** — `t24-adr-correction` (Task 24)
+83. **Dispatch a prose-only fix for decision record `0126`, which is right in its conclusion (`module: esnext` is safe) but cites the wrong evidence (`apps/garage/web/.swcrc`, which Jest never consults)** — `t24-adr-correction` (Task 24)
     Why: a false claim in a permanent decision record about why a config setting is safe, in the exact file that produced three separate defects across three rounds, invites someone to preserve the reason and discard the setting.
     Cost if wrong: one message and one ADR sentence to re-read; no re-review dispatched, since the change is prose and cannot regress an already byte-verified tree.
 
@@ -384,7 +384,7 @@ pattern, not about the thing being counted.
     Cost if wrong: a real failure entered the branch and would resurface only at the final whole-branch review; rule adopted from here — redirect verification output to a file so a red can be read, not re-run away.
 
 91. **Route to a fix round rather than accept the composite publisher's comment claiming isolation "for any delegate, present or future," when the isolation is measured to be synchronous-only** — `t16-async-delegate-hole` (Task 16 integration review)
-    Why: an async delegate's rejection is not caught by `forward`'s `try`, and `apps/lets-park/api` installs no `unhandledRejection` handler, so such a delegate would kill the process after `COMMIT`, on the request's way out — precisely the scenario the seam exists to prevent.
+    Why: an async delegate's rejection is not caught by `forward`'s `try`, and `apps/garage/api` installs no `unhandledRejection` handler, so such a delegate would kill the process after `COMMIT`, on the request's way out — precisely the scenario the seam exists to prevent.
     Cost if wrong: a future Slack-like integration takes the API down on every publish failure, if the comment is trusted as written.
 
 92. **Hand-edit a single Task 27 test fixture field during the Task 31 merge, instead of dispatching a separate integration task** — `t31-merge-fixture-edit` (Task 31 merge)
@@ -392,7 +392,7 @@ pattern, not about the thing being counted.
     Cost if wrong: a fixture default that silently disagrees with the screen's other state, bounded by the field being unread on that screen.
 
 93. **Dispatch Task 28 (e2e) off main while Task 16 (Slack/scheduled jobs) is still in re-review, rather than serialising** — `t28-parallel-with-16` (Task 28 dispatch)
-    Why: the two share no file surface — e2e adds `apps/lets-park/web-e2e`/`apps/lets-park/api-e2e` specs and `doc/testing.md`; Task 16 touches `apps/lets-park/api/src/slack` and the publisher composite.
+    Why: the two share no file surface — e2e adds `apps/garage/web-e2e`/`apps/garage/api-e2e` specs and `doc/testing.md`; Task 16 touches `apps/garage/api/src/slack` and the publisher composite.
     Cost if wrong: one merge conflict in `app.module.ts` or a jest config, both previously resolved keep-both without incident.
 
 94. **Overrule the implementer's justified skip of finding m5 and put `slack-client.service.spec.ts` back in scope for fix round 2** — `t16-m5-overruled` (Task 16 fix round 2)
@@ -403,7 +403,7 @@ pattern, not about the thing being counted.
     Why: closing it needs `no-misused-promises`, which is not enabled and cannot be without a workspace-wide type-aware-linting migration this task was not scoped to do.
     Cost if wrong: a future `async` delegate override compiles silently; bounded because the composite contains the consequence at runtime and logs it.
 
-96. **Base Task 29 on `task-28-e2e`'s tip (`f39aa88`), not on `feat/lets-park-mvp`, while Task 28 is still under review** — `t29-base-on-28` (Task 29 dispatch)
+96. **Base Task 29 on `task-28-e2e`'s tip (`f39aa88`), not on `feat/garage-mvp`, while Task 28 is still under review** — `t29-base-on-28` (Task 29 dispatch)
     Why: Task 29's remit is to make documentation true, and basing on main would have it document a tree about to change under it by 35 files, including `doc/testing.md` and the e2e targets it must describe.
     Cost if wrong: if Task 28's review forces fixes, Task 29 needs a rebase rather than a re-dispatch; merge order is pinned 28-then-29.
 
@@ -420,7 +420,7 @@ pattern, not about the thing being counted.
     Cost if wrong: a real intermittent contract-suite defect is being dismissed as infrastructure, bounded because the item is on the standing list for an infra ticket.
 
 100. **Dispatch Tasks 32 and 33 as parallel implementers in separate worktrees, against the skill's default of never running implementers concurrently** — `t32-33-parallel` (Tasks 32/33 dispatch)
-     Why: the two defects live in disjoint subsystems (realtime-client/apps/lets-park/api realtime vs. apps/lets-park/web auth), the project has run parallel branches throughout at the user's explicit request, and serialising two investigation-heavy tasks would roughly double the remaining wall clock.
+     Why: the two defects live in disjoint subsystems (realtime-client/apps/garage/api realtime vs. apps/garage/web auth), the project has run parallel branches throughout at the user's explicit request, and serialising two investigation-heavy tasks would roughly double the remaining wall clock.
      Cost if wrong: a merge conflict, most likely in the `doc/` index or the decision-record range, mitigated by reserving disjoint ranges.
 
 101. **Defer the reviewer's precise 10-item merge-staleness list into its own batched task after Tasks 29, 32 and 33 have all merged, rather than fixing it now** — `t29-staleness-after-merge` (Task 29 review)

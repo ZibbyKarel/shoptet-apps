@@ -2,7 +2,7 @@
 
 ## What
 
-`apps/lets-park/api/Dockerfile` has a fourth stage, `migrator`, whose whole job is
+`apps/garage/api/Dockerfile` has a fourth stage, `migrator`, whose whole job is
 `prisma migrate deploy`. `docker-compose.yml` runs it as the `migrate` service,
 and `api` waits for it with `condition: service_completed_successfully`. The
 API image contains no Prisma CLI, no schema and no migrations, and its
@@ -18,9 +18,9 @@ entrypoint runs no migration.
   serving against a schema it does not match. `depends_on` expresses that
   directly; an entrypoint script would have to reimplement the wait.
 - **`migrate deploy`, never `migrate dev` and never `migrate reset`.** Deploy
-  applies what is already in `libs/lets-park/database/prisma/migrations` and generates
+  applies what is already in `libs/garage/database/prisma/migrations` and generates
   nothing. `reset` destroys data and has no business in an image at all.
-- **It seeds nothing.** `libs/lets-park/database/src/scripts/seed.ts` says "Development
+- **It seeds nothing.** `libs/garage/database/src/scripts/seed.ts` says "Development
   seed" in its first line; it is run from a checkout, by a person, against a
   development database (`README.md`, `doc/database.md`).
 - **The CLI is 40 MB of build tooling** plus, transitively, Prisma Studio's
@@ -28,9 +28,9 @@ entrypoint runs no migration.
 
 ## How
 
-- `apps/lets-park/api/Dockerfile`, stage `migrator`: `prisma@7.10.0` and `dotenv@17.4.2`
+- `apps/garage/api/Dockerfile`, stage `migrator`: `prisma@7.10.0` and `dotenv@17.4.2`
   pinned to the workspace lockfile's resolutions, `prisma.config.ts` and
-  `libs/lets-park/database/prisma` copied so the config's
+  `libs/garage/database/prisma` copied so the config's
   `join(import.meta.dirname, 'libs', 'database')` still resolves.
 - `USER node` is set **before** the install, not after. A `chown -R` over an
   installed `node_modules` rewrites every file into a second layer: measured at

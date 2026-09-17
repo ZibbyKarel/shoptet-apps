@@ -15,10 +15,10 @@ right, and the three client constants stand unchanged.**
 
 | constant | where | value |
 | --- | --- | --- |
-| `REALTIME_LOCK_TTL_MS` | `apps/lets-park/api/src/env.ts` | 30 000 ms |
-| `CELL_LOCK_RENEW_FRACTION` | `libs/lets-park/realtime-client` | 0.5 |
-| `CELL_LOCK_ACK_TIMEOUT_MS` | `libs/lets-park/realtime-client` | 5 000 ms |
-| `CELL_LOCK_ACK_ATTEMPTS` | `libs/lets-park/realtime-client` | 2 |
+| `REALTIME_LOCK_TTL_MS` | `apps/garage/api/src/env.ts` | 30 000 ms |
+| `CELL_LOCK_RENEW_FRACTION` | `libs/garage/realtime-client` | 0.5 |
+| `CELL_LOCK_ACK_TIMEOUT_MS` | `libs/garage/realtime-client` | 5 000 ms |
+| `CELL_LOCK_ACK_ATTEMPTS` | `libs/garage/realtime-client` | 2 |
 
 The interleaving, on a hold taken at *t*=0:
 
@@ -55,9 +55,9 @@ a lot of this size is nothing.
 
 ## Why it is configurable at all
 
-So that the specs can run the *same* gateway against a short TTL. `apps/lets-park/api/src/realtime/**`
+So that the specs can run the *same* gateway against a short TTL. `apps/garage/api/src/realtime/**`
 contains no `NODE_ENV` check, no test flag and no bypass; the only thing that differs between
-a spec and production is this value — exactly the rule `apps/lets-park/api/src/auth` follows for
+a spec and production is this value — exactly the rule `apps/garage/api/src/auth` follows for
 `AUTH_OKTA_ISSUER`, and the reason `realtime-no-backdoor.spec.ts` asserts the module reads
 this one key and mentions no environment name at all.
 

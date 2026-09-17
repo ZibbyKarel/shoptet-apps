@@ -2,7 +2,7 @@
 
 ## What
 
-`apps/lets-park/web/src/app/global-error.tsx` renders its own `<html lang="cs">` and
+`apps/garage/web/src/app/global-error.tsx` renders its own `<html lang="cs">` and
 `<body>`, imports `./global.css`, wraps the page in `IntlProvider`, and shows
 `ScreenError` with `reset` as its retry.
 
@@ -31,7 +31,7 @@
 
 ## How
 
-`apps/lets-park/web/src/app/global-error.tsx` and `global-error.spec.tsx`. The spec asserts
+`apps/garage/web/src/app/global-error.tsx` and `global-error.spec.tsx`. The spec asserts
 the two catalogue strings appear (which is what proves the provider is really
 re-established rather than the sentences having been inlined), that neither the
 error's message nor its digest is anywhere in the body, that the retry calls

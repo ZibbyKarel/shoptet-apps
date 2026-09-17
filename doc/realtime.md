@@ -4,14 +4,14 @@ How the browser holds a Socket.io connection to the API, what it may say over
 it, and what it does with what comes back.
 
 **Scope of this document.** Task 21 built the **client** half
-(`libs/lets-park/realtime-client`) and Task 15 built the **gateway**
-(`apps/lets-park/api/src/realtime`). Both halves are described here: the client sections
+(`libs/garage/realtime-client`) and Task 15 built the **gateway**
+(`apps/garage/api/src/realtime`). Both halves are described here: the client sections
 come first because they are what a feature author touches, and §"The gateway"
 below is the server side of every claim they make.
 
 The vocabulary — event names, payload shapes, room naming, which direction an
 event travels — is not defined here. It is defined once, as Zod schemas, in
-`@lets-park/contract/realtime`, and `doc/contract.md` §Realtime describes it.
+`@garage/contract/realtime`, and `doc/contract.md` §Realtime describes it.
 Nothing in this document introduces an event; if you need a new one, add it to
 the contract first (`doc/contract.md`, "Adding a realtime event").
 
@@ -20,14 +20,14 @@ the contract first (`doc/contract.md`, "Adding a realtime event").
 ## The shape of it
 
 ```
-apps/lets-park/web ── @lets-park/realtime-client ── socket.io-client ~~~ socket.io ── apps/lets-park/api/src/realtime
+apps/garage/web ── @garage/realtime-client ── socket.io-client ~~~ socket.io ── apps/garage/api/src/realtime
                       │                                                              │
-                      └──────────── @lets-park/contract/realtime ────────────────────┘
+                      └──────────── @garage/contract/realtime ────────────────────┘
                                     (event names, payload schemas, roomForDate)
 ```
 
 One socket per browser tab, created by `useRealtimeConnection` inside
-`RealtimeProvider`, which `apps/lets-park/web` renders once in its provider boundary
+`RealtimeProvider`, which `apps/garage/web` renders once in its provider boundary
 alongside `QueryProvider`, `AuthProvider` and `IntlProvider` (Task 23 wires this
 up for real).
 
@@ -35,7 +35,7 @@ up for real).
 'use client';
 
 export function Providers({ children }: { children: ReactNode }) {
-  const getAccessToken = useAccessTokenProvider();   // @lets-park/auth/client
+  const getAccessToken = useAccessTokenProvider();   // @garage/auth/client
   const { status } = useSession();
 
   return (
@@ -56,7 +56,7 @@ reads a path in the URL as a **namespace**, not as a mount point, so
 `http://localhost:3000/api` dials the `/api` namespace — which the gateway does
 not register, and the refusal looks like an auth failure. The Socket.io mount
 point is the separate `path` option (`DEFAULT_SOCKET_PATH`). `apiOriginOf` lives
-in `apps/lets-park/web/src/api-url.ts` alongside the other two derivations; see
+in `apps/garage/web/src/api-url.ts` alongside the other two derivations; see
 `doc/decision/0101-*`.
 
 `enabled` holds the connection closed until there is a session: connecting
@@ -90,7 +90,7 @@ and all three are load-bearing:
 | property | why |
 | --- | --- |
 | re-read on **every** engine open | Socket.io calls `auth` from `Socket.onopen`, which is bound to the manager's `open` event for the socket's whole life. An object is read once, at construction, so a socket that outlives a token rotation would spend the rest of its life re-presenting an expired credential. |
-| the CONNECT packet waits for the callback | `libs/lets-park/auth`'s provider is async while a refresh is in flight. Nothing is sent until it settles. |
+| the CONNECT packet waits for the callback | `libs/garage/auth`'s provider is async while a refresh is in flight. Nothing is sent until it settles. |
 | no session, or a failed provider, sends `{}` | An empty handshake is refused by the gateway. Swallowing a refresh failure into a *successful* anonymous connect would be a silent downgrade. |
 
 A query string is written verbatim into nginx's `$request_uri`, load-balancer
@@ -210,7 +210,7 @@ useRealtimeEvent('reservation:created', (payload) => {
 This is the mirror of the rule the gateway implements in the other direction —
 Task 15 validates every inbound command against
 `CLIENT_TO_SERVER_EVENT_SCHEMAS` and drops what fails
-(`libs/lets-park/contract/src/realtime/commands.ts`).
+(`libs/garage/contract/src/realtime/commands.ts`).
 
 Acknowledgements are inbound data too, and are parsed the same way
 (`parseAck`). An unparsed `cell:lock` ack is a `setTimeout(NaN)` waiting to
@@ -249,7 +249,7 @@ arriving at one is the same setup.
 ### 1. The hold is renewed
 
 There is **no separate heartbeat command.** Re-sending `cell:lock` for a cell
-you already hold extends its TTL (`libs/lets-park/contract/src/realtime/commands.ts`) —
+you already hold extends its TTL (`libs/garage/contract/src/realtime/commands.ts`) —
 one command fewer on the inbound surface, and an idempotent one, so a client
 that loses track of its own state cannot corrupt the server's.
 
@@ -379,7 +379,7 @@ leaves the socket inactive).
 version: a double may stand in for a dependency's behaviour, never for the shape
 of its protocol.
 
-**Not verified in `libs/lets-park/realtime-client`, and where it is now:**
+**Not verified in `libs/garage/realtime-client`, and where it is now:**
 
 | claim | settled by |
 | --- | --- |
@@ -388,14 +388,14 @@ of its protocol.
 | the server's lock TTL and this client's renewal actually interleave | ✅ `doc/decision/0110-*` (arithmetic) + `lock.service.spec.ts`; a real round trip is still Fáze 7 |
 | broadcasts arrive only in the day room a client joined | ✅ `realtime.gateway.spec.ts` |
 | a lapsed hold is broadcast, so `held-by-other` cannot stick | ✅ `doc/decision/0111-*` — and, independently of the broadcast, `cell-lock.spec.tsx` "asks again when the other hold lapses and no broadcast arrives" |
-| three attempts over ~36 s is long enough for `libs/lets-park/auth` to rotate a token | Fáze 7 e2e |
+| three attempts over ~36 s is long enough for `libs/garage/auth` to rotate a token | Fáze 7 e2e |
 | a real reconnect against a real server re-authenticates | Fáze 7 e2e |
 
 ---
 
 ## The gateway
 
-`apps/lets-park/api/src/realtime` — a NestJS `@WebSocketGateway` over Socket.io v4.
+`apps/garage/api/src/realtime` — a NestJS `@WebSocketGateway` over Socket.io v4.
 
 | file | what it owns |
 | --- | --- |
@@ -409,7 +409,7 @@ of its protocol.
 
 `server.use(...)` — namespace middleware, and it has to be: a middleware that
 calls `next(err)` makes socket.io send a **CONNECT_ERROR**, which is the packet
-`libs/lets-park/realtime-client` branches on. Accepting the connection and then
+`libs/garage/realtime-client` branches on. Accepting the connection and then
 disconnecting would look identical from the gateway and completely different in
 a browser. Full reasoning, the source seams it was read from, and what a refusal
 says to the client and to the log: `doc/decision/0112-*`.
@@ -419,7 +419,7 @@ The token is verified by **`JwksVerifierService.verifyToken`** — the same sing
 `passport-jwt` (`doc/decision/0042-*`) — and resolved to a user by the same
 `AuthUserService`, so a socket goes through the same just-in-time provisioning
 and the same deactivated-user refusal an HTTP request does. There is no
-`NODE_ENV` branch anywhere under `apps/lets-park/api/src/realtime`;
+`NODE_ENV` branch anywhere under `apps/garage/api/src/realtime`;
 `realtime-no-backdoor.spec.ts` asserts it.
 
 The `UserSummary` a broadcast carries is resolved **once**, during the
@@ -528,7 +528,7 @@ hold their older tab is showing".
 - **Expiry** — one timer per hold, rescheduled on renewal, cleared on release.
   When it fires, `cell:unlocked` is broadcast. This is the mechanism, not
   bookkeeping: it is what clears "právě upravuje …" from every other tile
-  (`apps/lets-park/web`'s `useCellLocks` prunes on it, and `useCellLock` asks again on
+  (`apps/garage/web`'s `useCellLocks` prunes on it, and `useCellLock` asks again on
   it). `useCellLock` also carries its own `expiresAt` timer as a backstop, so
   the two are independent — `doc/decision/0111-*` asked for exactly that, and
   `doc/decision/0295-*` is where it was built.
@@ -574,13 +574,13 @@ expiry timer in the same window, so none fires into a closing server.
 
 Over **real WebSockets**, against the assembled `AppModule`, with a real
 in-process OIDC issuer signing real RS256 tokens. The client peer is not
-`socket.io-client` — that is a wrapped library owned by `libs/lets-park/realtime-client`,
+`socket.io-client` — that is a wrapped library owned by `libs/garage/realtime-client`,
 and the ban covers `apps/**` including specs. It is built instead on the
 protocol's own reference implementation: `engine.io-parser` for the transport
 frames and `socket.io-parser`'s `Encoder`/`Decoder`/`PacketType` for the
 protocol, both direct dependencies of the `socket.io` server under test. So
 CONNECT_ERROR is identified by the parser's own constant rather than by a number
-a fixture believes in — the standard `libs/lets-park/realtime-client`'s
+a fixture believes in — the standard `libs/garage/realtime-client`'s
 `offline-transport.ts` set for the other direction.
 
 ---
@@ -588,7 +588,7 @@ a fixture believes in — the standard `libs/lets-park/realtime-client`'s
 ## Single instance, and what changes when that stops being true
 
 The MVP targets one API instance, so Socket.io needs no adapter and no Redis
-(global constraint 8). **Nothing in `libs/lets-park/realtime-client` changes when that
+(global constraint 8). **Nothing in `libs/garage/realtime-client` changes when that
 stops being true** — rooms, event names and payloads are the contract's, and the
 client already assumes it may be talking to a server that has been redeployed
 under it, which is why every inbound payload is parsed.
@@ -641,7 +641,7 @@ untested one, and the two would have to land together to be worth anything.
 ## Related
 
 - `doc/contract.md` §Realtime — the events themselves, and how to add one
-- `doc/wrappers.md` §`libs/lets-park/realtime-client` — the wrapper ban and its probes
+- `doc/wrappers.md` §`libs/garage/realtime-client` — the wrapper ban and its probes
 - `doc/decision/0022-*` — event naming, one transaction → one event
 - `doc/decision/0023-*` — realtime is a separate entry point; the maps are derived
 - `doc/decision/0047-*` — the access token crosses to the browser; the refresh token does not
@@ -652,4 +652,4 @@ untested one, and the two would have to land together to be worth anything.
 - `doc/decision/0110-*` — the cell-lock TTL is 30 s, configurable, and the client's budget fits inside it
 - `doc/decision/0111-*` — a lapsed hold is broadcast, because the client deliberately does not poll
 - `doc/decision/0112-*` — the handshake is namespace middleware, so a refusal is a CONNECT_ERROR
-- `doc/api-modules.md` — where `apps/lets-park/api/src/realtime` sits among the API's modules
+- `doc/api-modules.md` — where `apps/garage/api/src/realtime` sits among the API's modules

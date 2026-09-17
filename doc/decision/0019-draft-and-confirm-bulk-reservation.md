@@ -59,7 +59,7 @@ didn't get your own". The summary (`assigned` / `queued` / `unavailable` /
 `preferredSpotHits`) gives the modal a title without any comparison at all.
 
 **Why the schema doesn't validate weekends and holidays.** It's tempting —
-`isBusinessDay` is a pure function in `libs/lets-park/shared-types` and the contract can
+`isBusinessDay` is a pure function in `libs/garage/shared-types` and the contract can
 see it. But it's **day eligibility**, the same category as "not in the past"
 and "inside the open window", which the window ruling already sends down to
 the service layer. If one rule out of three lived in the schema, the user
@@ -77,9 +77,9 @@ it is worse than either: the user wouldn't know something didn't happen.
 
 ## How
 
-- Schemas and both procedures: `libs/lets-park/contract/src/api/bulk.ts`.
+- Schemas and both procedures: `libs/garage/contract/src/api/bulk.ts`.
 - The enums `BULK_DAY_OUTCOMES` and `BULK_UNAVAILABLE_REASONS`, and the
-  constant `MAX_BULK_BOOKING_DAYS`, live in `libs/lets-park/shared-types` (like every
+  constant `MAX_BULK_BOOKING_DAYS`, live in `libs/garage/shared-types` (like every
   domain enum), so `libs/shared/i18n` can also see them for the Czech copy.
 - The zip on the frontend (Task 31):
 

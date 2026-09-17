@@ -5,7 +5,7 @@
 ## What
 
 `createdAt` / `updatedAt` and every other timestamp have the schema
-`timestampSchema = z.iso.datetime()` in `libs/lets-park/contract`, i.e. a **string** in
+`timestampSchema = z.iso.datetime()` in `libs/garage/contract`, i.e. a **string** in
 UTC (`2026-08-28T09:15:00.000Z`). Neither `z.date()` nor `z.coerce.date()` is
 used.
 

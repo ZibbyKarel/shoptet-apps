@@ -4,11 +4,11 @@ One Nx project, three layers, three entry points. The layers are directories
 under `src/`, not separate packages — see
 `doc/decision/0301-the-design-system-is-one-package-and-the-layer-rule-moved-to-lint-paths.md`.
 
-| Layer      | Entry point                           | Directory        |
-| ---------- | ------------------------------------- | ---------------- |
-| tokens     | `@lets-park/design-system/tokens`     | `src/tokens`     |
-| primitives | `@lets-park/design-system/primitives` | `src/primitives` |
-| compounds  | `@lets-park/design-system/compounds`  | `src/compounds`  |
+| Layer      | Entry point                        | Directory        |
+| ---------- | ---------------------------------- | ---------------- |
+| tokens     | `@garage/design-system/tokens`     | `src/tokens`     |
+| primitives | `@garage/design-system/primitives` | `src/primitives` |
+| compounds  | `@garage/design-system/compounds`  | `src/compounds`  |
 
 The direction is tokens → primitives → compounds, one way only. Compounds may
 import primitives and tokens; primitives must never import compounds; tokens
@@ -38,13 +38,13 @@ Button, Input, Select, Checkbox, Radio, Badge, Avatar, Switch, Stepper.
 
 Presentation only, and strictly domain-free: nothing in here knows what the app
 reserves or who reserves it. Every colour, radius, spacing and type size comes
-from `@lets-park/design-system/tokens`; no value is written by hand.
+from `@garage/design-system/tokens`; no value is written by hand.
 
 ## compounds
 
 DataTable, EmptyState, ConfirmDialog.
 
-Built from `@lets-park/design-system/primitives`, and strictly domain-free —
+Built from `@garage/design-system/primitives`, and strictly domain-free —
 fixtures and stories included.
 
 This layer is also the **wrapper for `@tanstack/react-table`** — the single

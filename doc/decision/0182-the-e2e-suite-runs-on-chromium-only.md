@@ -2,7 +2,7 @@
 
 ## What
 
-`apps/lets-park/web-e2e/playwright.config.mts` declares two projects — `setup` and
+`apps/garage/web-e2e/playwright.config.mts` declares two projects — `setup` and
 `chromium` — where the Nx scaffold declared Chromium, Firefox and WebKit. The
 other two browsers are removed, not skipped.
 
@@ -31,7 +31,7 @@ and does not need a database.
 
 ## How
 
-- `apps/lets-park/web-e2e/playwright.config.mts` — `projects: [setup, chromium]`. The
+- `apps/garage/web-e2e/playwright.config.mts` — `projects: [setup, chromium]`. The
   `setup` project produces the personas' `storageState`; `chromium` depends on
   it and ignores `src/support/`.
 

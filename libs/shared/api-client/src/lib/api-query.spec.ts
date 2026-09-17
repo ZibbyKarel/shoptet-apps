@@ -6,12 +6,12 @@
  * fails to invalidate, so these tests check the properties that matter — the
  * same input yields the same key, a different input does not. The
  * key-*invalidates-through-a-real-cache* tests live in
- * `apps/lets-park/web/src/shell/query/query-client.spec.ts` instead: they construct a
+ * `apps/garage/web/src/shell/query/query-client.spec.ts` instead: they construct a
  * real `QueryClient`, and mixing that with `@orpc/tanstack-query`'s
  * `queryOptions()` output under this project's `"module": "commonjs"`
  * reproduces the dual-package hazard `doc/decision/0038-*` found for
  * `libs/query` (two structurally identical but nominally distinct
- * `QueryClient` types). `apps/lets-park/web` already resolves this correctly
+ * `QueryClient` types). `apps/garage/web` already resolves this correctly
  * (`module: esnext`), this project does not need to.
  */
 

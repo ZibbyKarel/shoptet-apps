@@ -7,7 +7,7 @@ import './global.css';
  *
  * No providers yet: this app has no session, no API client and no message
  * catalog, so there is nothing for a client boundary to carry. When those
- * arrive, `apps/lets-park/web/src/app/layout.tsx` is the shape to follow —
+ * arrive, `apps/garage/web/src/app/layout.tsx` is the shape to follow —
  * it reads the session on the server and hands it down so the first client
  * render matches.
  *

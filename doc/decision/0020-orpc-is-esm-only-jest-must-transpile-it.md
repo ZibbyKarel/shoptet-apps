@@ -1,6 +1,6 @@
 # 0020 – `@orpc/contract` is ESM-only; Jest has to transpile it
 
-**Date:** 2026-08-28 · **Status:** accepted · **Applies to:** every project whose tests import `@lets-park/contract`
+**Date:** 2026-08-28 · **Status:** accepted · **Applies to:** every project whose tests import `@garage/contract`
 
 ## What
 
@@ -9,8 +9,8 @@ single build `dist/index.mjs`, no `require` condition in `exports`. Jest
 projects in this workspace run as CommonJS, so importing it fails with
 `SyntaxError: Cannot use import statement outside a module`.
 
-The fix lives in `libs/lets-park/contract/jest.config.cts` and
-`libs/lets-park/contract/tsconfig.spec.json`:
+The fix lives in `libs/garage/contract/jest.config.cts` and
+`libs/garage/contract/tsconfig.spec.json`:
 
 ```js
 transform: {
@@ -47,10 +47,10 @@ would be extra code that has to be maintained across every oRPC minor.
 
 ## How
 
-The configuration lives only in `libs/lets-park/contract` for now, since it's the only
+The configuration lives only in `libs/garage/contract` for now, since it's the only
 project that imports `@orpc/contract`. **Tasks 11 (`libs/shared/api-client`) and 12
-(`apps/lets-park/api`) will hit the same issue** the moment their tests touch
-`@lets-park/contract` — they'll need to copy these three lines.
+(`apps/garage/api`) will hit the same issue** the moment their tests touch
+`@garage/contract` — they'll need to copy these three lines.
 
 > Once a **third** project needs it, move the configuration into
 > `jest.preset.js` at the root, so the copies can't drift apart. Until then,

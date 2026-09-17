@@ -10,9 +10,9 @@ what each layer is for, how to run it, and what has to be up first.
 | Layer | Where | Runner | Needs Docker |
 | --- | --- | --- | --- |
 | **Unit** | `**/*.spec.ts(x)` in every project except the two `*-e2e` apps | Jest, via `nx run <project>:test` | no |
-| **Database** | `apps/lets-park/api/**/*.db.spec.ts` | Jest, via `nx run api:test-db` | **yes** (PostgreSQL) |
-| **API end-to-end** | `apps/lets-park/api-e2e/src/**/*.spec.ts` | Jest + axios, via `nx run api-e2e:e2e` | **yes** (PostgreSQL) |
-| **Browser end-to-end** | `apps/lets-park/web-e2e/src/**/*.spec.ts` | Playwright, via `nx run web-e2e:e2e` | **yes** (PostgreSQL + the OIDC issuer) |
+| **Database** | `apps/garage/api/**/*.db.spec.ts` | Jest, via `nx run api:test-db` | **yes** (PostgreSQL) |
+| **API end-to-end** | `apps/garage/api-e2e/src/**/*.spec.ts` | Jest + axios, via `nx run api-e2e:e2e` | **yes** (PostgreSQL) |
+| **Browser end-to-end** | `apps/garage/web-e2e/src/**/*.spec.ts` | Playwright, via `nx run web-e2e:e2e` | **yes** (PostgreSQL + the OIDC issuer) |
 
 They are cumulative, not redundant. A rule of thumb for where a new test
 belongs:
@@ -22,13 +22,13 @@ belongs:
 - **Database** (`*.db.spec.ts`) — anything whose correctness *is* the database:
   a unique constraint, `SELECT … FOR UPDATE`, a transaction's rollback, two
   concurrent writers racing. These are excluded from `api:test` by
-  `apps/lets-park/api/jest.config.cts` and run under their own config, `--runInBand`.
+  `apps/garage/api/jest.config.cts` and run under their own config, `--runInBand`.
 - **API end-to-end** — what the API does over real HTTP to a request a browser
   would never send: no `Authorization` header, a token from another issuer, a
-  scheme that is not `Bearer`. `apps/lets-park/web-e2e` always arrives holding a valid
+  scheme that is not `Bearer`. `apps/garage/web-e2e` always arrives holding a valid
   session, so it structurally cannot ask these questions.
 - **Browser end-to-end** — a whole user journey across both apps, the database
-  and the socket. Expensive; reserved for the journeys in `apps/lets-park/web-e2e/src/`,
+  and the socket. Expensive; reserved for the journeys in `apps/garage/web-e2e/src/`,
   one spec file each. What earns a file here is a claim no lower layer can
   make: two people disagreeing over the same bay, a setting saved on one
   screen changing another, a URL that stops answering. What does **not** is a
@@ -82,7 +82,7 @@ Four constraints, each of which has already cost this suite a day:
   preferred spot, and the bulk allocator prefers it). Scope to the date, the
   row, the spot you own.
 - **Address the UI the way a person does.** Role plus the Czech accessible
-  name the app actually renders, read out of `apps/lets-park/web/messages/cs.json` —
+  name the app actually renders, read out of `apps/garage/web/messages/cs.json` —
   there are no `data-testid` hooks in this application and none are to be
   added. Every wait is on a condition; a `waitForTimeout` passes on an idle
   laptop and fails on a busy one.
@@ -106,7 +106,7 @@ Then, once:
 
 ```bash
 cp .env.example .env            # if you have not already
-cp .env.example apps/lets-park/web/.env   # Next.js reads its own directory
+cp .env.example apps/garage/web/.env   # Next.js reads its own directory
 npx prisma migrate deploy
 npx prisma db seed
 ```
@@ -120,7 +120,7 @@ Ports, because they are not free choices:
 | Port | What |
 | --- | --- |
 | `3000` | the API (`PORT` in `.env`; Nx injects it into every target) |
-| `4200` | the web app — `apps/lets-park/web/project.json` pins `next dev --port 4200`, because `CORS_ALLOWED_ORIGINS` and the OIDC redirect URI both name it |
+| `4200` | the web app — `apps/garage/web/project.json` pins `next dev --port 4200`, because `CORS_ALLOWED_ORIGINS` and the OIDC redirect URI both name it |
 | `5432` | PostgreSQL |
 | `8080` | `mock-oauth2-server` |
 
@@ -179,7 +179,7 @@ To run the specs against an API you are already serving, skip the target and
 run Jest directly from the project directory — same caveat about the teardown:
 
 ```bash
-cd apps/lets-park/api-e2e && npx jest --runInBand
+cd apps/garage/api-e2e && npx jest --runInBand
 ```
 
 ### Browser end-to-end
@@ -193,8 +193,8 @@ npx nx run web-e2e:e2e -- --headed --debug          # watch it happen
 Everything it needs, it arranges:
 
 1. **`globalSetup`** runs `prisma db seed` and then
-   `libs/lets-park/database/src/scripts/reset-e2e.ts`, as subprocesses — the module
-   boundary keeps `scope:web` out of `libs/lets-park/database` (`doc/decision/0184-*`).
+   `libs/garage/database/src/scripts/reset-e2e.ts`, as subprocesses — the module
+   boundary keeps `scope:web` out of `libs/garage/database` (`doc/decision/0184-*`).
    The reset clears next month's reservations and queue entries and sets the
    reservation window to `AUTO` at 31 days, so that the month the suite books
    into is genuinely open (`doc/decision/0181-*`). **It leaves that setting
@@ -207,11 +207,11 @@ Everything it needs, it arranges:
      set in `playwright.config.mts` reaches that process — see the throttle
      entry under "When it goes wrong".
    - **The web app is started by Playwright**, as `npx next start --port 4200`
-     in `apps/lets-park/web`: the **built** app, not `next dev`. `next dev` runs React
+     in `apps/garage/web`: the **built** app, not `next dev`. `next dev` runs React
      `StrictMode`, which mounts every effect twice and gives each page a second
      socket.io connection; the built app does that far less
      (`doc/decision/0187-*`). The build is a real Nx dependency of `e2e`
-     (`apps/lets-park/web-e2e/project.json`), Nx-cached, about six seconds cold.
+     (`apps/garage/web-e2e/project.json`), Nx-cached, about six seconds cold.
 
    The API is adopted if port 3000 is already answering — Nx has by then
    started it. **The web app is not.** `reuseExistingServer` is `false` for it,
@@ -222,9 +222,9 @@ Everything it needs, it arranges:
    previous run's build, with no build having run at all
    (`doc/decision/0285-*`).
 3. **The `setup` project** signs all three personas in through the real OIDC
-   redirect and caches the sessions in `apps/lets-park/web-e2e/.auth/` — git-ignored, and
+   redirect and caches the sessions in `apps/garage/web-e2e/.auth/` — git-ignored, and
    rewritten on every run (`doc/decision/0185-*`; the path was
-   `apps/lets-park/web-e2e/apps/lets-park/web-e2e/.auth/` until `doc/decision/0287-*`, which is why
+   `apps/garage/web-e2e/apps/garage/web-e2e/.auth/` until `doc/decision/0287-*`, which is why
    two `.dockerignore` rules written for it excluded nothing).
 
    It also runs `build-identity.setup.ts`, which fails the whole run when the
@@ -452,7 +452,7 @@ teardown kills it. See the API end-to-end section above.
   style.
 - **Then break the thing it names and watch it go red.** A test that would
   still pass with its subject deleted reports coverage that does not exist,
-  which is worse than no test at all. Every scenario in `apps/lets-park/web-e2e` was
+  which is worse than no test at all. Every scenario in `apps/garage/web-e2e` was
   falsified this way before it was committed; the mutation table is in the
   task report.
 - **Never wait on a clock.** `page.waitForTimeout(2000)` passes on an idle

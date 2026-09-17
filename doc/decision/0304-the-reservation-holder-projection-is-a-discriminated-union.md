@@ -4,7 +4,7 @@
 
 ## What
 
-`publicReservationSchema` (`libs/lets-park/contract/src/schemas/entities.ts`) no longer
+`publicReservationSchema` (`libs/garage/contract/src/schemas/entities.ts`) no longer
 has a `user` key. It now has `holder`, typed by a new export,
 `reservationHolderSchema`:
 
@@ -57,9 +57,9 @@ it means every reader of the old field breaks loudly at the type checker
 (`Property 'user' does not exist on type '{ ...; holder: ...; }'`) rather than
 reading `undefined` silently at runtime and rendering nothing, or worse,
 throwing only in the one branch a test happened to exercise. Task 2's own
-verification found exactly this set of breaks — `apps/lets-park/api`'s mapper
+verification found exactly this set of breaks — `apps/garage/api`'s mapper
 (`prisma-mapping.ts`, `day-overview.service.ts`) and four call sites in
-`apps/lets-park/web` (`day-overview-cache.ts`, `lot-view.ts`,
+`apps/garage/web` (`day-overview-cache.ts`, `lot-view.ts`,
 `admin-day-screen.tsx`, `admin-spots-panel.tsx`) — which is the intended
 outcome for Tasks 3 and 4 to pick up, not a regression to fix here.
 
@@ -69,5 +69,5 @@ outcome for Tasks 3 and 4 to pick up, not a regression to fix here.
 realtime-client:test --skip-nx-cache` — 81 passed. `npx nx run-many -t
 typecheck --skip-nx-cache` fails in exactly the two projects downstream of
 this change (`api`, `web`), each on the old `.user` access — confirming the
-projection change propagates correctly and nothing in `libs/lets-park/contract` or
-`libs/lets-park/realtime-client` was missed.
+projection change propagates correctly and nothing in `libs/garage/contract` or
+`libs/garage/realtime-client` was missed.

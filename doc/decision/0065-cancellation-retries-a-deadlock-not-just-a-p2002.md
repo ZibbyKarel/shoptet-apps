@@ -1,6 +1,6 @@
 # 0065 – A cancellation retries a deadlock, not just the promotion's `P2002`
 
-**Date:** 2026-09-02 · **Status:** accepted · **Affects:** `apps/lets-park/api/src/reservations/`
+**Date:** 2026-09-02 · **Status:** accepted · **Affects:** `apps/garage/api/src/reservations/`
 
 ## What
 

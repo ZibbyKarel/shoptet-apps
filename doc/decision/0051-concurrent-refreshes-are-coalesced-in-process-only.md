@@ -3,7 +3,7 @@
 *(“in-process” now means the whole process, which is the point of the rewrite
 below — it used to mean “one of the three bundles Next.js builds”.)*
 
-**Date:** 2026-09-02 · **Rewritten:** 2026-09-03 · **Status:** accepted · **Task:** 20 (`libs/lets-park/auth`), review fix round 1; rewritten in the final-review fix round
+**Date:** 2026-09-02 · **Rewritten:** 2026-09-03 · **Status:** accepted · **Task:** 20 (`libs/garage/auth`), review fix round 1; rewritten in the final-review fix round
 **Follows on from:** `doc/decision/0044-*` (a failed refresh signs the user out)
 **Mechanism now lives in:** `doc/decision/0245-*` · **Same root cause:** `doc/decision/0231-*`
 
@@ -53,7 +53,7 @@ gets bounced to Okta for no visible reason, intermittently, and only in
 production, because `mock-oauth2-server` does not rotate refresh tokens.
 
 **Why the coalescing has to be process-wide and not per closure.** This is the
-paragraph the original record got wrong. `apps/lets-park/web/src/auth.ts` calls
+paragraph the original record got wrong. `apps/garage/web/src/auth.ts` calls
 `createAuth()` at module scope, which would be once per process if a process had
 one module registry. It does not. Next.js compiles the proxy, the `/api/auth/*`
 route handlers and the server components into separate bundles, each with its own
@@ -96,7 +96,7 @@ callback the token it decoded at the start of the request.
 
 ## How
 
-`libs/lets-park/auth/src/lib/refresh.ts`: the returned function checks
+`libs/garage/auth/src/lib/refresh.ts`: the returned function checks
 `state.inFlight?.refreshToken` before starting an exchange, and clears the slot on
 settle only if it is still the current entry (so a slow failure cannot wipe a
 newer renewal's slot). `state` is `sharedRefreshState(issuer, clientId)` in

@@ -19,22 +19,20 @@
     "exactOptionalPropertyTypes": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
-      "@lets-park/contract": ["./libs/lets-park/contract/src/index.ts"],
-      "@lets-park/contract/realtime": ["./libs/lets-park/contract/src/realtime/index.ts"],
-      "@lets-park/design-system/compounds": ["./libs/shared/design-system/src/compounds/index.ts"],
-      "@lets-park/design-system/primitives": [
-        "./libs/shared/design-system/src/primitives/index.ts"
-      ],
-      "@lets-park/design-system/tokens": ["./libs/shared/design-system/src/tokens/index.ts"],
-      "@lets-park/shared-types": ["./libs/lets-park/shared-types/src/index.ts"],
-      "@lets-park/calendar-export": ["./libs/lets-park/calendar-export/src/index.ts"],
-      "@lets-park/database": ["./libs/lets-park/database/src/index.ts"],
-      "@lets-park/i18n": ["./libs/shared/i18n/src/index.ts"],
-      "@lets-park/form": ["./libs/shared/form/src/index.ts"],
-      "@lets-park/api-client": ["./libs/shared/api-client/src/index.ts"],
-      "@lets-park/auth": ["./libs/lets-park/auth/src/index.ts"],
-      "@lets-park/auth/client": ["./libs/lets-park/auth/src/client/index.ts"],
-      "@lets-park/realtime-client": ["./libs/lets-park/realtime-client/src/index.ts"]
+      "@garage/contract": ["./libs/garage/contract/src/index.ts"],
+      "@garage/contract/realtime": ["./libs/garage/contract/src/realtime/index.ts"],
+      "@garage/design-system/compounds": ["./libs/shared/design-system/src/compounds/index.ts"],
+      "@garage/design-system/primitives": ["./libs/shared/design-system/src/primitives/index.ts"],
+      "@garage/design-system/tokens": ["./libs/shared/design-system/src/tokens/index.ts"],
+      "@garage/shared-types": ["./libs/garage/shared-types/src/index.ts"],
+      "@garage/calendar-export": ["./libs/garage/calendar-export/src/index.ts"],
+      "@garage/database": ["./libs/garage/database/src/index.ts"],
+      "@garage/i18n": ["./libs/shared/i18n/src/index.ts"],
+      "@garage/form": ["./libs/shared/form/src/index.ts"],
+      "@garage/api-client": ["./libs/shared/api-client/src/index.ts"],
+      "@garage/auth": ["./libs/garage/auth/src/index.ts"],
+      "@garage/auth/client": ["./libs/garage/auth/src/client/index.ts"],
+      "@garage/realtime-client": ["./libs/garage/realtime-client/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

@@ -1,4 +1,4 @@
-import type { SpacingKey } from '@lets-park/design-system/tokens';
+import type { SpacingKey } from '@garage/design-system/tokens';
 
 /** A spacing step, or `0` for no space at all — `SPACING` starts at `1`, see `Padding` below. */
 export type PaddingStep = SpacingKey | 0;

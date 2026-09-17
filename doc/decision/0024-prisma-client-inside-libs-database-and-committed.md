@@ -1,4 +1,4 @@
-# 0024 – The Prisma client is generated inside `libs/lets-park/database` and committed
+# 0024 – The Prisma client is generated inside `libs/garage/database` and committed
 
 **Date:** 2026-08-28 · **Status:** accepted · **Affects:** Tasks 9–13, 30, and CI
 
@@ -10,7 +10,7 @@ longer generates into `node_modules`. The choice made:
 ```prisma
 generator client {
   provider     = "prisma-client"
-  output       = "../src/generated/prisma"   // libs/lets-park/database/src/generated/prisma
+  output       = "../src/generated/prisma"   // libs/garage/database/src/generated/prisma
   moduleFormat = "cjs"
   runtime      = "nodejs"
 }
@@ -18,7 +18,7 @@ generator client {
 
 The generated client (14 files, ~500 kB of TypeScript) is **committed to the
 repo** and excluded from Prettier (`.prettierignore`). It is imported
-exclusively via `@lets-park/database`; no other project reaches into
+exclusively via `@garage/database`; no other project reaches into
 `src/generated/**`.
 
 ## Why
@@ -27,10 +27,10 @@ exclusively via `@lets-park/database`; no other project reaches into
 lives in this lib. If it lived in `node_modules` (Prisma 6) or at the repo
 root, it would sit outside the reach of the `type:data`/`scope:api` tags, and
 Nx wouldn't know about the dependency. This way, normal module boundaries
-apply, and `@lets-park/database` is the sole entry point.
+apply, and `@garage/database` is the sole entry point.
 
 **`moduleFormat = "cjs"`.** The default is ESM. The whole backend, however, is
-CommonJS (`apps/lets-park/api/tsconfig.app.json` → `"module": "commonjs"`, and Jest via
+CommonJS (`apps/garage/api/tsconfig.app.json` → `"module": "commonjs"`, and Jest via
 ts-jest too), so an ESM client would end in `ERR_REQUIRE_ESM`. Moving the whole
 workspace to ESM is not a decision that belongs to Task 9.
 
@@ -59,11 +59,11 @@ ever reaches production.
 
 - `npx prisma generate` (from the root) regenerates the client; **the output
   is committed together with any schema change**, or tests fail.
-- The target `database:prisma-generate` in `libs/lets-park/database/project.json` exists
+- The target `database:prisma-generate` in `libs/garage/database/project.json` exists
   for convenience and for a future CI check of "is the client up to date"; it
   is not in any target's `dependsOn`, precisely because that would require
   `.env`.
-- `.prettierignore` includes `/libs/lets-park/database/src/generated`. ESLint and `tsc`
+- `.prettierignore` includes `/libs/garage/database/src/generated`. ESLint and `tsc`
   don't need special handling – the generated files carry
   `/* eslint-disable */` and `// @ts-nocheck` right in their header.
 - `@prisma/*` was already present in `NPM_ALLOWLIST` for the `type:data` tag;

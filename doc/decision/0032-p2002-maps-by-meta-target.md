@@ -5,7 +5,7 @@
 
 ## What
 
-The global exception filter (`apps/lets-park/api/src/common/filters/contract-exception.filter.ts`)
+The global exception filter (`apps/garage/api/src/common/filters/contract-exception.filter.ts`)
 translates `Prisma.PrismaClientKnownRequestError` into members of the closed `ERROR_CODES`
 enum. `P2002` (unique-constraint violation) **doesn't map to a single code** — instead, the
 decision is made by which index failed, which is carried in `error.meta.target`:
@@ -56,7 +56,7 @@ order doesn't matter and a different table with the same pair of columns
 ## How
 
 ```ts
-// apps/lets-park/api/src/common/filters/contract-exception.filter.ts
+// apps/garage/api/src/common/filters/contract-exception.filter.ts
 export function mapUniqueConstraintViolation(meta: Record<string, unknown> | undefined): ErrorCode {
   const target = uniqueConstraintTarget(meta);
   if (targetMatches(target, 'WaitlistEntry', ['parkingSpotId', 'userId', 'date'])) return 'ALREADY_IN_WAITLIST';
@@ -77,7 +77,7 @@ If a unique index's composition changes in a migration and this map isn't update
 it fails **silently**: `P2002` falls through to `CONFLICT` and the user gets a generic
 message instead of the right one. Nothing breaks, it just gets worse – exactly the class of
 regression nobody reports. Touching unique indexes in
-`libs/lets-park/database/prisma/schema.prisma` therefore has to go through this function too; the
+`libs/garage/database/prisma/schema.prisma` therefore has to go through this function too; the
 tests only catch that the mapping does what it says, not that it matches the schema.
 
 The exact-match comparison **amplifies** this tendency toward silent failure – previously a

@@ -12,17 +12,17 @@ To make it unambiguous which project belongs to which application, every app
 and lib moved into a namespace directory:
 
 ```
-apps/lets-park/{web,web-e2e,api,api-e2e}
+apps/garage/{web,web-e2e,api,api-e2e}
 libs/shared/{design-system,form,i18n,api-client}
-libs/lets-park/{contract,database,auth,realtime-client,calendar-export,shared-types}
+libs/garage/{contract,database,auth,realtime-client,calendar-export,shared-types}
 ```
 
 `libs/shared/` is for libs with more than one consuming application.
-`libs/lets-park/` is for libs that only this application uses. A future
+`libs/garage/` is for libs that only this application uses. A future
 `apps/<second-app>/` and `libs/<second-app>/` follow the same shape.
 
 This commit is **only the move**. Nx project names (`web`, `api`,
-`contract`, …) and package names (`@lets-park/*`) are deliberately unchanged —
+`contract`, …) and package names (`@garage/*`) are deliberately unchanged —
 see "What this deliberately did not do".
 
 ## The rule used to classify each lib
@@ -42,18 +42,18 @@ yet observable:
 | --------------------------------------- | --------- | ------------------ | ------------------------------------------------------------------------------ |
 | `design-system`, `form`, `i18n`          | 2         | `libs/shared/`      | confirmed shared — the design system is the reason the second app lives here    |
 | `api-client`                             | 2         | `libs/shared/`      | confirmed: the second app keeps oRPC and the same contract conventions          |
-| `contract`, `database`                   | 1         | `libs/lets-park/`   | domain schemas; the second app gets its own                                     |
-| `realtime-client`                        | 1         | `libs/lets-park/`   | the second app has no realtime — see below                                      |
-| `calendar-export`                        | 1         | `libs/lets-park/`   | ICS export is a parking feature                                                 |
-| `auth`                                   | ?         | `libs/lets-park/`   | the second app's login is undecided — placed by today's fact, not by hope       |
-| `shared-types`                           | 1         | `libs/lets-park/`   | its name is misleading; see below                                               |
+| `contract`, `database`                   | 1         | `libs/garage/`   | domain schemas; the second app gets its own                                     |
+| `realtime-client`                        | 1         | `libs/garage/`   | the second app has no realtime — see below                                      |
+| `calendar-export`                        | 1         | `libs/garage/`   | ICS export is a parking feature                                                 |
+| `auth`                                   | ?         | `libs/garage/`   | the second app's login is undecided — placed by today's fact, not by hope       |
+| `shared-types`                           | 1         | `libs/garage/`   | its name is misleading; see below                                               |
 
 ### `realtime-client` was not split, on purpose
 
 An earlier reading of this lib proposed splitting it into a generic transport
 half (`socket.io`, connection, validation) and a domain half (`cell-lock.ts`,
 `useDayRoom`). That was speculative work for a consumer that does not exist:
-the second app has no realtime. One project, whole, under `libs/lets-park/`.
+the second app has no realtime. One project, whole, under `libs/garage/`.
 If a second realtime consumer ever appears, the split is the same work then,
 with a real second use to shape it.
 
@@ -77,7 +77,7 @@ identity providers are. Verify that before promoting it.
 
 It holds `date-only.ts` and `prague-time.ts` (generic), and
 `domain-constants.ts`, `reservation-window.ts` and the business-day / Czech
-holiday calendar (pure parking domain). It is under `libs/lets-park/` because
+holiday calendar (pure parking domain). It is under `libs/garage/` because
 the second app needs none of it. It was not pre-split or renamed for the same
 reason `realtime-client` was not: there is no second consumer to shape the
 seam. Rename it when one arrives, or when the name next causes a mistake.
@@ -86,16 +86,16 @@ seam. Rename it when one arrives, or when the name next causes a mistake.
 
 Two libs sit in `libs/shared/` while still bound to this application. Neither
 is caught by anything: the Nx `scope:` tags do not encode the namespace, and no
-rule forbids a `libs/shared/*` project depending on a `libs/lets-park/*` one.
+rule forbids a `libs/shared/*` project depending on a `libs/garage/*` one.
 Lint, typecheck and the suites all pass.
 
-### `libs/shared/i18n` re-exports `libs/lets-park/shared-types` wholesale
+### `libs/shared/i18n` re-exports `libs/garage/shared-types` wholesale
 
 `libs/shared/i18n/src/index.ts` opens with `export * from
-'@lets-park/shared-types'`, per `doc/decision/0003-date-helpers-in-shared-types.md`,
+'@garage/shared-types'`, per `doc/decision/0003-date-helpers-in-shared-types.md`,
 and `shared-types-reexport.spec.ts` pins that it works. So a shared-namespace
 lib re-exports an application-namespace one, and the moment the second
-application imports `@lets-park/i18n` it transitively receives
+application imports `@garage/i18n` it transitively receives
 `reservation-window.ts`, `domain-constants.ts` and the Czech business-day
 calendar — and `shared-types` acquires its second consumer, which by the
 consumer-count rule above would move it to `libs/shared/`.
@@ -110,14 +110,14 @@ and that is not yet known:
   (`date-only.ts`, `prague-time.ts`) from the parking domain — which is the
   `shared-types` split this record declines to do speculatively.
 
-Resolve it when the second application's first `@lets-park/i18n` import is
+Resolve it when the second application's first `@garage/i18n` import is
 written, not before, and not after.
 
-Every project now carries an `app:` tag (`app:lets-park` or `app:shared`),
+Every project now carries an `app:` tag (`app:garage` or `app:shared`),
 added so that per-application commands select on something that survives the
 project rename below. That tag is also the mechanism that would catch this: an
 `@nx/enforce-module-boundaries` constraint forbidding `app:shared` from
-depending on `app:lets-park`. It is deliberately **not** configured, because
+depending on `app:garage`. It is deliberately **not** configured, because
 it fails on exactly this one edge today and turning it on would force the
 resolution this section just argued against making speculatively. Add the
 constraint as part of resolving the re-export, not before it.
@@ -164,7 +164,7 @@ is the one place in the workspace where it applies.
   asymmetry is cosmetic until someone types `nx run web:test` and has to
   remember which app that is — resolve it in its own commit, renaming this
   application's projects to match, not the new one's to match these.
-- **Package names are unchanged.** `@lets-park/design-system` is the wrong
+- **Package names are unchanged.** `@garage/design-system` is the wrong
   scope for a package a second application depends on, but renaming the scope
   touches every import in the workspace. It is a pure find-replace that can be
   done independently and safely later; bundling it here would have tripled the
@@ -183,14 +183,14 @@ have handed every shared lib every package's exception, and `npm run lint`
 would still have passed. The owners were rewritten one prefix at a time
 instead, and both directions were probed rather than assumed:
 
-- A file in `apps/lets-park/web` importing all seven wrapped packages produced
+- A file in `apps/garage/web` importing all seven wrapped packages produced
   seven `no-restricted-imports` errors, each naming the correct new owner path.
 - A file in `libs/shared/i18n` importing `next-intl` (its own package) plus
   `next-auth`, `@orpc/client` and `react-hook-form` produced exactly three
   errors — the exception did not leak to its shared-namespace siblings.
 
 **Paths built from path segments survive a text rewrite.** Rewriting
-`libs/database` → `libs/lets-park/database` across the tree does not touch
+`libs/database` → `libs/garage/database` across the tree does not touch
 `join(root, 'libs', 'database')`, and the resulting failures are late and
 confusing. Six such sites existed and all six were found by grepping for the
 string literals `'apps'` and `'libs'` across all tracked code, not by grepping
@@ -212,7 +212,7 @@ All from the repository root, after `npx nx reset`:
 | `npm test`                         | 12/12 projects pass                                   |
 | `npm run build` (+ storybook)      | 3/3 pass                                              |
 | `nx format:check --all`            | exit 0                                                |
-| `npx prisma validate`              | schema resolved from `libs/lets-park/database`        |
+| `npx prisma validate`              | schema resolved from `libs/garage/database`        |
 | `nx run api:test-db`               | 9 suites, 129 tests pass                              |
 | `nx run api-e2e:e2e`               | pass                                                  |
 | `nx run web-e2e:e2e`               | 48 passed, and both ports free afterwards             |

@@ -1,4 +1,4 @@
-import { Button, Modal, type ButtonVariant } from '@lets-park/design-system/primitives';
+import { Button, Modal, type ButtonVariant } from '@garage/design-system/primitives';
 import type { ReactNode } from 'react';
 
 export type ConfirmDialogTone = 'default' | 'danger';

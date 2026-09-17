@@ -1,6 +1,6 @@
 # Bulk reservation: the allocator, the preview and the transaction
 
-`apps/lets-park/api/src/reservations/bulk-*`. Two procedures — `reservation.previewBulk`
+`apps/garage/api/src/reservations/bulk-*`. Two procedures — `reservation.previewBulk`
 and `reservation.confirmBulk` — that take a set of days inside one calendar
 month and give every one of them a spot, a queue place, or a reason why not.
 

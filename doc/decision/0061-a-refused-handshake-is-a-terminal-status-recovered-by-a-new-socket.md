@@ -1,6 +1,6 @@
 # 0061 – A refused handshake is a terminal status, recovered by building a new socket
 
-**Date:** 2026-09-02 · **Status:** accepted · **Task:** 21 (`libs/lets-park/realtime-client`, fix round 1)
+**Date:** 2026-09-02 · **Status:** accepted · **Task:** 21 (`libs/garage/realtime-client`, fix round 1)
 
 ## What
 
@@ -53,8 +53,8 @@ Before this change the handler reported `connecting` for both. The concrete cons
 
 > A user leaves the grid open over lunch. The tab is backgrounded, the transport drops. On the
 > reconnect the socket presents the access token it re-reads from the provider — but
-> `libs/lets-park/auth`'s rotation has not run yet and the token is stale. The gateway refuses.
-> `socket.io-client` destroys the socket. `libs/lets-park/auth` refreshes the token perfectly well a
+> `libs/garage/auth`'s rotation has not run yet and the token is stale. The gateway refuses.
+> `socket.io-client` destroys the socket. `libs/garage/auth` refreshes the token perfectly well a
 > minute later and **nothing happens**, because the connection effect's dependencies did not
 > change. The grid stops receiving `reservation:created`, `useCellLock` never leaves
 > `requesting`, the status pill says "connecting" indefinitely, and only a full page reload
@@ -95,7 +95,7 @@ again.
 
 ## How it is verified
 
-`libs/lets-park/realtime-client/src/lib/connection.spec.tsx`, `describe('a refused handshake')` — five
+`libs/garage/realtime-client/src/lib/connection.spec.tsx`, `describe('a refused handshake')` — five
 tests driving a **real** CONNECT_ERROR packet through a real `socket.io-client` socket. The
 fixture's `rejectHandshake()` emits `{ type: CONNECT_ERROR, nsp, data: { message } }` on the
 manager's `packet` event, which is the channel `Socket.subEvents()` subscribes to; the packet
@@ -124,7 +124,7 @@ independent of the branch, and the transport case is what the pre-fix code alrea
 ## Risk
 
 **Three attempts may be too few, or the delays wrong.** Nothing here has run against a real
-gateway (Task 15), so the numbers are sized against `libs/lets-park/auth`'s rotation rather than measured
+gateway (Task 15), so the numbers are sized against `libs/garage/auth`'s rotation rather than measured
 against a refusal. If the observed pattern in Fáze 7 e2e is that a stale token takes longer than
 36 s to refresh, the table is the one thing to change — it is a single exported constant and the
 bounded-vs-unbounded shape does not have to change with it.
@@ -133,7 +133,7 @@ bounded-vs-unbounded shape does not have to change with it.
 an explicit "try again" that quietly did nothing would be worse — but a consumer that wired it
 to something other than a user-initiated control would drop and re-take every room and cell
 lock. It is documented on the method; the only intended caller is a `rejected`-state affordance
-in `apps/lets-park/web` (Task 23).
+in `apps/garage/web` (Task 23).
 
 **A gateway that refuses for a reason unrelated to the token still gets three tries.** A
 namespace middleware that throws on a transient internal error, for instance, is retried as if

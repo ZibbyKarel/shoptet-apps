@@ -2,7 +2,7 @@ import { forwardRef, type HTMLAttributes } from 'react';
 
 import { cx } from '../cx';
 import { resolveGap } from '../gap';
-import type { SpacingKey } from '@lets-park/design-system/tokens';
+import type { SpacingKey } from '@garage/design-system/tokens';
 
 export type GridColumns = 1 | 2 | 3 | 4 | 5 | 6;
 

@@ -17,13 +17,13 @@ overview does not carry. The third is **not** implemented.
 ## Why
 
 - **The contract has no field for it.** `daySpotOverviewSchema`
-  (`libs/lets-park/contract/src/api/overview.ts`) carries `spot`, `reservation` and
+  (`libs/garage/contract/src/api/overview.ts`) carries `spot`, `reservation` and
   `waitlistCount`. Nothing in `admin.spot.list` or `overview.day` says who has a
   spot open in front of them.
 - **That is not an oversight in the contract.** "Somebody is editing this right
   now" is presence, not state: it is true for seconds, it belongs to no
   database row, and it is delivered over the Socket.io channel
-  (`@lets-park/contract/realtime`), which is where the lot screen's cell locks
+  (`@garage/contract/realtime`), which is where the lot screen's cell locks
   already live. Adding it to a REST-shaped read would make it a cached value
   that goes stale silently — the worst possible representation of a fact whose
   only virtue is being current.
@@ -43,7 +43,7 @@ which is exactly what a reviewer flagged.
 - `admin-spots-screen.tsx` renders `holderName` when the day overview has a row
   for the spot, `Volné` when it has one with no reservation, and
   `spotsTodayUnknown` (`—`) when it has none.
-- Nothing subscribes to `@lets-park/contract/realtime` from `shell/admin/`.
+- Nothing subscribes to `@garage/contract/realtime` from `shell/admin/`.
 
 ## Risk
 

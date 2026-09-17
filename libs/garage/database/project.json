@@ -1,0 +1,61 @@
+{
+  "name": "database",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/garage/database/src",
+  "projectType": "library",
+  "tags": ["type:data", "scope:api", "app:garage"],
+  "// targets": "to see all targets run: nx show project database --web",
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "tsc --noEmit -p libs/garage/database/tsconfig.lib.json",
+          "tsc --noEmit -p libs/garage/database/tsconfig.spec.json"
+        ],
+        "parallel": false
+      }
+    },
+    "reset-e2e": {
+      "// purpose": "Clears the e2e target month and widens the reservation window; see the script's own docs. `apps/garage/web-e2e`'s globalSetup runs the same file directly (one `node` process instead of an Nx invocation inside a test run); this target is the discoverable way to run it by hand.",
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node --require @swc-node/register libs/garage/database/src/scripts/reset-e2e.ts",
+        "cwd": "{workspaceRoot}",
+        "env": {
+          "SWC_NODE_PROJECT": "tsconfig.base.json"
+        }
+      }
+    },
+    "prisma-generate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma generate",
+        "cwd": "{workspaceRoot}"
+      },
+      "// inputs": "`default` first, deliberately: naming only the schema file **replaced** the default input set instead of extending it, so nothing but that one file could invalidate the cached client. The `externalDependencies` entry is the other half \u2014 a Prisma version bump changes the generated client and must miss the cache. Final review M-5.",
+      "inputs": [
+        "default",
+        {
+          "externalDependencies": ["prisma", "@prisma/client"]
+        }
+      ],
+      "outputs": ["{projectRoot}/src/generated"],
+      "cache": true
+    },
+    "check-schema": {
+      "// purpose": "The guard `schema.prisma` did not have. Both parity suites compare artefacts *derived* from it \u2014 `schema-contract-parity.spec.ts` reads the committed generated client, `migration-sql.spec.ts` reads the migration SQL \u2014 so an edit to the schema with no `prisma generate` and no migration left both of them passing against stale inputs. Final review I-3. Needs a live PostgreSQL (`docker compose --profile dev up -d`) and `DATABASE_URL`; it is not part of `nx run-many -t lint,typecheck,test,build` for that reason, and belongs in CI's `database` job, which already has the service.",
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "parallel": false,
+        "commands": [
+          "prisma migrate status",
+          "prisma migrate diff --from-config-datasource --to-schema libs/garage/database/prisma/schema.prisma --exit-code",
+          "prisma generate",
+          "git diff --exit-code -- libs/garage/database/src/generated"
+        ]
+      }
+    }
+  }
+}

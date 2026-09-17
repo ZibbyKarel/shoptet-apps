@@ -4,7 +4,7 @@
 
 `ReservationsService.isRetryableConflict` no longer tests `error.code ===
 'P2034'`. It calls a new `isWriteConflict` in
-`apps/lets-park/api/src/common/filters/contract-exception.filter.ts`, which is true for
+`apps/garage/api/src/common/filters/contract-exception.filter.ts`, which is true for
 `P2034` **and** for a `P2010` whose underlying SQLSTATE is in class 40
 (transaction rollback: `40001` serialization failure, `40P01` deadlock
 detected). `mapPrismaErrorCode` maps the same `P2010`s to `CONFLICT`; every

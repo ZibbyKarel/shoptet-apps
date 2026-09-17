@@ -1,7 +1,7 @@
 # 0175 – The month-window answer is its own contract field, because `canReserve` is per-day
 
-**Date:** 2026-09-03 · **Status:** accepted · **Affects:** `libs/lets-park/contract/src/api/overview.ts`,
-`apps/lets-park/api/src/overview/day-overview.service.ts`, `apps/lets-park/web/src/lot/*`
+**Date:** 2026-09-03 · **Status:** accepted · **Affects:** `libs/garage/contract/src/api/overview.ts`,
+`apps/garage/api/src/overview/day-overview.service.ts`, `apps/garage/web/src/lot/*`
 **Follows on from:** `doc/decision/0120-*`, `doc/decision/0064-*`
 
 ## What
@@ -68,17 +68,17 @@ means the backend answers the question the screen actually asks.
 
 **Why one field rather than exposing the two halves separately.** `isReservableDay` is a pure
 function of the date and the Czech calendar — `isBusinessDay` and a comparison — and the client
-already has both through `@lets-park/i18n`. There is no information in it the client lacks.
+already has both through `@garage/i18n`. There is no information in it the client lacks.
 `canReserveMonth` is the half that depends on server state (the window settings) and on identity
 (the role), so it is the half that has to travel.
 
 ## How
 
-- `libs/lets-park/contract/src/api/overview.ts` — the field, documented as "the window and the admin
+- `libs/garage/contract/src/api/overview.ts` — the field, documented as "the window and the admin
   exemption, and nothing about `date` itself". `overview.spec.ts` asserts it is required, and
   asserts that `canReserve: false` beside `canReserveMonth: true` is a **valid** payload — that
   combination is every weekend of every open month, not a contradiction.
-- `apps/lets-park/api/src/overview/day-overview.service.ts` — `canReserveMonth` and `isReservableDay` as two
+- `apps/garage/api/src/overview/day-overview.service.ts` — `canReserveMonth` and `isReservableDay` as two
   private methods, with `canReserve` composed from them at the one call site.
   `day-overview.service.spec.ts` gains a `canReserveMonth` block: the two fields disagreeing on a
   Saturday of an open October, on 28 September seen from inside September's window, and on a past
@@ -86,8 +86,8 @@ already has both through `@lets-park/i18n`. There is no information in it the cl
   exemption in a locked month; and the ordering case that proves the exemption does not rescue a
   Saturday. The three disagreement tests assert `window.state === 'OPEN'` rather than assuming it,
   because a fixture whose month was quietly locked would pass every one of them.
-- `apps/lets-park/web/src/lot/lot-screen/lot-screen.tsx` — both `showBulk` and the modal's prop.
-- `apps/lets-park/web/src/lot/bulk-modal/bulk-modal.tsx` — the prop is renamed `canReserveMonth`, so the wrong field
+- `apps/garage/web/src/lot/lot-screen/lot-screen.tsx` — both `showBulk` and the modal's prop.
+- `apps/garage/web/src/lot/bulk-modal/bulk-modal.tsx` — the prop is renamed `canReserveMonth`, so the wrong field
   cannot be passed without a type error.
 
 ## Risk

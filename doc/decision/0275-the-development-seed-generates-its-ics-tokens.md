@@ -2,7 +2,7 @@
 
 ## What
 
-`libs/lets-park/database/src/lib/seed-data.ts` no longer carries an `icsToken` field at
+`libs/garage/database/src/lib/seed-data.ts` no longer carries an `icsToken` field at
 all. `SeedUser` does not declare one; the four literals that used to sit in it
 are gone:
 
@@ -10,8 +10,8 @@ are gone:
 icsToken: '019917a0-0000-7000-8000-000000000001',   // …0002, …0003, …0004
 ```
 
-`libs/lets-park/database/src/lib/ics-token.ts` mints one instead —
-`randomBytes(32).toString('base64url')` — and `libs/lets-park/database/src/lib/seed-writes.ts`
+`libs/garage/database/src/lib/ics-token.ts` mints one instead —
+`randomBytes(32).toString('base64url')` — and `libs/garage/database/src/lib/seed-writes.ts`
 puts it in the `create` branch of the seed's `upsert` and **nowhere else**.
 `src/scripts/seed.ts` prints the resulting feed URLs to stdout so a developer
 can still subscribe.
@@ -19,7 +19,7 @@ can still subscribe.
 ## Why
 
 - **Those four values were published credentials.**
-  `apps/lets-park/api/src/calendar/calendar.controller.ts` is `@Public()` by design, and
+  `apps/garage/api/src/calendar/calendar.controller.ts` is `@Public()` by design, and
   its own header says why: *"there is no bearer token to check. The credential
   is the 32-byte `randomBytes` token in the path."* So
   `GET /api/calendar/019917a0-0000-7000-8000-000000000002.ics` returned that
@@ -36,7 +36,7 @@ can still subscribe.
 - **"Dev only" was a convention, not a mechanism.** `seed.ts` checked that
   `DATABASE_URL` was set and nothing more. `doc/decision/0276-*` is the other
   half of this fix.
-- **`base64url`, not hex.** `apps/lets-park/api/src/auth/auth-user.service.ts` mints a
+- **`base64url`, not hex.** `apps/garage/api/src/auth/auth-user.service.ts` mints a
   real token as `randomBytes(32).toString('base64url')` and
   `me.service.ts` regenerates it the same way. Nothing parses an ICS token, so
   its shape is all it has; a seeded account whose token is the shape of a real
@@ -50,15 +50,15 @@ can still subscribe.
   column. The same shape would revert a randomly generated token, so this is not
   subsumed by the change above.
 - **`role` and `active` deliberately stay in `update`.** Those are the seed's to
-  assert on every run, and `apps/lets-park/web-e2e` depends on `inactive@example.com`
+  assert on every run, and `apps/garage/web-e2e` depends on `inactive@example.com`
   being inactive when a suite starts. The distinction is that a credential
   belongs to whoever holds it and a role does not.
 
 ## How
 
-- `libs/lets-park/database/src/lib/ics-token.ts` and its spec: 32 bytes, base64url,
+- `libs/garage/database/src/lib/ics-token.ts` and its spec: 32 bytes, base64url,
   never repeating.
-- `libs/lets-park/database/src/lib/seed-writes.ts` owns the `upsert` argument shape so
+- `libs/garage/database/src/lib/seed-writes.ts` owns the `upsert` argument shape so
   that the one property that matters about it can be asserted rather than read —
   `seed.ts` calls `main()` on import, so nothing inside it is unit-testable.
   `seed-writes.spec.ts` fails if `icsToken` reappears in `update`.

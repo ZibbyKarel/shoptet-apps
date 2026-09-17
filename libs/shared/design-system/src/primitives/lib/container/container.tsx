@@ -32,7 +32,7 @@ export interface ContainerProps extends HTMLAttributes<HTMLDivElement> {
 /**
  * Centered, width-capped content wrapper, replacing 4 near-identical
  * `mx-auto w-full max-w-[var(--container)] px-4 py-*` occurrences in
- * `apps/lets-park/web` — identical but for `py-*`: `app/(app)/layout.tsx:26` uses
+ * `apps/garage/web` — identical but for `py-*`: `app/(app)/layout.tsx:26` uses
  * `py-8`, while `app/error.tsx:26`, `app/global-error.tsx:51` and
  * `app/not-found.tsx:24` all use `py-16`.
  */

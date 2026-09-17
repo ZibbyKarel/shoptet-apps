@@ -1,0 +1,32 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../../dist/out-tsc",
+    // Same reason as `libs/query/tsconfig.spec.json` (`doc/decision/0038-*`):
+    // deliberately **not** `commonjs`. `next-auth` and `@auth/core` are
+    // ESM-only, and this program also pulls in `@garage/api-client` →
+    // `@orpc/client`, which is ESM-only too. Inheriting `esnext` from
+    // `tsconfig.base.json` keeps every one of them resolved through the
+    // `import` condition, the same way `tsconfig.lib.json` already does.
+    // Nothing is emitted here (`--noEmit`) and the tests are transpiled by
+    // babel-jest, so the module format only affects resolution.
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "types": ["jest", "node"]
+  },
+  "include": [
+    "src/test-setup.ts",
+    "src/**/__fixtures__/**/*.ts",
+    "jest.config.ts",
+    "jest.config.cts",
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.spec.tsx",
+    "src/**/*.test.js",
+    "src/**/*.spec.js",
+    "src/**/*.test.jsx",
+    "src/**/*.spec.jsx",
+    "src/**/*.d.ts"
+  ]
+}

@@ -4,9 +4,9 @@
 
 Two changes to one hole:
 
-- `apps/lets-park/web-e2e/src/support/personas.ts` — `storageStatePath()` returns
+- `apps/garage/web-e2e/src/support/personas.ts` — `storageStatePath()` returns
   `join(workspaceRoot, 'apps', 'web-e2e', '.auth', …)` instead of the relative
-  `apps/lets-park/web-e2e/.auth/…`.
+  `apps/garage/web-e2e/.auth/…`.
 - `.dockerignore` — the two rules for these files become `**/.auth/` and
   `**/storage-state*.json`.
 
@@ -24,23 +24,23 @@ API that resolves against `process.cwd()`: `storageState({ path })` in
 `auth.setup.ts` and `browser.newContext({ storageState })` in `fixtures.ts` —
 not the config-directory resolution Playwright applies to `use.storageState`.
 Nx runs the executor with the cwd set to the *project* root, so the files were
-written to `apps/lets-park/web-e2e/apps/lets-park/web-e2e/.auth/`. Confirmed on disk. The two sides
+written to `apps/garage/web-e2e/apps/garage/web-e2e/.auth/`. Confirmed on disk. The two sides
 agreed with each other, so the suite worked, and the doubled path was recorded
 as ugly but harmless.
 
 It was not harmless, because `.dockerignore` patterns are anchored at the
-context root. `apps/lets-park/web-e2e/.auth/` named a directory that did not exist, and
+context root. `apps/garage/web-e2e/.auth/` named a directory that did not exist, and
 `storage-state*.json` matched only a root-level file. Measured with a real
 `docker build` over a synthetic context carrying this repository's
 `.dockerignore` and a `RUN find /ctx -type f`:
 
 ```
 /ctx/.env.example                                              ← correctly re-included
-/ctx/apps/lets-park/web-e2e/apps/lets-park/web-e2e/.auth/storage-state-user.json   ← NOT excluded
+/ctx/apps/garage/web-e2e/apps/garage/web-e2e/.auth/storage-state-user.json   ← NOT excluded
 ```
 
-`.env`, `apps/lets-park/web/.env`, a root-level `storage-state-*.json` and
-`apps/lets-park/web-e2e/.auth/…` were all excluded correctly. **Every rule in the file
+`.env`, `apps/garage/web/.env`, a root-level `storage-state-*.json` and
+`apps/garage/web-e2e/.auth/…` were all excluded correctly. **Every rule in the file
 worked except the two written for the one path that was real.**
 
 `COPY . .` in both `builder` stages would have put that file in a layer.
@@ -66,7 +66,7 @@ Both halves, because one alone leaves the next refactor to find out again:
   absolute path to itself.
 - **The patterns.** `**/`-prefixed, for the same reason `**/.env` is — the
   comment above it in `.dockerignore` records the measured incident where a
-  bare `.env` shipped `apps/lets-park/web/.env` into an image. A pattern that is right
+  bare `.env` shipped `apps/garage/web/.env` into an image. A pattern that is right
   wherever the file lands survives the next move.
 
 Re-measured with the same `docker build` probe, same context, new
@@ -77,17 +77,17 @@ Re-measured with the same `docker build` probe, same context, new
 ```
 
 And after a full suite run with the new `storageStatePath()`: the three files
-are at `apps/lets-park/web-e2e/.auth/`, and `apps/lets-park/web-e2e/apps/` does not exist.
+are at `apps/garage/web-e2e/.auth/`, and `apps/garage/web-e2e/apps/` does not exist.
 
 ## Risk
 
 - **`.gitignore` was left alone.** Its two rules now both match, where before
   only the unanchored one did; nothing needs to change for it to be correct.
-- **A stale `apps/lets-park/web-e2e/apps/` directory** may exist in a working tree that
+- **A stale `apps/garage/web-e2e/apps/` directory** may exist in a working tree that
   ran the suite before this change. It is git-ignored, holds expired mock-issuer
   credentials, and can be deleted.
 - **`workspaceRoot` walks up from `process.cwd()` for `nx.json`.** Every path
   the suite is invoked by — `nx run web-e2e:e2e`, or `playwright test` from
-  `apps/lets-park/web-e2e` — is inside the workspace, so it resolves. A `playwright test`
+  `apps/garage/web-e2e` — is inside the workspace, so it resolves. A `playwright test`
   run from outside the repository would now fail loudly instead of silently
   writing credentials to a new relative path, which is the better failure.

@@ -9,7 +9,7 @@ round was called for.
 
 ## M-6 — `admin.window.update({})` silently resets the reservation window
 
-`libs/lets-park/contract/src/api/reservation-window.ts:31`.
+`libs/garage/contract/src/api/reservation-window.ts:31`.
 
 `updateReservationWindowSettingsInputSchema` **is**
 `reservationWindowSettingsSchema`, whose two fields both carry `.default()`. So
@@ -30,19 +30,19 @@ booking system.
 `reservationWindowSettingsSchema` without the defaults, or a
 `z.strictObject` over the two fields — is an **API contract change**: it moves an
 accepted request shape into `VALIDATION_FAILED`, and the admin settings form in
-`apps/lets-park/web` is the client that would have to be checked against it. The fix round
-that found this owns `libs/lets-park/contract` and explicitly does not own `apps/`, and
+`apps/garage/web` is the client that would have to be checked against it. The fix round
+that found this owns `libs/garage/contract` and explicitly does not own `apps/`, and
 contract-first means the contract edit leads and the handler follows — which is
 exactly the sequencing that cannot be done from one side of that boundary.
 
 **The question to answer, not the answer:** should the update procedure take a
 shape where both fields are required (so an omission is rejected rather than
-defaulted), and if so, does `apps/lets-park/web`'s admin form already send both? A
+defaulted), and if so, does `apps/garage/web`'s admin form already send both? A
 follow-up needs to change both sides in one commit.
 
 ## M-4 — a tautological assertion in `router.spec.ts`
 
-`libs/lets-park/contract/src/api/router.spec.ts:196-208`. The test *declares both window
+`libs/garage/contract/src/api/router.spec.ts:196-208`. The test *declares both window
 errors on every write gated by the window* asserts against the spec file's own
 `EXPECTED_ERROR_CODES` table rather than against the contract.
 

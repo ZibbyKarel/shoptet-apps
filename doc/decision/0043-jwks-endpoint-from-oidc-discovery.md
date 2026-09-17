@@ -35,7 +35,7 @@ of dev and production. `doc/decision/0008-*` and `.env.example` both commit this
 `AUTH_OKTA_ISSUER`" — a hardcoded suffix breaks that promise the first time the code is
 deployed against real Okta, and breaks it at runtime, in production, on every request.
 
-The test issuer in `apps/lets-park/api/src/auth/testing/oidc-test-issuer.ts` publishes at `/jwks`
+The test issuer in `apps/garage/api/src/auth/testing/oidc-test-issuer.ts` publishes at `/jwks`
 specifically so that a reintroduced hardcoded `/v1/keys` fails the suite.
 
 **Why lazily.** Resolving discovery in the constructor would make `AppModule` initialisation

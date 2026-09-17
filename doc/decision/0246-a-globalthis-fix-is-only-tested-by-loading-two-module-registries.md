@@ -6,7 +6,7 @@
 
 ## What
 
-Every `globalThis` + `Symbol.for` store in `libs/lets-park/auth` gets one test that loads
+Every `globalThis` + `Symbol.for` store in `libs/garage/auth` gets one test that loads
 the module **twice, into two independent module registries**, via
 `jest.isolateModules`, and asserts the two loads see the same object.
 

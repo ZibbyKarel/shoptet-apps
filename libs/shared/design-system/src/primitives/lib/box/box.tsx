@@ -43,7 +43,7 @@ export type BoxBorderSide = 'bottom' | 'top';
  * the original markup was `border-b border-border` — so `true` is kept
  * byte-identical to before and `'bottom'`/`'top'` are added alongside it,
  * rather than a second `borderBottom`-shaped prop. No caller in
- * `apps/lets-park/web/src` needs `'left'`/`'right'` yet (grepped before
+ * `apps/garage/web/src` needs `'left'`/`'right'` yet (grepped before
  * adding these two) — add on demand, same as every other variant table here.
  */
 const BORDER_CLASSES: Record<BoxBorderSide, string> = {

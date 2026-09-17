@@ -1,6 +1,6 @@
-# 0046 – `libs/lets-park/auth` has two entry points, server and client
+# 0046 – `libs/garage/auth` has two entry points, server and client
 
-**Date:** 2026-09-02 · **Status:** accepted · **Task:** 20 (`libs/lets-park/auth`)
+**Date:** 2026-09-02 · **Status:** accepted · **Task:** 20 (`libs/garage/auth`)
 **Follows on from:** `doc/decision/0023-*` (the contract's second entry point)
 
 ## What
@@ -9,37 +9,37 @@ One lib, one owner of `next-auth`, two import paths:
 
 | path | resolves to | contains |
 | --- | --- | --- |
-| `@lets-park/auth` | `libs/lets-park/auth/src/index.ts` | `createAuth`, `createAuthConfig` and its callbacks, `createTokenRefresher`, `createAccessTokenProvider` |
-| `@lets-park/auth/client` | `libs/lets-park/auth/src/client/index.ts` | `AuthProvider`, `useRequireAuth`, `useAccessTokenProvider`, plus `useSession`/`signIn`/`signOut` |
+| `@garage/auth` | `libs/garage/auth/src/index.ts` | `createAuth`, `createAuthConfig` and its callbacks, `createTokenRefresher`, `createAccessTokenProvider` |
+| `@garage/auth/client` | `libs/garage/auth/src/client/index.ts` | `AuthProvider`, `useRequireAuth`, `useAccessTokenProvider`, plus `useSession`/`signIn`/`signOut` |
 
-> **2026-09-04:** the server row's inventory has narrowed. `@lets-park/auth` now exports
+> **2026-09-04:** the server row's inventory has narrowed. `@garage/auth` now exports
 > `createAuth` and `OKTA_PROVIDER_ID` plus the types `Auth` and `AuthOptions`;
 > `createAuthConfig`, `createTokenRefresher` and `createAccessTokenProvider` became
 > module-scoped implementation of `createAuth`. **The decision this record makes — two entry
 > points, server and client — is unchanged**, and so is everything below. The live inventory
-> is `libs/lets-park/auth/src/index.ts` and `doc/wrappers.md`.
+> is `libs/garage/auth/src/index.ts` and `doc/wrappers.md`.
 
 Both aliases are in `tsconfig.base.json`. There is one `project.json`, one tag pair
 (`type:util`, `scope:web`), one Jest project, and one `WRAPPED_LIBRARIES` entry.
 
 ## Why
 
-**The two halves import different things.** `@lets-park/auth` reaches `next-auth`'s default
+**The two halves import different things.** `@garage/auth` reaches `next-auth`'s default
 export, which pulls in route handlers, `next/server` and Auth.js's OAuth machinery.
-`@lets-park/auth/client` reaches only `next-auth/react`. A single barrel re-exporting both
+`@garage/auth/client` reaches only `next-auth/react`. A single barrel re-exporting both
 would put the server half in the module graph of every client component that wanted
 `useSession` — Next.js would either bundle it or fail on a server-only import, and which of
 the two you get depends on tree-shaking, which is not a guarantee to build a boundary on.
 
-**A second lib would be worse.** Splitting into `libs/lets-park/auth` and `libs/lets-park/auth-client` means two
+**A second lib would be worse.** Splitting into `libs/garage/auth` and `libs/garage/auth-client` means two
 projects, two tag sets, two Jest configs — and, critically, **two** `WRAPPED_LIBRARIES`
 owners for one package, or an owner that does not cover half the code. The map's shape
 (`pkg → one owner directory`) is what makes the ban and the exemption generate from a single
 source; giving `next-auth` two owners is exactly the kind of hand-maintained duplication that
 map exists to remove.
 
-**Precedent.** `libs/lets-park/contract` already does this for `@lets-park/contract` and
-`@lets-park/contract/realtime`, for the same reason: one owner of a concept, two audiences.
+**Precedent.** `libs/garage/contract` already does this for `@garage/contract` and
+`@garage/contract/realtime`, for the same reason: one owner of a concept, two audiences.
 
 **No `'use client'` directive here.** `client.tsx` carries none, matching `QueryProvider` in
 `libs/query` and `IntlProvider` in `libs/shared/i18n`: the app marks its own provider boundary as a
@@ -58,7 +58,7 @@ to prevent, reintroduced by an import.
 are `react`, `next-auth/react`, `./access-token` (a pure function), and `./session` (types and
 two constants) — nothing that reaches `next-auth`'s server entry.
 
-Verified with a real build rather than by reading imports. A temporary `apps/lets-park/web` route —
+Verified with a real build rather than by reading imports. A temporary `apps/garage/web` route —
 `page.tsx` as a Server Component calling `createAuth()` and `await auth()`, beside a
 `'use client'` `client-part.tsx` using `AuthProvider` and `useRequireAuth` — compiled under
 `nx build web --skip-nx-cache`:
@@ -85,7 +85,7 @@ requires the bare server entry. The list had to name our own server modules too.
 corrected list the probe failed as intended:
 
 ```
-@lets-park/auth/client reached "./config" — the server half.
+@garage/auth/client reached "./config" — the server half.
   at Object.require (src/lib/client.tsx:21:1)
   at Object.require (src/client/index.ts:13:1)
 ```
@@ -98,7 +98,7 @@ That matches what a bundler would do — an unused import is not in the bundle e
 does mean the guard is not a lint rule and cannot be read as one.
 
 It also enumerates the server modules by hand. A new server-only module added to
-`libs/lets-park/auth/src/lib/` is not covered until someone adds it to that list. The list is four
+`libs/garage/auth/src/lib/` is not covered until someone adds it to that list. The list is four
 entries long and sits next to the modules it names, which is the best available trade against
 a lint rule in `eslint.config.mjs` — this project's enforcement surface, where three separate
 rules have already been found silently inert, and where a rule with one subject reads as

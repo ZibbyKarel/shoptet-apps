@@ -17,7 +17,7 @@
  */
 
 import { createFormatter, useLocale } from 'next-intl';
-import { toUtcMidnight, type DateOnly } from '@lets-park/shared-types';
+import { toUtcMidnight, type DateOnly } from '@garage/shared-types';
 import { DEFAULT_LOCALE, isLocale, type Locale } from './locale';
 import { MONTH_LOCATIVE_CS } from './dates';
 
@@ -134,8 +134,8 @@ export function createDateFormatters(locale: Locale): DateFormatters {
 /**
  * The formatters for the locale on the provider.
  *
- * For components. Pure view modules (`apps/lets-park/web/src/lot/lot-view.ts`,
- * `apps/lets-park/web/src/shell/admin/window-banner/window-view.ts`) are not components
+ * For components. Pure view modules (`apps/garage/web/src/lot/lot-view.ts`,
+ * `apps/garage/web/src/shell/admin/window-banner/window-view.ts`) are not components
  * and take a `DateFormatters` as a parameter instead — which is also what makes
  * their tests able to assert both languages without a React tree.
  */

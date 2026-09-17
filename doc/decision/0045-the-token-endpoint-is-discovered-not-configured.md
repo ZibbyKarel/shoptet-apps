@@ -1,10 +1,10 @@
 # 0045 – The token endpoint and its client-authentication method come from OIDC discovery
 
-**Date:** 2026-09-02 · **Status:** accepted · **Task:** 20 (`libs/lets-park/auth`)
+**Date:** 2026-09-02 · **Status:** accepted · **Task:** 20 (`libs/garage/auth`)
 
 ## What
 
-`libs/lets-park/auth`'s refresh token rotation does not have a configured token endpoint. Given
+`libs/garage/auth`'s refresh token rotation does not have a configured token endpoint. Given
 `AUTH_OKTA_ISSUER`, it fetches `${issuer}/.well-known/openid-configuration` once per
 refresher and reads two fields:
 
@@ -32,7 +32,7 @@ that shape for Okta gets two things wrong at once:
   because e2e would stay green.
 
 **One issuer, one document, both halves of the system.** `AUTH_OKTA_ISSUER` is already the
-single Okta URL in `.env.example`, shared by `apps/lets-park/web` and `apps/lets-park/api`, and the API's JWKS
+single Okta URL in `.env.example`, shared by `apps/garage/web` and `apps/garage/api`, and the API's JWKS
 lookup (Task 11) discovers its keys from the same document. Deriving the token endpoint the
 same way keeps "dev, e2e and production run the same code, only the values differ" true for
 refresh as well as for validation — which is global constraint 8's requirement, not a
@@ -49,7 +49,7 @@ Okta). A setting that can disagree with the server is a setting that will.
 ## How
 
 `createTokenRefresher({ issuer, clientId, clientSecret, fetch? })` in
-`libs/lets-park/auth/src/lib/refresh.ts`. The cache is a `let` inside the returned closure rather than a
+`libs/garage/auth/src/lib/refresh.ts`. The cache is a `let` inside the returned closure rather than a
 module-level `Map`: a module-global cache would have needed a reset hook for tests, and a
 reset hook only tests call is precisely the production-code test seam this project bans
 elsewhere. A failed discovery clears the cache so the next renewal retries.

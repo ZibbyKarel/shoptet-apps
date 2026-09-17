@@ -42,10 +42,10 @@ service layer. A schema also cannot see who is calling, and two of the three rul
 
 ## How
 
-- `apps/lets-park/api/src/reservations/reservation-policy.ts` — `assertBusinessDay`, called from
+- `apps/garage/api/src/reservations/reservation-policy.ts` — `assertBusinessDay`, called from
   `assertMayTakeDay` **before** the window check, so a Saturday in a locked month is reported as
   the Saturday. That is the fact that will still be true next month.
-- `isBusinessDay` from `@lets-park/shared-types` is the only implementation of "business day";
+- `isBusinessDay` from `@garage/shared-types` is the only implementation of "business day";
   nothing here re-derives it.
 - `reservation-policy.spec.ts` covers the ordering and the admin case; `reservations.db.spec.ts`
   and `waitlist.db.spec.ts` cover it end to end.

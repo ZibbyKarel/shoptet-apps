@@ -14,7 +14,7 @@
    in `src/lib/layout.ts`.
 
    Import this file (not `tokens.css` directly) from the app's global CSS
-   entrypoint:  @import "@lets-park/design-system/tokens/theme.css";
+   entrypoint:  @import "@garage/design-system/tokens/theme.css";
    ============================================================ */
 
 @import 'tailwindcss';

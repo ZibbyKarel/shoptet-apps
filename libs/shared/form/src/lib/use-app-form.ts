@@ -12,8 +12,8 @@ import type { z } from 'zod';
  * submitted-value shapes), not on the schema's own type — see the comment on
  * `useAppForm` for why that is what lets `zodResolver`'s result flow through
  * with no cast. `schema` is typed as `z.ZodType<TOut, TIn>` rather than a
- * `libs/lets-park/contract` schema — this lib is domain-free and validates whatever Zod
- * object schema a caller (in `apps/lets-park/web` or a future `type:feature` lib)
+ * `libs/garage/contract` schema — this lib is domain-free and validates whatever Zod
+ * object schema a caller (in `apps/garage/web` or a future `type:feature` lib)
  * passes in.
  */
 export interface UseAppFormOptions<TIn extends FieldValues, TOut extends FieldValues = TIn>
@@ -41,7 +41,7 @@ export type AppForm<TIn extends FieldValues, TOut extends FieldValues = TIn> = U
  * Wires a Zod schema into react-hook-form via `@hookform/resolvers/zod`, so
  * every form in the product validates against the same schema its submit
  * request will ultimately be checked against again by the contract
- * (`libs/lets-park/contract`) — never a hand-duplicated set of validation rules.
+ * (`libs/garage/contract`) — never a hand-duplicated set of validation rules.
  *
  * A typo in a field name passed to `register`/`control` elsewhere is a
  * compile error, because `TIn`/`TOut` drive both the field-value type and the
@@ -68,7 +68,7 @@ export type AppForm<TIn extends FieldValues, TOut extends FieldValues = TIn> = U
  *
  * **Exercised, not just reasoned:** `use-app-form.spec.tsx`, "the TIn/TOut
  * split", is the only place in the workspace where a schema's input and output
- * types actually differ — every other form here (and both `apps/lets-park/web` call
+ * types actually differ — every other form here (and both `apps/garage/web` call
  * sites, which write `useAppForm<TValues>` and let `TOut` default to `TIn`)
  * uses a schema where they coincide, so nothing else can tell the two-parameter
  * form from the one-parameter one. That suite pins both halves:

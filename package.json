@@ -1,15 +1,15 @@
 {
   "name": "@shoptet-apps/source",
-  "// name": "The repository hosts more than one application, so the root package is named after the repository (`shoptet-apps`) rather than after the first application that lived here. **Nx generators derive a new lib's alias scope from this name** (doc/decision/0006-*), so a lib generated from here on is offered `@shoptet-apps/…` while every existing one is `@lets-park/…`. That inconsistency is real: the existing scope is wrong for a shared lib and doc/decision/0310-* defers renaming it. Until that happens, pick the alias deliberately when you add a lib instead of accepting the generator's default.",
+  "// name": "The repository hosts more than one application, so the root package is named after the repository (`shoptet-apps`) rather than after the first application that lived here. **Nx generators derive a new lib's alias scope from this name** (doc/decision/0006-*), so a lib generated from here on is offered `@shoptet-apps/…` while every existing one is `@garage/…`. That inconsistency is real: the existing scope is wrong for a shared lib, and doc/decision/0313-* records why the `garage` rename kept one scope for app and shared libs alike instead of splitting them. Pick the alias deliberately when you add a lib instead of accepting the generator's default.",
   "version": "0.0.0",
   "license": "MIT",
   "// engines": "The Node major was pinned in three places that npm never reads: `.nvmrc`, `node-version-file` in CI, and `node:24-alpine` in both Dockerfiles. A developer on Node 22 got no warning from `npm ci` and found out later, somewhere unrelated. This is the same pin in the one file npm does read; `.nvmrc` stays the source of truth for the exact version.",
   "engines": {
     "node": ">=24"
   },
-  "// scripts": "Two kinds live here and the naming says which. Unsuffixed scripts are workspace-wide — they run every project of every application, which is what CI's `verify` job needs and what a reviewer means by \"is the tree green\". A `:<app>` suffix scopes a script to one application, and the only one that needs it today is `dev`, because serving a second application's api and web alongside this one's is never what you want. Per-app scripts select by the `app:` tag, never by project name: Nx project names are globally unique, so the second application cannot also own a project called `api`, and the rename that forces would break `-p api,web` while leaving `-p tag:app:lets-park` correct. Adding `dev:<second-app>` is then one line.",
+  "// scripts": "Two kinds live here and the naming says which. Unsuffixed scripts are workspace-wide — they run every project of every application, which is what CI's `verify` job needs and what a reviewer means by \"is the tree green\". A `:<app>` suffix scopes a script to one application, and the only one that needs it today is `dev`, because serving a second application's api and web alongside this one's is never what you want. Per-app scripts select by the `app:` tag, never by project name: Nx project names are globally unique, so the second application cannot also own a project called `api`, and the rename that forces would break `-p api,web` while leaving `-p tag:app:garage` correct. Adding `dev:<second-app>` is then one line.",
   "scripts": {
-    "dev:lets-park": "nx run-many -t serve,dev -p tag:app:lets-park --parallel=2",
+    "dev:garage": "nx run-many -t serve,dev -p tag:app:garage --parallel=2",
     "dev:wishlist": "nx run-many -t serve,dev -p tag:app:wishlist",
     "build": "nx run-many -t build,build-storybook",
     "test": "nx run-many -t test",

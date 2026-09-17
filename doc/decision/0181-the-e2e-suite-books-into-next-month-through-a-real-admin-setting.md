@@ -2,7 +2,7 @@
 
 ## What
 
-Before the browsers start, `libs/lets-park/database/src/scripts/reset-e2e.ts` sets the
+Before the browsers start, `libs/garage/database/src/scripts/reset-e2e.ts` sets the
 reservation window to `openDaysBefore: 31, lockMode: 'AUTO'` and clears every
 reservation and queue entry in the **next** calendar month. Every scenario that
 writes then books a business day of that month, chosen by
@@ -55,14 +55,14 @@ application does not already have.
 
 ## How
 
-- `libs/lets-park/database/src/scripts/reset-e2e.ts` — deletes the month's reservations
+- `libs/garage/database/src/scripts/reset-e2e.ts` — deletes the month's reservations
   and queue entries, upserts the window settings, refuses to run with
   `NODE_ENV=production`.
-- `libs/lets-park/database/project.json` — `nx run database:reset-e2e` for running it by
+- `libs/garage/database/project.json` — `nx run database:reset-e2e` for running it by
   hand.
-- `apps/lets-park/web-e2e/src/support/global-setup.ts` — runs `prisma db seed` and then
+- `apps/garage/web-e2e/src/support/global-setup.ts` — runs `prisma db seed` and then
   the reset script, as subprocesses (see `0184`).
-- `apps/lets-park/web-e2e/src/support/dates.ts` — `e2eBusinessDays()` and the
+- `apps/garage/web-e2e/src/support/dates.ts` — `e2eBusinessDays()` and the
   `SPEC_DAY_SLOTS` table that gives each spec file its own day.
 - `reservation.spec.ts` asserts the bay is free and reservable *before* booking
   it, so a window that silently failed to open would fail there rather than

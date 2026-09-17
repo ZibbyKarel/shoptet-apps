@@ -45,12 +45,12 @@ could never be made whole again. Not a close call.
 
 A second settings surface, duplicating the upsert/default/audit shape
 `ReservationWindowService` already has for the window: `ReservationLimitsService`
-(`apps/lets-park/api/src/reservation-limits/`) reads the singleton, defaults it
+(`apps/garage/api/src/reservation-limits/`) reads the singleton, defaults it
 when the seed hasn't run, replaces it wholesale on `update`, and writes
 `RESERVATION_LIMITS_UPDATED` to the audit log with before/after values — the
 same arrangement as `ReservationWindowService`, just for one field instead of
 two. It also costs a fifth admin tab, "Limity rezervací"
-(`apps/lets-park/web/src/shell/admin/admin-limits-panel.tsx` +
+(`apps/garage/web/src/shell/admin/admin-limits-panel.tsx` +
 `admin-limits-screen/`), built the same way as the reservation-window tab: one
 stepper, no Save button, saves on change.
 

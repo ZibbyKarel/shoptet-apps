@@ -10,7 +10,7 @@ import {
 
 import { cx } from '../cx';
 import { resolveGap, resolveGapX, resolveGapY } from '../gap';
-import type { SpacingKey } from '@lets-park/design-system/tokens';
+import type { SpacingKey } from '@garage/design-system/tokens';
 
 export type StackDirection = 'row' | 'column';
 export type StackAlign = 'start' | 'center' | 'end' | 'stretch' | 'baseline';
@@ -109,7 +109,7 @@ export interface StackProps extends HTMLAttributes<HTMLDivElement> {
 
 /**
  * Flex row/column with a gap, replacing `flex flex-col gap-*` and
- * `flex items-center gap-*` (30+ occurrences in `apps/lets-park/web`).
+ * `flex items-center gap-*` (30+ occurrences in `apps/garage/web`).
  */
 export const Stack = forwardRef<HTMLElement, StackProps>(function Stack(
   {

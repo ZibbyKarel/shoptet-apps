@@ -3,7 +3,7 @@
 ## What
 
 `toRealtimeNoticeView(status, hasEverConnected)` in
-`apps/lets-park/web/src/lot/lot-view.ts` decides which of three things the lot screen
+`apps/garage/web/src/lot/lot-view.ts` decides which of three things the lot screen
 draws above the map: nothing, the quiet notice, or the notice with a
 "Připojit znovu" button. `RealtimeNotice` takes `onReconnect` as optional and
 omits the button when it is absent.
@@ -43,11 +43,11 @@ omits the button when it is absent.
 
 ## How
 
-- `apps/lets-park/web/src/lot/lot-view.ts` — `RealtimeNoticeView` and
+- `apps/garage/web/src/lot/lot-view.ts` — `RealtimeNoticeView` and
   `toRealtimeNoticeView`.
-- `apps/lets-park/web/src/lot/lot-header/lot-header.tsx` — `RealtimeNotice`'s `onReconnect` is
+- `apps/garage/web/src/lot/lot-header/lot-header.tsx` — `RealtimeNotice`'s `onReconnect` is
   optional; the button is conditional on it.
-- `apps/lets-park/web/src/lot/lot-screen/lot-screen.tsx` — a `useRef` latched to `true` on the first
+- `apps/garage/web/src/lot/lot-screen/lot-screen.tsx` — a `useRef` latched to `true` on the first
   `connected` (written during render: it only ever goes false → true, and it is
   read in the same render that sets it).
 - `lot-view.spec.ts` covers the rule; `lot-screen.spec.tsx` covers what is drawn,

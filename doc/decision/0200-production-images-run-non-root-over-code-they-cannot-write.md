@@ -2,7 +2,7 @@
 
 ## What
 
-`apps/lets-park/api/Dockerfile` and `apps/lets-park/web/Dockerfile` are multi-stage builds on
+`apps/garage/api/Dockerfile` and `apps/garage/web/Dockerfile` are multi-stage builds on
 `node:24-alpine` whose final stage:
 
 - runs as the base image's `node` user (uid 1000), never root;
@@ -23,14 +23,14 @@ else; the web app's holds Next's standalone output, the static chunks and
   `docker exec … sh -c 'echo x >> /app/main.js'` succeeded inside the running
   container. Root-owned files and a non-root user make the same command answer
   `Permission denied`, which is what "the container is immutable" is supposed to
-  mean. The one exception is `apps/lets-park/web/.next/cache`, which Next writes to at
+  mean. The one exception is `apps/garage/web/.next/cache`, which Next writes to at
   runtime and which is created and chowned explicitly.
 - **Readiness, not liveness, is what a compose `HEALTHCHECK` should report.**
   `depends_on: condition: service_healthy` reads it, and an API that is up but
   cannot reach Postgres must not be treated as ready to receive the web app's
   traffic. `/health/ready` answers 503 in that case; `/health/live` deliberately
   answers 200, because restarting a process cannot fix a database outage
-  (`apps/lets-park/api/src/health/health.controller.ts`, `doc/decision/0035-*`).
+  (`apps/garage/api/src/health/health.controller.ts`, `doc/decision/0035-*`).
 - **`/health/ready`, not `/api/health/ready`.** `configureApp()` passes the
   health prefix to `setGlobalPrefix`'s `exclude`, so the probes sit at the
   server root. A health check built off the `/api` prefix is red on a perfectly
@@ -43,10 +43,10 @@ else; the web app's holds Next's standalone output, the static chunks and
 
 ## How
 
-- `apps/lets-park/api/Dockerfile` — stages `builder` → `runtime-deps` → `runner`, plus a
+- `apps/garage/api/Dockerfile` — stages `builder` → `runtime-deps` → `runner`, plus a
   separate `migrator` (`doc/decision/0204-*`). `HEALTHCHECK` on
   `http://127.0.0.1:${PORT}/health/ready`.
-- `apps/lets-park/web/Dockerfile` — stages `builder` → `runner`. `HEALTHCHECK` on
+- `apps/garage/web/Dockerfile` — stages `builder` → `runner`. `HEALTHCHECK` on
   `http://127.0.0.1:${PORT}/api/health`, the web app's own readiness probe for
   the pair (`doc/decision/0103-*`).
 - `.nvmrc` pins the Node major that both images, CI and local development share.

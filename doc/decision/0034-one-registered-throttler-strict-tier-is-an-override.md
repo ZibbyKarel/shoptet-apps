@@ -8,7 +8,7 @@
 (`THROTTLE_TTL_MS` / `THROTTLE_LIMIT`, default 300 requests per minute). A stricter tier for
 endpoints reachable without a session (`THROTTLE_STRICT_TTL_MS` / `THROTTLE_STRICT_LIMIT`,
 default 20 per minute) is **not a second registered throttler**, but the `@StrictThrottle()`
-decorator in `apps/lets-park/api/src/common/throttling/throttle-tiers.ts`, which reconfigures that one
+decorator in `apps/garage/api/src/common/throttling/throttle-tiers.ts`, which reconfigures that one
 throttler on a given route.
 
 Task 10 **doesn't put the decorator anywhere** – it only prepares it. Which routes get it is
@@ -34,7 +34,7 @@ eagerly in the body of `StrictThrottle()`, it would be read before `ConfigModule
 the env. Fortunately, `@nestjs/throttler` accepts a function for `ttl`/`limit`, so the value
 is read **per request** – by which point `validateApiEnv` has long since run.
 
-`ENV_DEFAULTS` is imported from `apps/lets-park/api/src/env.ts`, so that the decorator's fallback and
+`ENV_DEFAULTS` is imported from `apps/garage/api/src/env.ts`, so that the decorator's fallback and
 the Zod schema's `.default()` are the same numbers; a second copy would drift.
 
 **`ttl` is in milliseconds.** In v5 it was seconds. That's also where the `_MS`-suffixed

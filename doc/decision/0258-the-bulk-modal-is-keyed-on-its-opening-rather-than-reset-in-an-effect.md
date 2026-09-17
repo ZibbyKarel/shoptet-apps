@@ -35,7 +35,7 @@ and `failure` is gone.
 
 ## How
 
-`apps/lets-park/web/src/lot/bulk-modal/bulk-modal.tsx`. `apps/lets-park/web/src/lot/bulk-modal/bulk-modal.spec.tsx` gains
+`apps/garage/web/src/lot/bulk-modal/bulk-modal.tsx`. `apps/garage/web/src/lot/bulk-modal/bulk-modal.spec.tsx` gains
 *"does not carry an in-flight proposal request into the next opening"*: start a
 preview that never resolves, close, reopen, and the primary button is the
 resting `Vyberte dny` with no `aria-busy`, and selecting a day re-enables it.

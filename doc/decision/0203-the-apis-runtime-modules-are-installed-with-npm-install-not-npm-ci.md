@@ -2,13 +2,13 @@
 
 ## What
 
-`apps/lets-park/api/Dockerfile`'s `runtime-deps` stage runs
+`apps/garage/api/Dockerfile`'s `runtime-deps` stage runs
 
 ```
 npm install --omit=dev --ignore-scripts --no-audit --no-fund
 ```
 
-against the `package.json` webpack generates into `dist/apps/lets-park/api`, and ignores
+against the `package.json` webpack generates into `dist/apps/garage/api`, and ignores
 the `package-lock.json` generated beside it.
 
 ## Why
@@ -28,8 +28,8 @@ the `package-lock.json` generated beside it.
   hoisted copy through the shadowing one. Reproduced outside Docker, in a bare
   directory holding only those two files.
 - **Nx's own targets for this cannot run here.** `api:prune` /
-  `api:prune-lockfile` exist in `apps/lets-park/api/project.json`, and both fail with
-  `apps/lets-park/api/package.json does not exist` — `@nx/js:prune-lockfile` expects a
+  `api:prune-lockfile` exist in `apps/garage/api/project.json`, and both fail with
+  `apps/garage/api/package.json does not exist` — `@nx/js:prune-lockfile` expects a
   per-project manifest, and this workspace is `project.json`-only
   (`doc/decision/0006-*`).
 - **The alternative is fully locked and five times the size.** `npm ci
@@ -46,18 +46,18 @@ lockfile.
 
 ## How
 
-- `apps/lets-park/api/Dockerfile`, stage `runtime-deps`. `--ignore-scripts` because
+- `apps/garage/api/Dockerfile`, stage `runtime-deps`. `--ignore-scripts` because
   nothing in this set needs to run code at install time and an image build is
   the last place it should be able to.
 - The `prune`, `prune-lockfile` and `copy-workspace-modules` targets in
-  `apps/lets-park/api/project.json` are left as they are: they are unused, and fixing
+  `apps/garage/api/project.json` are left as they are: they are unused, and fixing
   scaffolding this Dockerfile does not call for is not this change's business.
 
 ## Risk
 
 - **A transitive dependency can move between two builds of the same commit.**
   The mitigation, if this ever matters, is a registry that pins by policy or a
-  lockfile committed for `dist/apps/lets-park/api` — not a hand-edited copy of a broken
+  lockfile committed for `dist/apps/garage/api` — not a hand-edited copy of a broken
   one.
 - **If Nx ever fixes the pruner**, this stage should go back to `npm ci`. The
   reproduction above is what to re-run to find out.

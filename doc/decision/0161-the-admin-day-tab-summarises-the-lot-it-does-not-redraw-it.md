@@ -3,7 +3,7 @@
 ## What
 
 The first tab of `/admin`, "Přehled parkoviště"
-(`apps/lets-park/web/src/shell/admin/admin-day-screen/admin-day-screen.tsx`), renders the day's **date**,
+(`apps/garage/web/src/shell/admin/admin-day-screen/admin-day-screen.tsx`), renders the day's **date**,
 the free/taken **counts**, the reservation-window **banner**, a `DataTable` with
 one row per spot (label, category, who holds it, how many are queued), and a
 button that opens the lot screen.

@@ -38,7 +38,7 @@ Two ways a user has two live connections on one cell:
   socket is gone. Anything that connection still emits lands against a hold that
   is no longer its own.
 
-Measured before the change, `apps/lets-park/api/src/realtime/lock.service.spec.ts`:
+Measured before the change, `apps/garage/api/src/realtime/lock.service.spec.ts`:
 
 ```
 ● InMemoryLockService › giving a hold back › REPRO: a stale connection
@@ -111,17 +111,17 @@ enforce correctness.
 
 ## How
 
-- `apps/lets-park/api/src/realtime/lock.service.ts` — the abstract signature, the
+- `apps/garage/api/src/realtime/lock.service.ts` — the abstract signature, the
   in-memory match, the Redis mapping table (`DEL` only if the holder **and its
   socket** match), and a new header section stating the asymmetry.
-- `apps/lets-park/api/src/realtime/realtime.gateway.ts` — `cellUnlock` passes
+- `apps/garage/api/src/realtime/realtime.gateway.ts` — `cellUnlock` passes
   `{ user: client.data.user, socketId: client.id }`.
-- `apps/lets-park/api/src/realtime/lock.service.spec.ts` — "refuses a superseded
+- `apps/garage/api/src/realtime/lock.service.spec.ts` — "refuses a superseded
   connection of the holder's own user" (the hold survives a rival's `acquire`,
   so it is held rather than merely unreported) and its pair, "lets the
   connection that re-took the hold give it back", which is what would fail if
   the match were tightened to socket **only**.
-- `apps/lets-park/api/src/realtime/realtime.gateway.spec.ts` — the same claim over real
+- `apps/garage/api/src/realtime/realtime.gateway.spec.ts` — the same claim over real
   sockets: no `cell:unlocked` reaches the room, and the rival is still
   `HELD_BY_OTHER`.
 

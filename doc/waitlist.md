@@ -1,6 +1,6 @@
 # Reservations, the waitlist and auto-promotion
 
-`apps/lets-park/api/src/reservations/`. Four procedures — `reservation.create`,
+`apps/garage/api/src/reservations/`. Four procedures — `reservation.create`,
 `reservation.cancel`, `waitlist.join`, `waitlist.leave` — and the thing that
 couples them: when a reservation is cancelled, the freed spot is handed to the
 first eligible person queued for it, **inside the same transaction**.
@@ -119,7 +119,7 @@ would — never to enforce the rule.
 | the queue is served in order, once  | `SELECT … FOR UPDATE` on the queue                         | blocks, then sees the truth |
 
 The mapping from a violated index to a contract code lives in
-`mapUniqueConstraintViolation` (`apps/lets-park/api/src/common/errors/prisma-error-mapping.ts`) and reads the
+`mapUniqueConstraintViolation` (`apps/garage/api/src/common/errors/prisma-error-mapping.ts`) and reads the
 constraint out of `meta.driverAdapterError.cause.constraint.index`, because
 `@prisma/adapter-pg` does not populate Prisma's documented `meta.target` at all.
 
@@ -192,7 +192,7 @@ do with each other, so it is not the default.
 
 **The primitive is now in use elsewhere, for something narrower.** The per-user,
 per-calendar-month reservation cap
-(`apps/lets-park/api/src/reservations/monthly-reservation-cap.ts`) takes
+(`apps/garage/api/src/reservations/monthly-reservation-cap.ts`) takes
 `pg_advisory_xact_lock` on a `(userId, month)` key, because the cap is computed
 rather than stored and therefore has no unique index to act as the final
 arbiter — the lock plus a recount inside it _is_ the authoritative check. That is
@@ -251,7 +251,7 @@ as the DI token. It was bound in `ReservationsModule` to
 - **Task 15 (Socket.io)** is one of the two implementations. `DomainEvent` is a mapped type
   over the contract's own `ServerToClientEvents`, so a gateway can forward one
   with `io.to(roomForDate(payload.date)).emit(name, payload)` and nothing else.
-  No payload is declared here; an event not in `@lets-park/contract/realtime`
+  No payload is declared here; an event not in `@garage/contract/realtime`
   does not compile.
 - **Task 16 (Slack)** consumes `notifyPromotions`. Promotion is the one outcome a
   user did not ask for and would otherwise discover by refreshing the page.
@@ -269,14 +269,14 @@ this module's:
 `reservation:reassigned` **instead of** `cancelled` + `created`, never both: a
 client that saw both would flash the cell empty before repainting it, and
 `created` in a locked month would read as the window having been violated. See
-the schema comments in `libs/lets-park/contract/src/realtime/events.ts`.
+the schema comments in `libs/garage/contract/src/realtime/events.ts`.
 
 ---
 
 ## Who the window applies to
 
 `doc/decision/0004-*` (ruling window-1), enforced in `ReservationPolicy` — never
-re-derived, since `isMonthOpen` / `monthLockState` in `@lets-park/shared-types`
+re-derived, since `isMonthOpen` / `monthLockState` in `@garage/shared-types`
 are the only implementation of the rule.
 
 | action                          | window applies?                               |

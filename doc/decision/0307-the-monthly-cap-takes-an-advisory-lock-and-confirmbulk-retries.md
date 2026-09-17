@@ -7,7 +7,7 @@ below are unaffected) · **Task:** `TODO.md` item 4
 
 ## What
 
-`apps/lets-park/api/src/reservations/monthly-reservation-cap.ts` enforces a cap on
+`apps/garage/api/src/reservations/monthly-reservation-cap.ts` enforces a cap on
 confirmed reservations per user per calendar month — five, fixed, when this was
 written; an admin-configurable setting since `doc/decision/0312-*`, read as a
 parameter rather than a constant. Every path that inserts a

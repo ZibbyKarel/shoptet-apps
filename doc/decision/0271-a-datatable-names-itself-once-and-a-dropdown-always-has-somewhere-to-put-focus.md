@@ -24,9 +24,9 @@ names the table, which is the thing being read. The caption is the one that has
 to stay: it is what makes `getByRole('table', { name })` resolve, and it is
 attached to the element a screen reader is actually navigating.
 
-Checked before removing: nothing in `apps/lets-park/web`, `apps/lets-park/web-e2e` or any spec
+Checked before removing: nothing in `apps/garage/web`, `apps/garage/web-e2e` or any spec
 queries a `region` by a DataTable title. The three `getByRole('region', { name:
-'Skupina IT' })` assertions in `apps/lets-park/web-e2e/src/login.spec.ts` resolve to
+'Skupina IT' })` assertions in `apps/garage/web-e2e/src/login.spec.ts` resolve to
 `lot-grid.tsx`'s own `<section aria-label>`, which is untouched.
 
 **Dropdown.** `openAt` falls back to `enabledIndexes[0] ?? 0`, and the focus

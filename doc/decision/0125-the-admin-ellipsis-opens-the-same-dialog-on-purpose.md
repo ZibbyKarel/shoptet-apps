@@ -52,7 +52,7 @@ looking at a taken spot sees `titleEdit` ("Upravit rezervaci") and `subAdmin`
 ("Jako admin můžete rezervaci kdykoliv zrušit"), and `showCancel` already
 grants the cancel button on `isAdmin || spot.isMine` independent of how the
 dialog was reached (`:89`). That is the one write the contract actually
-supports for someone else's reservation — `libs/lets-park/contract/src/api/
+supports for someone else's reservation — `libs/garage/contract/src/api/
 reservations.ts` exposes `create` (self only) and `cancel`, nothing that lets
 an admin rewrite another user's name or plate the way the design's mock
 `saveReservation` does by direct state mutation. So "editing" in the brief's

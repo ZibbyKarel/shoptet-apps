@@ -5,7 +5,7 @@
 ## What
 
 The `web:build` target has `options.env.NODE_ENV = "production"` hard-coded in
-`apps/lets-park/web/project.json`. That's the only thing that `build` block in
+`apps/garage/web/project.json`. That's the only thing that `build` block in
 `project.json` does – everything else (`command`, `cwd`, `cache`, `inputs`,
 `outputs`, `dependsOn`) stays inferred by the `@nx/next` plugin, and Nx merges
 it with this block.
@@ -19,13 +19,13 @@ depends on `NODE_ENV` is ever added, the same applies to it.
 The Nx executor `nx:run-commands` loads `.env` from both the workspace root
 **and** the project root, and injects them into the spawned process's
 environment. Per `doc/decision/0009-*`, a developer has both copies (`.env`
-and `apps/lets-park/web/.env`), and both contain `NODE_ENV=development` – they are dev
+and `apps/garage/web/.env`), and both contain `NODE_ENV=development` – they are dev
 env files, that's correct and shouldn't change.
 
 Next.js sets `NODE_ENV=production` during `next build` **only if it isn't
 already set**; it respects a value already present in `process.env`. Env files
 loaded by Next.js itself (`@next/env`) don't override `NODE_ENV`, so `cd
-apps/lets-park/web && next build` works fine — but `nx run web:build` gets
+apps/garage/web && next build` works fine — but `nx run web:build` gets
 `NODE_ENV=development` injected from outside beforehand, and Next keeps it.
 
 The result is a build that's half development and half production.
@@ -47,16 +47,16 @@ A telltale accompanying symptom is dev-only warnings —
 is a function of local machine state, not of committed code. It first
 appeared the moment a developer copied `.env.example` to the root to get
 `DATABASE_URL` for Task 9 – i.e. "right around Task 9", even though Task 9
-never changed a single line in `apps/lets-park/web`. A bisect therefore showed nothing,
+never changed a single line in `apps/garage/web`. A bisect therefore showed nothing,
 and couldn't have.
 
 **Why not other fixes.**
 
 - *Remove `NODE_ENV` from `.env.example`* – env files aren't version-controlled
   and must stay purely development-oriented; it also wouldn't fix
-  `apps/lets-park/web/.env`, which a developer creates the same way regardless, and
-  `apps/lets-park/api` relies on `NODE_ENV` being present in the environment
-  (`apps/lets-park/api/src/env.ts`).
+  `apps/garage/web/.env`, which a developer creates the same way regardless, and
+  `apps/garage/api` relies on `NODE_ENV` being present in the environment
+  (`apps/garage/api/src/env.ts`).
 - *`NX_LOAD_DOT_ENV_FILES=false`* – a global switch that would also disable
   loading `.env` where it's wanted (`api:serve`, `web:dev`).
 - *Disable prerendering / delete the failing pages* – papering over the
@@ -65,7 +65,7 @@ and couldn't have.
 ## How
 
 ```jsonc
-// apps/lets-park/web/project.json
+// apps/garage/web/project.json
 "targets": {
   "build": {
     "options": { "env": { "NODE_ENV": "production" } }
@@ -75,7 +75,7 @@ and couldn't have.
 
 Verification that merging with the inferred target changed nothing else:
 `nx show project web --json` must still show `"command": "next build"`,
-`"cwd": "apps/lets-park/web"`, `cache`, `inputs`, `outputs`, and `dependsOn` for `build`.
+`"cwd": "apps/garage/web"`, `cache`, `inputs`, `outputs`, and `dependsOn` for `build`.
 
 ## Risk if this is wrong
 

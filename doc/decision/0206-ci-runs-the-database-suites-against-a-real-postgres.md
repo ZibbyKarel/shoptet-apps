@@ -9,7 +9,7 @@ container) and `images` (both production images build).
 ## Why
 
 - **Without `database`, a green pipeline would say nothing about the code most
-  likely to be wrong.** `apps/lets-park/api/jest.config.cts` excludes `*.db.spec.ts` from
+  likely to be wrong.** `apps/garage/api/jest.config.cts` excludes `*.db.spec.ts` from
   `api:test` on purpose — they need a server. That is eight suites and 92 tests
   covering `SELECT … FOR UPDATE`, transaction isolation, and the waitlist
   promotion that shares a cancellation's transaction. A test double cannot
@@ -27,7 +27,7 @@ container) and `images` (both production images build).
 
   The third row is the one that matters most: a suite that skipped itself
   without a database would turn a missing service into a green build.
-- **No migration step in the job.** `apps/lets-park/api/src/testing/database/global-setup.ts`
+- **No migration step in the job.** `apps/garage/api/src/testing/database/global-setup.ts`
   creates a throwaway database per run, applies the committed migrations to it
   and repoints `DATABASE_URL` — and throws when the variable is absent.
 - **The service needs a health check.** Without `--health-cmd`, the job would
@@ -36,7 +36,7 @@ container) and `images` (both production images build).
 - **`nx format:check --all`, not the bare command.** With no base ref to diff
   against — which is what a fresh CI checkout is — plain `nx format:check`
   checks nothing and passes vacuously. `--all` found one genuinely unformatted
-  file, `apps/lets-park/web/.swcrc`, which is reformatted in the same change.
+  file, `apps/garage/web/.swcrc`, which is reformatted in the same change.
 - **`images` guards this task's own output.** A Dockerfile that stops building
   is invisible to every other job, and `.dockerignore` — which is what keeps
   `.env` out of the build context — is only exercised by an actual build.

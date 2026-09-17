@@ -1,4 +1,4 @@
-# Let's Park — the whole stack, in three profiles.
+# Garage — the whole stack, in three profiles.
 #
 # Every service carries a profile, so a bare `docker compose up` starts nothing
 # and you have to say what you want. That is on purpose, and it is the one
@@ -32,7 +32,7 @@
 # (`docker compose config` prints what it resolved). The two are different
 # files because they describe two different topologies: on the host the API is
 # at `localhost:3000` and Postgres at `localhost:5432`; inside the network they
-# are at `lets-park-api:3000` and `postgres:5432`. Copy `.env.docker.example`
+# are at `garage-api:3000` and `postgres:5432`. Copy `.env.docker.example`
 # to `.env.docker` — both are git-ignored where they hold real values, and no
 # secret is ever written into this file or into an image.
 #
@@ -40,7 +40,7 @@
 # There is deliberately no `env_file:` on `api` or `web`: a blanket env file
 # puts whatever happens to be in it — other projects' tokens, a personal
 # `DATABASE_URL` — inside a container that has no business seeing it. The list
-# here is the contract, and `apps/lets-park/api/src/env.ts` and `apps/lets-park/web/src/env.ts`
+# here is the contract, and `apps/garage/api/src/env.ts` and `apps/garage/web/src/env.ts`
 # are what enforce it at boot.
 
 services:
@@ -82,7 +82,7 @@ services:
   # that variable at a real Okta authorization server and this container is
   # simply never started (see README.md, "Okta").
   #
-  # The `lets-park-oidc` alias is not decoration. mock-oauth2-server builds
+  # The `garage-oidc` alias is not decoration. mock-oauth2-server builds
   # every URL it publishes — the authorization endpoint the browser is sent to,
   # the JWKS URI the API reads, and the `iss` claim it mints — from the **Host
   # header of the request it is answering**. So the issuer URL has to be one
@@ -90,7 +90,7 @@ services:
   # published port from the operator's browser. Docker's DNS gives the first;
   # one line in the host's /etc/hosts gives the second:
   #
-  #     127.0.0.1 lets-park-api lets-park-oidc
+  #     127.0.0.1 garage-api garage-oidc
   #
   # Reach it by a different name from either side and sign-in succeeds while
   # every API call 401s on a mismatched `iss` — see doc/decision/0201-*.
@@ -101,7 +101,7 @@ services:
     networks:
       default:
         aliases:
-          - lets-park-oidc
+          - garage-oidc
     ports:
       - '8080:8080'
 
@@ -126,12 +126,12 @@ services:
   # in the API: a serving process that can rewrite its own schema eventually
   # will, on some restart nobody planned, and on more than one replica at once.
   # `prisma migrate deploy` only applies what already exists in
-  # `libs/lets-park/database/prisma/migrations` — it never generates and never resets.
+  # `libs/garage/database/prisma/migrations` — it never generates and never resets.
   migrate:
     profiles: ['app']
     build:
       context: .
-      dockerfile: apps/lets-park/api/Dockerfile
+      dockerfile: apps/garage/api/Dockerfile
       target: migrator
     restart: 'no'
     environment:
@@ -147,7 +147,7 @@ services:
     profiles: ['app']
     build:
       context: .
-      dockerfile: apps/lets-park/api/Dockerfile
+      dockerfile: apps/garage/api/Dockerfile
     restart: unless-stopped
     # PID 1 is `node`, which does handle SIGTERM here (Nest's
     # `enableShutdownHooks`), but it will not reap anything else. `init: true`
@@ -160,13 +160,13 @@ services:
     networks:
       default:
         aliases:
-          - lets-park-api
+          - garage-api
     # The list form, not the map, and every entry bare. Two findings, both
     # measured:
     #
     # 1. An entry with no `=` is forwarded **only when the variable is set**
     #    and is absent otherwise, whereas `KEY: ${KEY:-}` sets it to the empty
-    #    string. `apps/lets-park/api/src/env.ts` gives every optional key a default that
+    #    string. `apps/garage/api/src/env.ts` gives every optional key a default that
     #    an empty string does not satisfy — `SLACK_BOT_TOKEN` is
     #    `z.string().min(1).optional()` — so `:-` would crash the boot on a
     #    variable nobody set.
@@ -178,8 +178,8 @@ services:
     #    with `--dry-run`.
     #
     # A missing *required* value is therefore caught where it always was: by
-    # the app's own fail-fast schema at boot (`apps/lets-park/api/src/env.ts`,
-    # `apps/lets-park/web/src/instrumentation-node.ts`), which names the variable and
+    # the app's own fail-fast schema at boot (`apps/garage/api/src/env.ts`,
+    # `apps/garage/web/src/instrumentation-node.ts`), which names the variable and
     # exits. `AUTH_URL` is the one exception — it is Auth.js's, not in
     # `webEnvSchema` — and shows up instead as a bad post-login redirect on the
     # first sign-in. See doc/decision/0205-*.
@@ -191,7 +191,7 @@ services:
       - AUTH_OKTA_AUDIENCE
       - CORS_ALLOWED_ORIGINS
       - LOG_LEVEL=${LOG_LEVEL:-info}
-      # Tunables. Each has a default in `apps/lets-park/api/src/env.ts`; forwarded only
+      # Tunables. Each has a default in `apps/garage/api/src/env.ts`; forwarded only
       # when someone has actually chosen a value.
       - BODY_LIMIT
       - HEALTH_DB_TIMEOUT_MS
@@ -200,10 +200,10 @@ services:
       - THROTTLE_LIMIT
       - THROTTLE_STRICT_TTL_MS
       - THROTTLE_STRICT_LIMIT
-      # Slack. These belong to `apps/lets-park/api/src/slack` (`doc/slack.md`). Listed,
+      # Slack. These belong to `apps/garage/api/src/slack` (`doc/slack.md`). Listed,
       # not defaulted: a bare entry is forwarded only when it is set, so an
       # unset Slack is a working Slack-less API rather than a broken one —
-      # `SLACK_ENABLED` defaults to `false` in `apps/lets-park/api/src/env.ts`
+      # `SLACK_ENABLED` defaults to `false` in `apps/garage/api/src/env.ts`
       # (`doc/decision/0130-slack-is-off-by-default-and-there-is-no-dev-only-branch`).
       #
       # **`SLACK_BOT_TOKEN` is a secret, and no committed file carries its
@@ -232,7 +232,7 @@ services:
     profiles: ['app']
     build:
       context: .
-      dockerfile: apps/lets-park/web/Dockerfile
+      dockerfile: apps/garage/web/Dockerfile
     restart: unless-stopped
     init: true
     stop_grace_period: 30s
@@ -241,7 +241,7 @@ services:
       - PORT=3000
       # Read by server code at request time and handed to the browser as a
       # prop, so it must be one URL that works from both — hence the
-      # `lets-park-api` alias and the /etc/hosts line above.
+      # `garage-api` alias and the /etc/hosts line above.
       - NEXT_PUBLIC_API_URL
       # The app's **public** origin, and required in a container for a reason
       # that only shows up in one: Next's request interceptor (`proxy.ts`) sees

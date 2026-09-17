@@ -4,7 +4,7 @@
 
 Two changes, and the second is the one that matters.
 
-**1.** `apps/lets-park/api/src/app/app.controller.ts`, `app.service.ts` and their two specs
+**1.** `apps/garage/api/src/app/app.controller.ts`, `app.service.ts` and their two specs
 are deleted, and `AppModule` declares no controllers and no `AppService`.
 `GET /api` → `{"message":"Hello API"}` is gone.
 
@@ -21,7 +21,7 @@ never an exposure. It was a live HTTP endpoint that existed in **no contract**,
 which global constraint 1 (contract-first) forbids, and nothing called it. It
 was scaffolding that outlived the scaffold.
 
-`apps/lets-park/api-e2e/src/api/api.spec.ts`'s header already recorded the situation
+`apps/garage/api-e2e/src/api/api.spec.ts`'s header already recorded the situation
 accurately, including that deleting the controller "would be the better end
 state", and deferred it as an API change rather than a test change. This is that
 change.
@@ -66,11 +66,11 @@ contract-first, and an exemption that is not visible is a hole:
 
 `GET /api` now answers **404** where it answered 401.
 
-- `apps/lets-park/api/src/auth/auth-pipeline.spec.ts` used it as its "a route with no auth
+- `apps/garage/api/src/auth/auth-pipeline.spec.ts` used it as its "a route with no auth
   decorator at all" probe. It now uses the locally declared
   `ProtectedController`, which makes the same point without depending on a stub
   existing, and gains an explicit 404 assertion for the bare prefix.
-- **`apps/lets-park/api-e2e/src/api/api.spec.ts` still asserts 401 and will fail.** That
+- **`apps/garage/api-e2e/src/api/api.spec.ts` still asserts 401 and will fail.** That
   file is outside this change's ownership boundary and is deliberately left
   alone; the fix is to expect `404` and drop the "Hello API" assertion, whose
   subject no longer exists. It is flagged in the fix report.

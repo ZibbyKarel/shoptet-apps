@@ -31,7 +31,7 @@
       "options": {
         "max-warnings": 0
       },
-      "// inputs": "`^default` is what makes the typed lint rules honest. `eslint.config.mjs` turns on `projectService: true` for `apps/lets-park/api/**` and `libs/**`, so `@typescript-eslint/no-floating-promises` reads types **across project references** — a signature change in a dependency changes a dependent's lint result. Without `^default` a project's lint hash covers only its own files, and that is not a theory: probed by making a `libs/lets-park/shared-types` export `async` while touching nothing in `apps/lets-park/api`, which then held a genuine floating promise and still reported `1/1 cache hit (100%)`, green. `--skip-nx-cache` on the same tree errored. A rule that reads as enforcement and enforces nothing is the exact failure `eslint.config.mjs` documents having been caught in four times. The price is more local cache misses; CI runs cold anyway.",
+      "// inputs": "`^default` is what makes the typed lint rules honest. `eslint.config.mjs` turns on `projectService: true` for `apps/garage/api/**` and `libs/**`, so `@typescript-eslint/no-floating-promises` reads types **across project references** — a signature change in a dependency changes a dependent's lint result. Without `^default` a project's lint hash covers only its own files, and that is not a theory: probed by making a `libs/garage/shared-types` export `async` while touching nothing in `apps/garage/api`, which then held a genuine floating promise and still reported `1/1 cache hit (100%)`, green. `--skip-nx-cache` on the same tree errored. A rule that reads as enforcement and enforces nothing is the exact failure `eslint.config.mjs` documents having been caught in four times. The price is more local cache misses; CI runs cold anyway.",
       "inputs": [
         "default",
         "^default",
@@ -95,7 +95,7 @@
       "options": {
         "targetName": "test"
       },
-      "exclude": ["apps/lets-park/api-e2e/**/*"]
+      "exclude": ["apps/garage/api-e2e/**/*"]
     },
     {
       "plugin": "@nx/webpack/plugin",

@@ -18,9 +18,9 @@ does**. Measured per document rather than per page:
 
 89 documents across four full-suite runs, every one of them with exactly one
 connection, and 25 document loads answered by exactly 25 sockets in each
-complete run. Nothing in `libs/lets-park/realtime-client` was changed to produce that
+complete run. Nothing in `libs/garage/realtime-client` was changed to produce that
 result — `git diff` against the base commit touches no file under
-`libs/lets-park/realtime-client/` or `apps/lets-park/web/src/`.
+`libs/garage/realtime-client/` or `apps/garage/web/src/`.
 
 So: **no fix, because there is nothing to fix.** What this task adds instead is
 the instrument that can tell the two questions apart, and a test that asks the
@@ -142,7 +142,7 @@ phenomenon. There was no phenomenon.
 
 ### What this leaves standing
 
-`libs/lets-park/realtime-client`'s design is what makes one-per-document true rather than
+`libs/garage/realtime-client`'s design is what makes one-per-document true rather than
 lucky, and none of it was in question: `useRealtimeConnection` builds the socket
 inside an effect and tears it down in that effect's cleanup, `forceNew: true`
 keeps it out of socket.io's per-origin manager cache, and only `url`, `path`,
@@ -160,16 +160,16 @@ the connection's lifetime.
 
 ## How
 
-- `apps/lets-park/web-e2e/src/support/realtime.ts` — `LOAD` tracing,
+- `apps/garage/web-e2e/src/support/realtime.ts` — `LOAD` tracing,
   `installRealtimeSocketCounter` / `realtimeSocketsInDocument`, and a header that
   names this as the third wrong reading of that log.
   `recordDayRoomSubscriptions` is now `async`, because an init script registered
   after the first navigation would miss the document it exists to watch.
-- `apps/lets-park/web-e2e/src/support/fixtures.ts` — `await`s it.
-- `apps/lets-park/web-e2e/src/realtime-connection.spec.ts` — the regression test: one
+- `apps/garage/web-e2e/src/support/fixtures.ts` — `await`s it.
+- `apps/garage/web-e2e/src/realtime-connection.spec.ts` — the regression test: one
   document, one connection, asserted after a day walk and an open editing form,
   and again on the document a reload produces.
-- `apps/lets-park/web-e2e/src/support/dates.ts` — a day slot of its own for that spec.
+- `apps/garage/web-e2e/src/support/dates.ts` — a day slot of its own for that spec.
 
 ## Risk
 
@@ -211,7 +211,7 @@ the connection's lifetime.
 
   | cause | what happened | how to tell |
   | --- | --- | --- |
-  | **transport drop** | engine.io lost the connection and re-handshook; the socket object is the same one | `libs/lets-park/realtime-client` did not tear down: no cleanup ran, `generation` is unchanged |
+  | **transport drop** | engine.io lost the connection and re-handshook; the socket object is the same one | `libs/garage/realtime-client` did not tear down: no cleanup ran, `generation` is unchanged |
   | **rebuilt socket** | `useRealtimeConnection`'s effect re-ran, disconnected and built a **new** socket | one of its four deps changed — see below |
 
   An earlier version of this note named only the first, which would send anyone

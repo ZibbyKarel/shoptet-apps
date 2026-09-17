@@ -4,7 +4,7 @@
 
 `NEXT_PUBLIC_API_URL` (`http://localhost:3000/api`) is the API's base URL. The
 web app talks to three endpoints on that deployment and **none of them is the
-configured value itself**. `apps/lets-park/web/src/api-url.ts` derives all three:
+configured value itself**. `apps/garage/web/src/api-url.ts` derives all three:
 
 | Consumer | Derivation | Example |
 |---|---|---|
@@ -47,8 +47,8 @@ itself.
 ## How
 
 - `API_RPC_SEGMENT` mirrors `RPC_ROUTE_PREFIX` in
-  `apps/lets-park/api/src/orpc/rpc-route.ts` by value, not by import. The module boundary
-  keeps `apps/lets-park/web` out of `apps/lets-park/api`, and rightly — a shared constant would
+  `apps/garage/api/src/orpc/rpc-route.ts` by value, not by import. The module boundary
+  keeps `apps/garage/web` out of `apps/garage/api`, and rightly — a shared constant would
   make the client the authority on a server mount point. The two are kept
   honest by `api-url.spec.ts` and by exercising a real request.
 - `apiOriginOf` throws on a relative URL rather than returning something
@@ -62,7 +62,7 @@ itself.
 
 - **The `/rpc` segment is duplicated knowledge.** If the API ever moves its RPC
   mount, `API_RPC_SEGMENT` has to move with it and only a running request will
-  say so. The alternative — publishing the segment from `libs/lets-park/contract` — is a
+  say so. The alternative — publishing the segment from `libs/garage/contract` — is a
   reasonable future change, but the contract currently describes procedures,
   not transports, and putting a Nest routing detail in it would be worse.
 - **`ApiProvider`'s use of the derivation is unspecced** (see above). A live

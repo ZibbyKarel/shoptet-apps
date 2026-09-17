@@ -5,7 +5,7 @@
  * `.env` on its own, so both live here. The file sits at the repo root because
  * that is where the Prisma CLI looks for it and where the root `.env` lives
  * (see `doc/decision/0009-env-file-topology-and-compose-profiles.md`); the schema
- * itself stays inside `libs/lets-park/database`.
+ * itself stays inside `libs/garage/database`.
  *
  * Everything database-related is run from the repo root:
  *
@@ -21,7 +21,7 @@ import 'dotenv/config';
 import { join } from 'node:path';
 import { defineConfig, env } from 'prisma/config';
 
-const databaseLib = join(import.meta.dirname, 'libs', 'lets-park', 'database');
+const databaseLib = join(import.meta.dirname, 'libs', 'garage', 'database');
 
 export default defineConfig({
   schema: join(databaseLib, 'prisma', 'schema.prisma'),
@@ -29,7 +29,7 @@ export default defineConfig({
     path: join(databaseLib, 'prisma', 'migrations'),
     // `prisma db seed` spawns this command; `dotenv/config` above has already
     // populated `process.env`, which the child process inherits.
-    seed: 'node --require @swc-node/register libs/lets-park/database/src/scripts/seed.ts',
+    seed: 'node --require @swc-node/register libs/garage/database/src/scripts/seed.ts',
   },
   datasource: {
     url: env('DATABASE_URL'),

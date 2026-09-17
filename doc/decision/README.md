@@ -10,7 +10,7 @@ for why, and take the next number from the end of this list.
 
 - [`0001-parallel-subagent-execution`](0001-parallel-subagent-execution.md) — Parallel phase execution via git worktrees
 - [`0002-visual-design-source-of-truth`](0002-visual-design-source-of-truth.md) — Visual design: downloaded locally, tokens from the Shoptet DS
-- [`0003-date-helpers-in-shared-types`](0003-date-helpers-in-shared-types.md) — Europe/Prague date logic lives in `libs/lets-park/shared-types`, not `libs/shared/i18n`
+- [`0003-date-helpers-in-shared-types`](0003-date-helpers-in-shared-types.md) — Europe/Prague date logic lives in `libs/garage/shared-types`, not `libs/shared/i18n`
 - [`0004-mvp-scope-includes-design-features`](0004-mvp-scope-includes-design-features.md) — MVP scope also includes features that exist only in the design
 - [`0005-npm-scope-lets-park`](0005-npm-scope-lets-park.md) — The npm scope is `@lets-park`, not `@myorg`
 - [`0006-nx-layout-project-json-and-path-aliases`](0006-nx-layout-project-json-and-path-aliases.md) — Nx layout: `project.json` + path aliases in `tsconfig.base.json`
@@ -27,7 +27,7 @@ for why, and take the next number from the end of this list.
 - [`0014-dateonly-is-an-unbranded-string`](0014-dateonly-is-an-unbranded-string.md) — `DateOnly` is an unbranded `string`
 - [`0015-timestamps-in-contract-are-iso-strings`](0015-timestamps-in-contract-are-iso-strings.md) — Timestamps in the contract are ISO strings, not `Date`
 - [`0016-closed-enums-and-uuid-in-contract`](0016-closed-enums-and-uuid-in-contract.md) — Closed enums in the contract: AuditLog actions and UUID identifiers
-- [`0017-npm-allowlist-on-type-dimension-and-tag-layer-foundation`](0017-npm-allowlist-on-type-dimension-and-tag-layer-foundation.md) — The npm allow-list hangs off the `type:` dimension; `libs/lets-park/shared-types` gets `layer:foundation`
+- [`0017-npm-allowlist-on-type-dimension-and-tag-layer-foundation`](0017-npm-allowlist-on-type-dimension-and-tag-layer-foundation.md) — The npm allow-list hangs off the `type:` dimension; `libs/garage/shared-types` gets `layer:foundation`
 - [`0018-mapping-error-contract-to-orpc`](0018-mapping-error-contract-to-orpc.md) — The error contract maps onto oRPC 1:1, `details` = `data`
 - [`0019-draft-and-confirm-bulk-reservation`](0019-draft-and-confirm-bulk-reservation.md) — The bulk-reservation preview and confirmation share a shape; the client computes the diff
 - [`0020-orpc-is-esm-only-jest-must-transpile-it`](0020-orpc-is-esm-only-jest-must-transpile-it.md) — `@orpc/contract` is ESM-only; Jest has to transpile it
@@ -35,7 +35,7 @@ for why, and take the next number from the end of this list.
 - [`0022-realtime-event-names-and-one-transaction-one-event`](0022-realtime-event-names-and-one-transaction-one-event.md) — Realtime event names and the rule "one transaction = one event"
 - [`0023-realtime-is-a-separate-entry-point-and-maps-are-derived`](0023-realtime-is-a-separate-entry-point-and-maps-are-derived.md) — Realtime is a separate entry point, and its event maps are derived from a registry
 - [`0024-czech-month-declension-genitive-vs-nominative`](0024-czech-month-declension-genitive-vs-nominative.md) — Czech month declension: genitive vs. nominative in `libs/shared/i18n`
-- [`0024-prisma-client-inside-libs-database-and-committed`](0024-prisma-client-inside-libs-database-and-committed.md) — The Prisma client is generated inside `libs/lets-park/database` and committed
+- [`0024-prisma-client-inside-libs-database-and-committed`](0024-prisma-client-inside-libs-database-and-committed.md) — The Prisma client is generated inside `libs/garage/database` and committed
 - [`0025-next-intl-esm-jest-transform`](0025-next-intl-esm-jest-transform.md) — `next-intl` is ESM-only; Jest in `libs/shared/i18n` must also transpile `@orpc`
 - [`0025-uuid-v7-as-primary-key`](0025-uuid-v7-as-primary-key.md) — Primary keys are client-generated UUID v7
 - [`0026-singleton-settings-enforced-by-check-constraint`](0026-singleton-settings-enforced-by-check-constraint.md) — The `ReservationWindowSettings` singleton is enforced by a `CHECK` constraint
@@ -52,13 +52,13 @@ for why, and take the next number from the end of this list.
 - [`0037-libs-query-tests-need-nodes-fetch-not-jsdoms`](0037-libs-query-tests-need-nodes-fetch-not-jsdoms.md) — `libs/query`'s tests run on Node's fetch, not jsdom's, via a custom Jest environment
 - [`0038-libs-query-spec-tsconfig-must-not-be-commonjs`](0038-libs-query-spec-tsconfig-must-not-be-commonjs.md) — `libs/query/tsconfig.spec.json` must not set `module: commonjs`
 - [`0039-contract-errors-are-read-by-code-not-by-orpcs-defined-flag`](0039-contract-errors-are-read-by-code-not-by-orpcs-defined-flag.md) — A contract error is recognised by its code, not by oRPC's `defined` flag
-- [`0040-contract-exports-the-applied-client-type-not-the-orpc-builder`](0040-contract-exports-the-applied-client-type-not-the-orpc-builder.md) — `libs/lets-park/contract` exports the applied client type; `@orpc/contract` stays out of `type:util`
+- [`0040-contract-exports-the-applied-client-type-not-the-orpc-builder`](0040-contract-exports-the-applied-client-type-not-the-orpc-builder.md) — `libs/garage/contract` exports the applied client type; `@orpc/contract` stays out of `type:util`
 - [`0041-auth-failures-401-transport-403-contract`](0041-auth-failures-401-transport-403-contract.md) — Authentication failure is a transport 401; a deactivated user is the contract's FORBIDDEN
 - [`0042-one-jwks-client-shared-by-http-and-websocket`](0042-one-jwks-client-shared-by-http-and-websocket.md) — One JWKS client and one rule set, shared by the HTTP guard and the WebSocket handshake
 - [`0043-jwks-endpoint-from-oidc-discovery`](0043-jwks-endpoint-from-oidc-discovery.md) — The JWKS endpoint comes from OIDC discovery, and a cache miss never becomes a bypass
 - [`0044-jit-provisioning-email-fallback-rebinds-oktaid`](0044-jit-provisioning-email-fallback-rebinds-oktaid.md) — JIT provisioning matches on `oktaId`, falls back to `email`, and lets the database settle races
 - [`0045-the-token-endpoint-is-discovered-not-configured`](0045-the-token-endpoint-is-discovered-not-configured.md) — The token endpoint and its client-authentication method come from OIDC discovery
-- [`0046-libs-auth-has-a-separate-client-entry-point`](0046-libs-auth-has-a-separate-client-entry-point.md) — `libs/lets-park/auth` has two entry points, server and client
+- [`0046-libs-auth-has-a-separate-client-entry-point`](0046-libs-auth-has-a-separate-client-entry-point.md) — `libs/garage/auth` has two entry points, server and client
 - [`0047-the-access-token-crosses-to-the-browser-the-refresh-token-does-not`](0047-the-access-token-crosses-to-the-browser-the-refresh-token-does-not.md) — The access token crosses to the browser; the refresh token never does
 - [`0048-a-failed-refresh-fails-closed-and-signs-out`](0048-a-failed-refresh-fails-closed-and-signs-out.md) — A failed refresh drops the token and signs the user out, rather than retrying or serving a stale bearer
 - [`0049-the-session-is-polled-because-rotation-only-runs-when-it-is-read`](0049-the-session-is-polled-because-rotation-only-runs-when-it-is-read.md) — `AuthProvider` polls the session, because rotation only happens when the session is read
@@ -84,7 +84,7 @@ for why, and take the next number from the end of this list.
 - [`0072-sorting-is-a-two-state-toggle-behind-a-wrapper-type`](0072-sorting-is-a-two-state-toggle-behind-a-wrapper-type.md) — Sorting is a two-state toggle, and no TanStack type crosses the wrapper
 - [`0080-the-ics-feed-answers-404-not-401`](0080-the-ics-feed-answers-404-not-401.md) — 0080 — The ICS feed answers 404, never 401
 - [`0081-the-rendered-feed-is-a-pure-function-of-the-data`](0081-the-rendered-feed-is-a-pure-function-of-the-data.md) — 0081 — The rendered feed is a pure function of the data, so `ETag` works
-- [`0082-czech-ics-copy-lives-in-libs-calendar-export`](0082-czech-ics-copy-lives-in-libs-calendar-export.md) — 0082 — The feed's Czech copy lives in `libs/lets-park/calendar-export`, not in `libs/shared/i18n`
+- [`0082-czech-ics-copy-lives-in-libs-calendar-export`](0082-czech-ics-copy-lives-in-libs-calendar-export.md) — 0082 — The feed's Czech copy lives in `libs/garage/calendar-export`, not in `libs/shared/i18n`
 - [`0090-a-weekend-inside-a-bulk-request-is-a-per-day-fact`](0090-a-weekend-inside-a-bulk-request-is-a-per-day-fact.md) — A weekend inside a bulk request is a per-day fact, not a rejected request
 - [`0091-joining-a-waitlist-is-its-own-audit-action`](0091-joining-a-waitlist-is-its-own-audit-action.md) — Joining a waitlist is its own audit action
 - [`0092-bulk-confirmation-writes-in-date-order-and-never-lets-a-statement-fail`](0092-bulk-confirmation-writes-in-date-order-and-never-lets-a-statement-fail.md) — Bulk confirmation writes in date order and never lets a statement fail
@@ -95,7 +95,7 @@ for why, and take the next number from the end of this list.
 - [`0110-the-cell-lock-ttl-is-thirty-seconds-and-configurable`](0110-the-cell-lock-ttl-is-thirty-seconds-and-configurable.md) — The cell-lock TTL is 30 s, it comes from the environment, and the client's renewal budget fits inside it
 - [`0111-a-lapsed-hold-is-broadcast-because-the-client-does-not-poll`](0111-a-lapsed-hold-is-broadcast-because-the-client-does-not-poll.md) — A lapsed hold is broadcast, because the client deliberately does not poll
 - [`0112-the-handshake-is-namespace-middleware-so-a-refusal-is-a-connect-error`](0112-the-handshake-is-namespace-middleware-so-a-refusal-is-a-connect-error.md) — The handshake is authenticated in namespace middleware, so a refusal is a CONNECT_ERROR
-- [`0113-socket-io-path-moves-into-the-shared-contract`](0113-socket-io-path-moves-into-the-shared-contract.md) — `SOCKET_IO_PATH` moves into `@lets-park/contract/realtime`
+- [`0113-socket-io-path-moves-into-the-shared-contract`](0113-socket-io-path-moves-into-the-shared-contract.md) — `SOCKET_IO_PATH` moves into `@garage/contract/realtime`
 - [`0120-canreserve-is-the-backends-answer-not-a-window-rederivation`](0120-canreserve-is-the-backends-answer-not-a-window-rederivation.md) — `canReserve` is the backend's answer; the lot never re-derives it from the window
 - [`0121-the-banner-quotes-a-window-date-only-under-auto`](0121-the-banner-quotes-a-window-date-only-under-auto.md) — The window banner quotes a date only under `lockMode: 'AUTO'`
 - [`0122-the-window-banner-is-always-rendered`](0122-the-window-banner-is-always-rendered.md) — The window banner is always rendered; `showLockState` is not a hiding rule
@@ -104,7 +104,7 @@ for why, and take the next number from the end of this list.
 - [`0125-the-admin-ellipsis-opens-the-same-dialog-on-purpose`](0125-the-admin-ellipsis-opens-the-same-dialog-on-purpose.md) — The admin `⋯` opens the same dialog `onOpen` does, on purpose
 - [`0126-a-childs-exclude-must-be-set-explicitly-or-it-silently-inherits-the-parents`](0126-a-childs-exclude-must-be-set-explicitly-or-it-silently-inherits-the-parents.md) — A child tsconfig's `exclude` must be set explicitly, or it silently inherits the parent's
 - [`0130-slack-is-off-by-default-and-there-is-no-dev-only-branch`](0130-slack-is-off-by-default-and-there-is-no-dev-only-branch.md) — Slack is off by an env value, not by a dev-only branch
-- [`0131-slack-czech-copy-stays-in-the-slack-module`](0131-slack-czech-copy-stays-in-the-slack-module.md) — Slack's Czech copy stays in `apps/lets-park/api/src/slack/`, and there is still no backend catalog
+- [`0131-slack-czech-copy-stays-in-the-slack-module`](0131-slack-czech-copy-stays-in-the-slack-module.md) — Slack's Czech copy stays in `apps/garage/api/src/slack/`, and there is still no backend catalog
 - [`0132-the-per-attempt-timeout-is-slackclients-own-not-axioss`](0132-the-per-attempt-timeout-is-slackclients-own-not-axioss.md) — The per-attempt Slack timeout is `SlackClient`'s own timer, not axios's
 - [`0135-the-after-commit-seam-is-a-composite-not-a-choice`](0135-the-after-commit-seam-is-a-composite-not-a-choice.md) — The after-commit seam is a composite, not a choice between Socket.io and Slack
 - [`0140-the-day-bar-is-its-own-file`](0140-the-day-bar-is-its-own-file.md) — The day bar is its own file
@@ -206,3 +206,4 @@ for why, and take the next number from the end of this list.
 - [`0310-the-workspace-is-namespaced-to-host-two-applications`](0310-the-workspace-is-namespaced-to-host-two-applications.md) — 0310 – The workspace is namespaced to host two applications
 - [`0311-the-application-layer-carries-no-tailwind`](0311-the-application-layer-carries-no-tailwind.md) — 0311 – The application layer carries no Tailwind
 - [`0312-the-monthly-cap-is-its-own-settings-singleton`](0312-the-monthly-cap-is-its-own-settings-singleton.md) — 0312 – The monthly cap is its own settings singleton
+- [`0313-the-parking-application-is-renamed-garage`](0313-the-parking-application-is-renamed-garage.md) — 0313 – The parking application is renamed `garage`

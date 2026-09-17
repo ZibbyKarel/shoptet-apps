@@ -1,6 +1,6 @@
 # 0170 – The confirmed schedule is laid against the proposal, and a difference is never swallowed
 
-**Date:** 2026-09-03 · **Status:** accepted · **Affects:** `apps/lets-park/web/src/lot/bulk-*`
+**Date:** 2026-09-03 · **Status:** accepted · **Affects:** `apps/garage/web/src/lot/bulk-*`
 **Follows on from:** `doc/decision/0019-*`, `doc/decision/0092-*`
 
 ## What
@@ -13,7 +13,7 @@ showed, day by day, and
 - when any day does not, renders a `role="alert"` panel above the schedule listing **only** the
   days that moved, each as `Návrh: …` / `Skutečnost: …`.
 
-The comparison is `diffBulkSchedule` in `apps/lets-park/web/src/lot/bulk-modal/bulk-view.ts`. Two answers for one date
+The comparison is `diffBulkSchedule` in `apps/garage/web/src/lot/bulk-modal/bulk-view.ts`. Two answers for one date
 count as the same when the outcome kind, the spot **id**, the preferred-spot flag, the queue
 position and the unavailable reason all agree. `reservationId` / `waitlistEntryId` are excluded:
 they exist only on the result, and their absence from the proposal is not a difference a user cares
@@ -37,7 +37,7 @@ in place while the database says otherwise. The failure surfaces days later, at 
 the worst possible place to discover it.
 
 **The server cannot do this comparison.** `confirmBulk` takes the same input as `previewBulk` and
-deliberately does **not** receive the plan the client is holding (`libs/lets-park/contract/src/api/bulk.ts`,
+deliberately does **not** receive the plan the client is holding (`libs/garage/contract/src/api/bulk.ts`,
 `doc/decision/0019-*`): trusting a client-supplied plan would be trusting a client-supplied
 allocation. So the client is the only party that holds both halves, and the two outputs were given
 the same shape precisely so it could zip them.
@@ -54,10 +54,10 @@ user did not ask for and must not have to hunt for, which is what `alert` is for
 
 ## How
 
-- `apps/lets-park/web/src/lot/bulk-modal/bulk-view.ts` — `sameOutcome` and `diffBulkSchedule`, pure and sorted
+- `apps/garage/web/src/lot/bulk-modal/bulk-view.ts` — `sameOutcome` and `diffBulkSchedule`, pure and sorted
   ascending; `toScheduleRows` re-sorts both lists into date order so a reader comparing them does
   not also have to account for two orderings.
-- `apps/lets-park/web/src/lot/bulk-modal/bulk-modal.tsx` — the result step; `describeOutcome` renders one side of a
+- `apps/garage/web/src/lot/bulk-modal/bulk-modal.tsx` — the result step; `describeOutcome` renders one side of a
   difference as one phrase, with `resultChangedMissing` ("nic") for the `null` side.
 - `bulk-view.spec.ts` covers the comparison itself — a matching pair, a spot that became a queue
   place, a queue position that moved, a day on one side only, the ordering, and the fact that

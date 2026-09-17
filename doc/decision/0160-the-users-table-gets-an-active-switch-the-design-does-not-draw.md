@@ -2,7 +2,7 @@
 
 ## What
 
-`apps/lets-park/web/src/shell/admin/admin-users-screen/admin-users-screen.tsx` renders **four** columns —
+`apps/garage/web/src/shell/admin/admin-users-screen/admin-users-screen.tsx` renders **four** columns —
 `Jméno`, `E-mail`, `Admin`, `Aktivní` — where
 `doc/design/screens/03-admin-users.png` draws three. The fourth is a `Switch`
 per row, wired to `admin.user.update({ id, active })`.
@@ -31,7 +31,7 @@ The switch on the signed-in admin's **own** row is disabled, with
   `UsersService.adminUpdate` refuses self-deactivation with `CONFLICT`
   regardless of what any browser sends, and refuses removing the last active
   admin. Hiding a control is never authorization
-  (`apps/lets-park/api/src/orpc/orpc-pipeline.spec.ts` proves the server side over real
+  (`apps/garage/api/src/orpc/orpc-pipeline.spec.ts` proves the server side over real
   HTTP). What the disabled switch buys is that the most likely mistake — a
   mis-click on the wrong row, whose cost is losing your own session mid-task —
   does not reach the API at all.

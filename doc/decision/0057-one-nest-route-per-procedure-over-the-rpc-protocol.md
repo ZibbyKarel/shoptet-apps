@@ -5,14 +5,14 @@
 
 ## What
 
-`apps/lets-park/api` serves the contract from Task 4 as **one `@Post()` Nest route per contract
+`apps/garage/api` serves the contract from Task 4 as **one `@Post()` Nest route per contract
 procedure**, each delegating to a single shared `RPCHandler` from `@orpc/server`:
 
-- `apps/lets-park/api/src/orpc/rpc-route.ts` derives the path — `/api/rpc/<segment>/<segment>`, so
+- `apps/garage/api/src/orpc/rpc-route.ts` derives the path — `/api/rpc/<segment>/<segment>`, so
   `admin.spot.create` is `POST /api/rpc/admin/spot/create`.
-- `apps/lets-park/api/src/orpc/rpc-route-handler.ts` owns the one `RPCHandler`, mounted with
+- `apps/garage/api/src/orpc/rpc-route-handler.ts` owns the one `RPCHandler`, mounted with
   `prefix: '/api/rpc'`, and turns an unmatched path into a `NotFoundException`.
-- `apps/lets-park/api/src/orpc/implementer.ts` is `implement(contract).$context<OrpcContext>()` plus the
+- `apps/garage/api/src/orpc/implementer.ts` is `implement(contract).$context<OrpcContext>()` plus the
   error-mapping middleware; every procedure is built from it, so the input and output schemas
   are the contract's own and cannot drift.
 - The controller method carries the Nest decorators: `@Roles('ADMIN')` where the contract
@@ -23,7 +23,7 @@ The task brief named `@orpc/nest`'s `@Implement` decorator. **That package is no
 is not used.** The only new dependency is `@orpc/server@1.15.0`, already a transitive dependency
 of `@orpc/contract`.
 
-`apps/lets-park/api/src/orpc/orpc-route-parity.spec.ts` is what keeps this honest: it walks the contract
+`apps/garage/api/src/orpc/orpc-route-parity.spec.ts` is what keeps this honest: it walks the contract
 router and, for every procedure, asserts a Nest route exists at the derived path (or is listed in
 `NOT_YET_IMPLEMENTED` for Tasks 13 and 17), that it is a `POST`, and that its `@Roles` metadata
 is `['ADMIN']` for exactly the `admin.*` namespace and absent everywhere else.
@@ -36,7 +36,7 @@ has two: the **RPC protocol** (`RPCLink`/`RPCHandler`, a `{ json, meta }` envelo
 methods, bare JSON bodies). `@Implement` only serves the second.
 
 `libs/shared/api-client` (Task 19, merged) builds its client with `RPCLink` from `@orpc/client/fetch`,
-and its spec asserts the exact request an `apps/lets-park/web` call produces:
+and its spec asserts the exact request an `apps/garage/web` call produces:
 `https://api.test/rpc/reservation/create` with body `{ json: { … } }`. `libs/query`'s fixtures
 (`libs/query/src/__fixtures__/stub-api.ts`) build responses the same way. Adopting `@Implement`
 would have meant:
@@ -46,7 +46,7 @@ would have meant:
 2. rewriting merged, passing tests in two libraries to assert a different URL shape and a
    different body;
 3. deciding a REST method and path for each of the 20 procedures — information the contract does
-   not carry, so it would have been invented in `apps/lets-park/api` and duplicated in the client.
+   not carry, so it would have been invented in `apps/garage/api` and duplicated in the client.
 
 None of that is work Task 12 was asked to do, and (1) is exactly the kind of allowlist widening
 "arriving as a side effect" the task constraints call a finding. The RPC protocol is what the
@@ -72,7 +72,7 @@ serialises through the same codec, so the wire format cannot drift between two p
 
 ## Consequences
 
-- Adding a procedure to the contract is **two** edits in `apps/lets-park/api`: the oRPC implementation, and
+- Adding a procedure to the contract is **two** edits in `apps/garage/api`: the oRPC implementation, and
   a `@Post(rpcRoute(…))` method on a controller. Forgetting the second is a failing parity spec,
   not a 404 discovered in the browser.
 - A path the contract declares but no route serves answers **404**, not 501 — `RPCHandler`

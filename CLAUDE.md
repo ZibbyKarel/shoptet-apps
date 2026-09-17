@@ -7,10 +7,10 @@ and documentation (`doc/`, this file). The two deliberate exceptions:
 `plan.md` (the binding spec, written in Czech — see below) stays as-is, and
 **UI copy** is **written** in Czech, because this is a Czech company's internal
 app and the interface language is a product decision, not a documentation one.
-Czech remains the source of truth: `apps/lets-park/web/messages/cs.json` is where copy
+Czech remains the source of truth: `apps/garage/web/messages/cs.json` is where copy
 is written, and its keys define what exists. English is a translation that
 sits alongside it (`en.json`), kept in step by the parity guard at
-`apps/lets-park/web/messages/messages.spec.ts`. New copy is written in Czech first and
+`apps/garage/web/messages/messages.spec.ts`. New copy is written in Czech first and
 then translated — never English-first, and never by replacing a Czech string
 with an English one. See `doc/i18n.md` for details.
 
@@ -19,12 +19,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project state
 
 **This workspace hosts more than one application.** `apps/` and `libs/` are
-namespaced by owner: `apps/lets-park/*` and `libs/lets-park/*` belong to the
+namespaced by owner: `apps/garage/*` and `libs/garage/*` belong to the
 parking app, `libs/shared/*` holds the four libs a second application also
 consumes (`design-system`, `form`, `i18n`, `api-client`). A lib's namespace
 is decided by **how many applications consume it**, not by how much code it
 holds — `doc/decision/0310-*` states the rule, records why `auth` and
-`shared-types` sit under `lets-park/` despite looking generic, and names the
+`shared-types` sit under `garage/` despite looking generic, and names the
 one piece of debt the split exposed (`libs/shared/api-client` still imports
 this app's contract at runtime; that must be resolved before a second
 contract exists).
@@ -35,24 +35,24 @@ commands below are unaffected by the directory layout. They will not stay
 that way — project names are globally unique, so a second application cannot
 own a project called `api` either, and scaffolding it forces the rename.
 
-Every project therefore also carries an **`app:` tag** — `app:lets-park` or
+Every project therefore also carries an **`app:` tag** — `app:garage` or
 `app:shared` — and that is what a per-application command selects on:
-`nx run-many -t lint -p tag:app:lets-park`, never `-p api,web`. The tag
+`nx run-many -t lint -p tag:app:garage`, never `-p api,web`. The tag
 survives the rename; a list of project names does not. In `package.json`,
 an unsuffixed script is workspace-wide and a `:<app>` suffix scopes it
-(`npm run dev:lets-park`).
+(`npm run dev:garage`).
 
 The second application is `apps/wishlist/web` — a feature-request board for
 `shoptet-partner-cli` users, currently **a scaffold**: one page, no api, no
 auth, no tests. Its Nx project is `wishlist-web` (prefixed, while this app's
 are flat — `doc/decision/0310-*` explains why that asymmetry is deliberate
 and temporary), it serves on **port 4300**, and its one screen is built from
-`@lets-park/design-system` on purpose, so that rendering it proves the whole
+`@garage/design-system` on purpose, so that rendering it proves the whole
 shared chain resolves from a second application.
 
 The parking app is scaffolded and all of Fáze 0–7 is written:
-`apps/lets-park/api` (NestJS 11), `apps/lets-park/web` (Next.js 16),
-`apps/lets-park/api-e2e`, `apps/lets-park/web-e2e`, and ten libs.
+`apps/garage/api` (NestJS 11), `apps/garage/web` (Next.js 16),
+`apps/garage/api-e2e`, `apps/garage/web-e2e`, and ten libs.
 `npm ci` first — several agents have skipped it in a fresh worktree and spent
 the next hour on spurious `Module not found` errors in `api:build`.
 
@@ -82,7 +82,7 @@ absent one, because a reader trusts it.
 ```bash
 npm ci                 # always, in a fresh worktree, before anything else
 
-npm run dev:lets-park  # serve,dev for this app's api and web — continuous
+npm run dev:garage  # serve,dev for this app's api and web — continuous
 npm run dev:wishlist   # the wishlist board on :4300 — continuous
 npm run lint           # nx run-many -t lint
 npm run typecheck      # nx run-many -t typecheck
@@ -122,7 +122,7 @@ a stripped shell: exit 1 without it, exit 0 and **8 suites / 94 tests** with it)
 Either copy `.env` in, or pass it for the one command:
 
 ```bash
-DATABASE_URL=$(grep '^DATABASE_URL=' /path/to/lets-park/.env | sed 's/^DATABASE_URL=//') \
+DATABASE_URL=$(grep '^DATABASE_URL=' /path/to/shoptet-apps/.env | sed 's/^DATABASE_URL=//') \
   npx nx run api:test-db
 ```
 
@@ -159,7 +159,7 @@ that reproduces what CI actually runs — **48 passed, exit 0, 27.6 s**, against
   corrupt the write; the same thing has been seen here as exit 1 after 509
   passing tests. Read the suite's own summary line, not just `$?`.
 
-**`npm test` does not run the database suites.** `apps/lets-park/api/jest.config.cts`
+**`npm test` does not run the database suites.** `apps/garage/api/jest.config.cts`
 excludes `*.db.spec.ts` because they need a live PostgreSQL; they run under
 `api:test-db`, and in CI in their own job. A change to `SELECT … FOR UPDATE`,
 to transaction isolation, or to waitlist promotion is untested until you have
@@ -207,7 +207,7 @@ suite, which several config comments had been assuming for a while.
 
 Non-negotiable architectural rules from `plan.md` that apply to every phase (see the file for full detail):
 
-- **Contract-first**: all FE↔BE data shapes are defined once as Zod schemas in the single `libs/lets-park/contract` lib — shared entity schemas plus two entry points: `@lets-park/contract` (API, via oRPC) and `@lets-park/contract/realtime` (Socket.io events — Zod payload schemas, validated server-side). TS types are always derived (`z.infer`), never hand-duplicated. No endpoint/DTO/event may exist in code before it exists in the contract. Errors are typed contract errors; reservation dates are date-only (`YYYY-MM-DD`) in Europe/Prague.
+- **Contract-first**: all FE↔BE data shapes are defined once as Zod schemas in the single `libs/garage/contract` lib — shared entity schemas plus two entry points: `@garage/contract` (API, via oRPC) and `@garage/contract/realtime` (Socket.io events — Zod payload schemas, validated server-side). TS types are always derived (`z.infer`), never hand-duplicated. No endpoint/DTO/event may exist in code before it exists in the contract. Errors are typed contract errors; reservation dates are date-only (`YYYY-MM-DD`) in Europe/Prague.
 - **Design-system-first**: tokens (`libs/shared/design-system/src/tokens`) → primitives (`libs/shared/design-system/src/primitives`) → compounds (`libs/shared/design-system/src/compounds`, e.g. DataTable) → domain-specific composition, which lives only in app feature code. The three layers are directories of one Nx project, `design-system`, with one entry point each. Primitives and compounds each get a Storybook story written alongside them and must stay presentation-only with no domain data; compounds may import primitives, never the reverse — enforced by path-scoped `no-restricted-imports` rules in `libs/shared/design-system/eslint.config.mjs` (`doc/decision/0301-the-design-system-is-one-package-and-the-layer-rule-moved-to-lint-paths.md`).
 - **Mandatory wrapper layers**: app/feature code must never import react-hook-form, TanStack Query/Table, socket.io-client, next-auth, next-intl, or ical-generator directly — always through the corresponding `libs/*` wrapper (table in `plan.md`). ESLint (Nx module boundaries / `no-restricted-imports`) must enforce this. A one-off, non-recurring third-party import elsewhere in app code is acceptable only with a comment explaining why no wrapper was created — but this exception does not apply to the libraries listed above.
 - Validation is Zod-only; `class-validator`/`class-transformer` are not used in NestJS.

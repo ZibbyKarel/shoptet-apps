@@ -9,10 +9,10 @@ row: "enforcing the lock on create/join/leave").
 class as `reservation.cancel`: always allowed, for any caller, in any month
 state.
 
-- `apps/lets-park/api/src/reservations/waitlist.service.ts` — the
+- `apps/garage/api/src/reservations/waitlist.service.ts` — the
   `policy.assertWindowOpen(...)` call is gone, and with it `leave`'s `settings`
   read and its `today` parameter, which had no other use.
-- `libs/lets-park/contract/src/api/waitlist.ts` — contract-first, so this edit led:
+- `libs/garage/contract/src/api/waitlist.ts` — contract-first, so this edit led:
   `leaveWaitlistContract` no longer declares `RESERVATIONS_LOCKED` or
   `OUT_OF_HORIZON`. Its declared errors are `NOT_FOUND` and `CONFLICT`.
 
@@ -23,7 +23,7 @@ state.
 **The rule as written made leaving impossible for the entire live life of every
 queue, under the configuration the product ships with.**
 
-`monthLockState` (`libs/lets-park/shared-types/src/lib/reservation-window.ts:100-102`)
+`monthLockState` (`libs/garage/shared-types/src/lib/reservation-window.ts:100-102`)
 returns `LOCKED` as soon as `today >= startOfMonth(targetDate)` — the window
 closes at the *start* of the target month, not its end, which that file's own
 header calls out as load-bearing. The shipped defaults are `AUTO` and

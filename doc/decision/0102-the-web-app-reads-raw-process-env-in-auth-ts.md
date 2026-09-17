@@ -2,7 +2,7 @@
 
 ## What
 
-`apps/lets-park/web/src/auth.ts` builds the app's Auth.js instance from
+`apps/garage/web/src/auth.ts` builds the app's Auth.js instance from
 `process.env.AUTH_*` directly, with `?? ''` fallbacks, instead of calling
 `validateWebEnv()` from `./env.ts`:
 
@@ -37,7 +37,7 @@ in `instrumentation.ts` → `register()`.
   `AUTH_SECRET`, `AUTH_OKTA_ID` and `AUTH_OKTA_SECRET` from the environment on
   its own, and an inferred variable is one the schema never sees.
 - **Neither secret is `NEXT_PUBLIC_`**, and this module is imported only from
-  server files. The browser half of the wrapper (`@lets-park/auth/client`)
+  server files. The browser half of the wrapper (`@garage/auth/client`)
   reaches the session over `/api/auth/session` and never sees a secret.
 
 ## How
@@ -45,7 +45,7 @@ in `instrumentation.ts` → `register()`.
 Verified both ways rather than argued:
 
 - `nx run web:build` with the environment present → exit 0.
-- `nx run web:build` with `.env` and `apps/lets-park/web/.env` moved aside → exit 0.
+- `nx run web:build` with `.env` and `apps/garage/web/.env` moved aside → exit 0.
   (Both files restored afterwards.)
 
 ## Risk

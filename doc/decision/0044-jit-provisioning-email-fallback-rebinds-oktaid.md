@@ -57,7 +57,7 @@ Address changes are an admin operation.
 
 **Why "no `email` claim" is 401 rather than 403.** The token is valid but does not identify a
 *provisionable* person — the API cannot say who this is in its own terms. 403 would be worse:
-`apps/lets-park/web` renders `FORBIDDEN` as "your account is not allowed", which would be a plainly
+`apps/garage/web` renders `FORBIDDEN` as "your account is not allowed", which would be a plainly
 wrong explanation for a missing OAuth scope. The condition is an operator misconfiguration
 (the client was not granted `email`), affects everybody at once, and the `error`-level log
 says exactly that.
@@ -113,5 +113,5 @@ retried forever. That is the intended failure mode.
 **The unique constraints are modelled, not exercised, in these tests.** Docker was
 unavailable when this was written, so that Postgres actually raises P2002 for
 `User_oktaId_key` / `User_email_key` / `User_icsToken_key` is inherited from
-`libs/lets-park/database/prisma/schema.prisma` and verified only in CI. The retry logic, the catch and
+`libs/garage/database/prisma/schema.prisma` and verified only in CI. The retry logic, the catch and
 the "every caller gets the same row" outcome are genuinely exercised.

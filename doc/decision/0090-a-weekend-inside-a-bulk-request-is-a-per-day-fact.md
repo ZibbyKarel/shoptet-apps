@@ -1,6 +1,6 @@
 # 0090 – A weekend inside a bulk request is a per-day fact, not a rejected request
 
-**Date:** 2026-09-02 · **Status:** accepted · **Affects:** `apps/lets-park/api/src/reservations/bulk-*`
+**Date:** 2026-09-02 · **Status:** accepted · **Affects:** `apps/garage/api/src/reservations/bulk-*`
 **Follows on from:** `doc/decision/0064-*`
 
 ## What
@@ -26,7 +26,7 @@ This is a deliberate deviation from Task 30's brief, which said weekends and hol
 ## Why
 
 **The contract had already decided, and the contract is the source of truth.**
-`BULK_UNAVAILABLE_REASONS` (Task 4, `libs/lets-park/shared-types/src/lib/domain-constants.ts`) lists
+`BULK_UNAVAILABLE_REASONS` (Task 4, `libs/garage/shared-types/src/lib/domain-constants.ts`) lists
 `NOT_A_BUSINESS_DAY` as one of exactly three per-day reasons, above a doc comment that states the
 rule in so many words: *"These are per-day facts reported inside a successful response, not errors:
 one impossible day must not throw away the rest of the batch. Conditions that invalidate the whole
@@ -35,7 +35,7 @@ the request would have left a contract member with no reachable trigger, which
 `doc/decision/0021-*` forbids outright.
 
 **Nothing in the input schema can enforce it anyway.** `bulkBookingInputSchema` is a Zod schema; the
-Czech public-holiday calendar lives in `@lets-park/shared-types` and depends on the year. Zod
+Czech public-holiday calendar lives in `@garage/shared-types` and depends on the year. Zod
 *could* call `isBusinessDay` in a `refine`, but then the first Saturday in a 20-day selection would
 throw away the other 19 days' answers — which is exactly the failure mode the contract's comment
 was written against.

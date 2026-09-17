@@ -2,8 +2,8 @@
 // shaped like `doc/decision/0020-orpc-is-esm-only-jest-must-transpile-it.md`:
 //
 // - `@orpc/contract` (a single `.mjs` build), pulled in transitively because
-//   `errors.spec.ts` imports `ERROR_CODES` from `@lets-park/contract` at
-//   runtime (not just as a type) — the same reason `libs/lets-park/contract` itself
+//   `errors.spec.ts` imports `ERROR_CODES` from `@garage/contract` at
+//   runtime (not just as a type) — the same reason `libs/garage/contract` itself
 //   needs this.
 // - `next-intl` and its transitive dependencies (`use-intl`,
 //   `intl-messageformat`, `@formatjs/*`, `@schummar/icu-type-parser`,

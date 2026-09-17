@@ -51,7 +51,7 @@ repository's sources, the emitted stylesheet loses eighteen selectors:
 - **It takes the zero-value utilities with it.** `p-0`, `m-0` and every
   `inset-0`/`top-0`/`left-0` resolve through the same multiplier, and nothing in
   the token scale defines a `0` step. `radio.tsx` alone uses `border-0 p-0`.
-- **Four of the eighteen are in `apps/lets-park/web`** (`lot-header.tsx`,
+- **Four of the eighteen are in `apps/garage/web`** (`lot-header.tsx`,
   `admin-users-screen.tsx`, `admin-window-screen.tsx`, `lock-mode-choice.tsx`),
   which this change does not own and cannot fix in the same commit. Closing the
   scale would have shipped a silent layout regression in three admin screens.

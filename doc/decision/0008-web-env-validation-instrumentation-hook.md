@@ -4,12 +4,12 @@
 
 ## What
 
-Fail-fast validation of `apps/lets-park/web`'s env variables (`validateWebEnv`,
-`apps/lets-park/web/src/env.ts`) is not called from the top level of `next.config.ts`, as the
+Fail-fast validation of `apps/garage/web`'s env variables (`validateWebEnv`,
+`apps/garage/web/src/env.ts`) is not called from the top level of `next.config.ts`, as the
 literal wording of Task 2 might suggest ("validation at build/boot time"). It is
-called from `apps/lets-park/web/src/instrumentation.ts` (the Next.js `register()` hook), and
+called from `apps/garage/web/src/instrumentation.ts` (the Next.js `register()` hook), and
 only for the Node.js runtime — via a separate module,
-`apps/lets-park/web/src/instrumentation-node.ts`, not inline. A validation failure also ends
+`apps/garage/web/src/instrumentation-node.ts`, not inline. A validation failure also ends
 with an explicit `process.exit(1)`, not a plain `throw`.
 
 ## Why
@@ -51,12 +51,12 @@ brings the process down, with the same effect as an exception thrown from
 
 ## How
 
-- `apps/lets-park/web/src/env.ts` – the schema and `validateWebEnv`, with no assumption about
+- `apps/garage/web/src/env.ts` – the schema and `validateWebEnv`, with no assumption about
   who calls it.
-- `apps/lets-park/web/src/instrumentation.ts` – `register()`, only routing by `NEXT_RUNTIME`.
-- `apps/lets-park/web/src/instrumentation-node.ts` – the actual validation + `console.error` +
+- `apps/garage/web/src/instrumentation.ts` – `register()`, only routing by `NEXT_RUNTIME`.
+- `apps/garage/web/src/instrumentation-node.ts` – the actual validation + `console.error` +
   `process.exit(1)` on failure. `no-console` doesn't apply here (it's enforced only
-  in `apps/lets-park/api/**` and `libs/**`, see `eslint.config.mjs`).
+  in `apps/garage/api/**` and `libs/**`, see `eslint.config.mjs`).
 - Verified with a real run: `next build` passes without env (build doesn't call the
   validation); `next start` without env exits (`exit code 1`) with a message naming
   every missing variable, without their values – the output is in

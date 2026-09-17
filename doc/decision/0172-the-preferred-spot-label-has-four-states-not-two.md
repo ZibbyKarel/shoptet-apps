@@ -1,6 +1,6 @@
 # 0172 – The preferred-spot label has four states, not two
 
-**Date:** 2026-09-03 · **Status:** accepted · **Affects:** `apps/lets-park/web/src/lot/bulk-modal/bulk-view.ts`
+**Date:** 2026-09-03 · **Status:** accepted · **Affects:** `apps/garage/web/src/lot/bulk-modal/bulk-view.ts`
 
 ## What
 
@@ -19,7 +19,7 @@ The line under the bulk grid — `Preferované místo: E2.92` in
 
 **The id and the label come from different reads, and only one of them can go stale.** The id is on
 the caller's own profile (`me.get`); the label comes from `spot.list`, which returns **active spots
-only** ("Deactivated spots are kept for their foreign keys" — `libs/lets-park/contract/src/api/spots.ts`). An
+only** ("Deactivated spots are kept for their foreign keys" — `libs/garage/contract/src/api/spots.ts`). An
 admin deactivating a spot after somebody chose it as their preference leaves a perfectly valid id
 with no label to render.
 
@@ -42,11 +42,11 @@ one.
 
 ## How
 
-- `apps/lets-park/web/src/lot/bulk-modal/bulk-view.ts` — `toPreferredSpotView(preferredParkingSpotId, spots)`. The two
+- `apps/garage/web/src/lot/bulk-modal/bulk-view.ts` — `toPreferredSpotView(preferredParkingSpotId, spots)`. The two
   `undefined` inputs mean "still loading" and are checked before the `null` that means "no
   preference": `undefined` and `null` are different answers here, which is why
   `exactOptionalPropertyTypes` being on workspace-wide matters.
-- `apps/lets-park/web/src/lot/bulk-modal/bulk-modal.tsx` — `preferredSpotNote()`, a total `switch` over the four kinds.
+- `apps/garage/web/src/lot/bulk-modal/bulk-modal.tsx` — `preferredSpotNote()`, a total `switch` over the four kinds.
 - `bulk-view.spec.ts` has one test per state, the `unavailable` one named for what it prevents;
   `bulk-modal.spec.tsx` asserts that a retired spot renders the "už není k dispozici" sentence
   **and** that the old label is nowhere on screen.

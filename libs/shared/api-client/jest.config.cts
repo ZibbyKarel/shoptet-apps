@@ -1,6 +1,6 @@
 /**
  * This project imports `@orpc/client`, `@orpc/client/fetch` and (transitively,
- * through `@lets-park/contract`) `@orpc/contract`, all published ESM-only,
+ * through `@garage/contract`) `@orpc/contract`, all published ESM-only,
  * while Jest runs here as CommonJS.
  *
  * The `transformIgnorePatterns` half of that fix now lives in

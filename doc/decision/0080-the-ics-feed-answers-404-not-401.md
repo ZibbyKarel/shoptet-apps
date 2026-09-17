@@ -61,7 +61,7 @@ table.
 the path it could not match (`Cannot GET /api/calendar/nope`), while this
 endpoint answers a constant `Not Found`, so the two bodies differ. That reveals
 exactly one thing — that a URL ending in `.ics` under `/api/calendar` matches a
-route — which is public knowledge: the path is in `libs/lets-park/contract`
+route — which is public knowledge: the path is in `libs/garage/contract`
 (`ICS_FEED_BASE_PATH`), in `doc/ics.md`, and on the settings screen every
 employee can open. It says nothing about any token.
 
@@ -73,15 +73,15 @@ rather than leaving it unmentioned.
 
 ## How
 
-- `apps/lets-park/api/src/calendar/calendar.service.ts` — the single `findFirst({ where: {
+- `apps/garage/api/src/calendar/calendar.service.ts` — the single `findFirst({ where: {
   icsToken, active: true } })` and the bare `NotFoundException`.
-- `apps/lets-park/api/src/calendar/calendar.controller.ts` — headers set after the lookup.
-- `apps/lets-park/api/src/calendar/calendar.service.spec.ts` — the four rejection cases,
+- `apps/garage/api/src/calendar/calendar.controller.ts` — headers set after the lookup.
+- `apps/garage/api/src/calendar/calendar.service.spec.ts` — the four rejection cases,
   including "says exactly the same thing in every case" and "never reveals
   whether a token exists by doing extra work for it".
-- `apps/lets-park/api/src/calendar/calendar-pipeline.spec.ts` — the same over real HTTP,
+- `apps/garage/api/src/calendar/calendar-pipeline.spec.ts` — the same over real HTTP,
   comparing status, body and headers.
-- `apps/lets-park/api/src/calendar/calendar.db.spec.ts` — that the `active: true` filter
+- `apps/garage/api/src/calendar/calendar.db.spec.ts` — that the `active: true` filter
   really is applied by PostgreSQL, not just by the in-memory double.
 
 Replacing `NotFoundException` with `UnauthorizedException` fails **10** tests;

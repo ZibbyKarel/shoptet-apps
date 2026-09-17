@@ -68,7 +68,7 @@ the database name appears in the response.
 That file, though, calls the controller's methods **directly**, so it says nothing about the
 actual HTTP response – and that's exactly where the bug was: the global filter overwrote the
 terminus body with a constant (see `doc/decision/0033-*`). What the probe actually returns
-is verified by `apps/lets-park/api/src/app/http-pipeline.spec.ts` with real requests against a running
+is verified by `apps/garage/api/src/app/http-pipeline.spec.ts` with real requests against a running
 server. The split is deliberate: `health.spec.ts` tests what the indicator *computes*,
 `http-pipeline.spec.ts` tests what the client *gets*.
 

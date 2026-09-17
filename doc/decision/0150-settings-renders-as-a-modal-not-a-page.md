@@ -2,7 +2,7 @@
 
 ## What
 
-`apps/lets-park/web/src/shell/settings-screen/settings-screen.tsx` renders the whole settings screen —
+`apps/garage/web/src/shell/settings-screen/settings-screen.tsx` renders the whole settings screen —
 licence plate, preferred spot, and the ICS section (`doc/decision/0151-*`) —
 inside the design system's `Modal` primitive
 (`libs/shared/design-system/primitives/src/lib/modal/modal.tsx`), reached at the

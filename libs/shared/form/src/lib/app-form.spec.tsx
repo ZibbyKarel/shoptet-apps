@@ -1,8 +1,8 @@
 /**
  * The whole point of `libs/shared/form` is that a real, validated, submittable form
- * can be built from `@lets-park/form` plus design-system primitives without
+ * can be built from `@garage/form` plus design-system primitives without
  * ever importing `react-hook-form` directly (`doc/wrappers.md`). This file's
- * own import list — `@lets-park/form`, `@lets-park/design-system/primitives`
+ * own import list — `@garage/form`, `@garage/design-system/primitives`
  * and `zod`, nothing else — *is* that proof, and the last test below reads
  * this file's own source back off disk to make the claim self-checking
  * rather than something a reviewer has to take on faith.
@@ -11,8 +11,8 @@ import { readFileSync } from 'node:fs';
 import * as z from 'zod';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Checkbox, Input, Select } from '@lets-park/design-system/primitives';
-import { FormField, FormProvider, useAppForm } from '@lets-park/form';
+import { Checkbox, Input, Select } from '@garage/design-system/primitives';
+import { FormField, FormProvider, useAppForm } from '@garage/form';
 
 const demoSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -80,7 +80,7 @@ function DemoForm({ onValid }: { readonly onValid: (values: DemoValues) => void 
   );
 }
 
-describe('a form built only from @lets-park/form + design-system primitives', () => {
+describe('a form built only from @garage/form + design-system primitives', () => {
   it('reflects Zod validation errors into each primitive error state, observably', async () => {
     const user = userEvent.setup();
     render(<DemoForm onValid={jest.fn()} />);

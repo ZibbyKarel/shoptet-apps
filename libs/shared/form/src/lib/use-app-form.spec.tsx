@@ -8,7 +8,7 @@
 import * as z from 'zod';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { FormField, FormProvider, useAppForm } from '@lets-park/form';
+import { FormField, FormProvider, useAppForm } from '@garage/form';
 
 const emailSchema = z.object({
   email: z.email('Enter a valid email'),
@@ -71,7 +71,7 @@ describe('useAppForm + FormField', () => {
  *
  * Every other form in this workspace uses a schema whose input and output types
  * are **the same** (`.refine()` does not change a type, and both call sites in
- * `apps/lets-park/web` write `useAppForm<TValues>` with `TOut` defaulting to `TIn`), so
+ * `apps/garage/web` write `useAppForm<TValues>` with `TOut` defaulting to `TIn`), so
  * until this suite existed the whole two-parameter apparatus was unexercised: a
  * refactor back to the `schema: TSchema` shape the file's comment says was tried
  * and abandoned would have compiled and passed every form test, silently

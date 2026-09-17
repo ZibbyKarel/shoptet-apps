@@ -29,7 +29,7 @@ different about any of them: none has localized copy keyed to a code, so all thr
 declare function isDefinedError<T>(error: T): error is Extract<T, ORPCError<any, any>>;
 ```
 
-`apps/lets-park/api`'s global filter sets `defined: false` on **every** domain error it serialises
+`apps/garage/api`'s global filter sets `defined: false` on **every** domain error it serialises
 (`contractErrorBody()` in `contract-exception.filter.ts`, `doc/decision/0033-*`), and does so
 by construction: an error that reached the filter is by definition one the procedure did not
 declare. So against this backend `isDefinedError` rejects every real domain error there is.
@@ -80,19 +80,19 @@ hand-constructed `ORPCError` — including `does not narrow on oRPC's 'defined' 
 exists to fail if someone "simplifies" this to `isDefinedError`, and a sweep over all twelve
 `ERROR_CODES`.
 
-## An unguarded defect in `apps/lets-park/api` that this decision did not fix — **resolved**
+## An unguarded defect in `apps/garage/api` that this decision did not fix — **resolved**
 
 > **Resolved by `doc/decision/0058-error-bodies-on-rpc-routes-carry-the-rpc-envelope.md`.**
 > `ContractExceptionFilter` now wraps every contract-error body on an `/api/rpc` path in
 > `{ json: … }` (`contract-exception.filter.ts:399`), and the guard this section asked for —
 > "a test that fails today", asserting the serialised body **is** enveloped — exists and runs
-> against a live server in `apps/lets-park/api/src/orpc/orpc-pipeline.spec.ts`. The section below is
-> kept as the record of why the guard had to live in `apps/lets-park/api` rather than in
+> against a live server in `apps/garage/api/src/orpc/orpc-pipeline.spec.ts`. The section below is
+> kept as the record of why the guard had to live in `apps/garage/api` rather than in
 > `libs/shared/api-client`; read it in the past tense. The "Risk if this is wrong" section that
 > follows is **still binding**: `toContractError` must not be loosened to read a top-level
 > body.
 
-`apps/lets-park/api`'s filter wrote its body at the top level (`response.status(s).json(body)`), but
+`apps/garage/api`'s filter wrote its body at the top level (`response.status(s).json(body)`), but
 the RPC protocol reads the payload out of a `{ json, meta }` envelope. A top-level body
 deserialises to `undefined`, fails oRPC's `isORPCErrorJson`, and the client synthesises a code
 from the HTTP status instead — so a 409 `SPOT_ALREADY_RESERVED` arrives as `CONFLICT`, which
@@ -105,15 +105,15 @@ shown the wrong domain error, confidently. Reproduced against a real `RPCLink` w
 in the RPC envelope` acted as a tripwire that would fail once the server was fixed. That was
 wrong, and it is worth stating why rather than quietly deleting it: that test hand-writes its
 own unwrapped body and restates the filter's body builder locally, so it has **zero coupling
-to `apps/lets-park/api`** and will keep passing unchanged forever, fixed server or not. It documents a
+to `apps/garage/api`** and will keep passing unchanged forever, fixed server or not. It documents a
 property of `@orpc/client` — which is genuinely useful and is why it is kept — and nothing
 about the server.
 
-The coupling cannot be added from `libs/shared/api-client`: it is `type:util`/`scope:web`, `apps/lets-park/api`
+The coupling cannot be added from `libs/shared/api-client`: it is `type:util`/`scope:web`, `apps/garage/api`
 is `type:app`/`scope:api`, and the Nx boundaries forbid a lib depending on an app *and* web
-reaching api. **The guard that would work belongs in `apps/lets-park/api`'s filter spec, asserting the
+reaching api. **The guard that would work belongs in `apps/garage/api`'s filter spec, asserting the
 serialised body is enveloped — a test that failed at the time this was written.** Writing it
-was outside Task 19's file set; it was routed to whoever owned `apps/lets-park/api` next, and they did
+was outside Task 19's file set; it was routed to whoever owned `apps/garage/api` next, and they did
 it: `orpc-pipeline.spec.ts` now asserts `{ json: { code, status } }` for `FORBIDDEN`,
 `CONFLICT` and `INTERNAL_SERVER_ERROR` against a live server.
 

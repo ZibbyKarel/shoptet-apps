@@ -2,7 +2,7 @@
 
 ## What
 
-`libs/lets-park/database/prisma/schema.prisma` still declares:
+`libs/garage/database/prisma/schema.prisma` still declares:
 
 ```prisma
 actor User @relation(fields: [actorUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)

@@ -33,7 +33,7 @@ design wins where it conflicts with prose.
 
 **Why in `libs/shared/i18n` rather than in the modal.** A fact about the Czech language belongs in the lib
 that owns Czech language facts, next to the formatters it sits between. Putting twelve month names
-in `apps/lets-park/web` would also have put UI-adjacent locale data outside the one place `doc/i18n.md` points
+in `apps/garage/web` would also have put UI-adjacent locale data outside the one place `doc/i18n.md` points
 readers at.
 
 ## How

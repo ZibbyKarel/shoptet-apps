@@ -1,6 +1,6 @@
 # 0092 – Bulk confirmation writes in date order and never lets a statement fail
 
-**Date:** 2026-09-02 · **Status:** accepted · **Affects:** `apps/lets-park/api/src/reservations/bulk-*`
+**Date:** 2026-09-02 · **Status:** accepted · **Affects:** `apps/garage/api/src/reservations/bulk-*`
 **Follows on from:** `doc/decision/0065-*`, `doc/decision/0066-*`
 
 ## What

@@ -80,4 +80,4 @@ graphify-out
 handoff.md
 
 # Playwright storage state (live session cookies) — never committed
-apps/lets-park/web-e2e/.auth/
+apps/garage/web-e2e/.auth/

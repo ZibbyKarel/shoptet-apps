@@ -26,8 +26,8 @@ lists all 132 records by slug.
 
   | file | was | now |
   | --- | --- | --- |
-  | `libs/lets-park/calendar-export/src/lib/reservation-calendar.ts` | `0013-*` | `0013-calendar-arithmetic-and-single-timezone-boundary` |
-  | `libs/lets-park/shared-types/README.md` | `0013-*` | same |
+  | `libs/garage/calendar-export/src/lib/reservation-calendar.ts` | `0013-*` | `0013-calendar-arithmetic-and-single-timezone-boundary` |
+  | `libs/garage/shared-types/README.md` | `0013-*` | same |
   | `doc/ics.md` | `0013-*` | same |
   | `doc/decision/0081-*` | `0013-*` | same |
   | `doc/wrappers.md` | `0025-*` | `0025-next-intl-esm-jest-transform` |

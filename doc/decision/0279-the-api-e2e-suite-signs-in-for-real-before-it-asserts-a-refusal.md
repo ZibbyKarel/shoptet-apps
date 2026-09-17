@@ -2,9 +2,9 @@
 
 ## What
 
-`apps/lets-park/api-e2e/src/support/oidc-token.ts` fetches an access token from the mock
+`apps/garage/api-e2e/src/support/oidc-token.ts` fetches an access token from the mock
 OIDC issuer through the ordinary authorization-code flow, over plain HTTP.
-`apps/lets-park/api-e2e/src/api/auth.spec.ts` opens with three tests that use it:
+`apps/garage/api-e2e/src/api/auth.spec.ts` opens with three tests that use it:
 
 - `POST /api/rpc/me/get` with the token answers `200` and the seeded person's
   record;
@@ -12,7 +12,7 @@ OIDC issuer through the ordinary authorization-code flow, over plain HTTP.
 - the feed at `/api/calendar/<that person's icsToken>.ics` answers `200`
   `text/calendar`.
 
-`apps/lets-park/api-e2e/project.json` no longer passes `--passWithNoTests`.
+`apps/garage/api-e2e/project.json` no longer passes `--passWithNoTests`.
 
 ## Why
 
@@ -53,7 +53,7 @@ OIDC issuer through the ordinary authorization-code flow, over plain HTTP.
   2. the default token carries exactly `aud, azp, exp, iat, iss, jti, nbf, sub,
      tid` — **no `email`, no `name`** — so both are supplied through the form's
      *Optional claims JSON* field, the same way
-     `apps/lets-park/web-e2e/src/support/personas.ts` does through the browser
+     `apps/garage/web-e2e/src/support/personas.ts` does through the browser
      (`doc/decision/0180-*`). Without an `email`,
      `AuthUserService.findOrProvision` refuses the subject.
 - The assertions are on `email`, `name`, and the presence of `id` and `role` —

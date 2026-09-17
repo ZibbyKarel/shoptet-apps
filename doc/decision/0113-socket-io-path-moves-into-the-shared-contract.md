@@ -1,19 +1,19 @@
-# 0113 – `SOCKET_IO_PATH` moves into `@lets-park/contract/realtime`
+# 0113 – `SOCKET_IO_PATH` moves into `@garage/contract/realtime`
 
 **Date:** 2026-09-03 · **Status:** accepted · **Task:** 15, fix round 1
 
 ## What
 
 `SOCKET_IO_PATH` — Socket.io's own default HTTP endpoint, `/socket.io` — is now declared exactly
-once, in `libs/lets-park/contract/src/realtime/socket-path.ts`, and exported from
-`@lets-park/contract/realtime`. `apps/lets-park/api/src/realtime/realtime-io.adapter.ts` imports it rather
-than declaring its own copy, and `libs/lets-park/realtime-client/src/lib/socket.ts` derives
+once, in `libs/garage/contract/src/realtime/socket-path.ts`, and exported from
+`@garage/contract/realtime`. `apps/garage/api/src/realtime/realtime-io.adapter.ts` imports it rather
+than declaring its own copy, and `libs/garage/realtime-client/src/lib/socket.ts` derives
 `DEFAULT_SOCKET_PATH` — the name existing callers already use — from the same import instead of a
-second literal. `apps/lets-park/api/src/realtime/testing/realtime-test-client.ts`, the hand-built test peer
+second literal. `apps/garage/api/src/realtime/testing/realtime-test-client.ts`, the hand-built test peer
 that dials a real WebSocket against the assembled app, also now builds its URL from the same
 constant rather than a third hardcoded `/socket.io/`.
 
-`realtime-io.adapter.spec.ts` (new) and `libs/lets-park/realtime-client/src/lib/socket.spec.ts` (extended)
+`realtime-io.adapter.spec.ts` (new) and `libs/garage/realtime-client/src/lib/socket.spec.ts` (extended)
 each assert their own side's configured path against this one import.
 
 ## Why: two literals that agree are not a guarantee
@@ -27,7 +27,7 @@ constant, the client's `DEFAULT_SOCKET_PATH`, and a URL literal inside
 server's path alone (the review's probe `P2`) failed 44 tests, but only because the test harness
 happened to hardcode the *same* literal the adapter did; changing the *client's*
 `DEFAULT_SOCKET_PATH` alone would have failed **zero** tests on either side, because nothing in
-`apps/lets-park/api`'s suite reads it and nothing in `libs/lets-park/realtime-client`'s suite reads the adapter's
+`apps/garage/api`'s suite reads it and nothing in `libs/garage/realtime-client`'s suite reads the adapter's
 value.
 
 A Socket.io path mismatch between server and browser is not a degraded feature — it is a total
@@ -41,21 +41,21 @@ actually notice disagreeing.
 
 ## Why the contract, and why this was safe to do in a fix round
 
-`apps/lets-park/api` (`scope:api`) cannot import `libs/lets-park/realtime-client` (`scope:web`) — verified by the
+`apps/garage/api` (`scope:api`) cannot import `libs/garage/realtime-client` (`scope:web`) — verified by the
 original report's ESLint probe and re-verified by the review's own probe D
 (`@nx/enforce-module-boundaries` refuses it, correctly: the lib's entry point pulls React in). So
 the constant cannot live in either existing home without breaking that boundary. It can live in
-`@lets-park/contract/realtime`, which is `scope:shared`, carries no framework-specific
+`@garage/contract/realtime`, which is `scope:shared`, carries no framework-specific
 dependency, and both halves already import for the event registries — adding one more export to
 an entry point both sides already depend on is not a new dependency edge, only a new symbol on
 an existing one.
 
-This is a change to `libs/lets-park/contract`'s file set, which the original Task 15 report declined to
+This is a change to `libs/garage/contract`'s file set, which the original Task 15 report declined to
 make on the grounds that it is "a change to another task's file set." The controller for this fix
 round ruled explicitly that the risk of a silent realtime outage outweighs that boundary, and
 authorized lifting the constant as part of Task 15's fix round rather than waiting for a task that
 happens to reopen the contract. No event, payload, or ack shape changed — this is a transport-level
-constant, not a realtime event — so `libs/lets-park/contract`'s own contract-first guarantees (schemas,
+constant, not a realtime event — so `libs/garage/contract`'s own contract-first guarantees (schemas,
 `z.infer` types, the `no-orpc.spec.ts` module-graph walk) are untouched by it.
 
 ## How the guarantee is now enforced
@@ -64,18 +64,18 @@ Not by making the two sides unable to disagree in principle — nothing prevents
 reintroducing a private literal on one side — but by making that edit fail immediately, on the
 side that made it, without needing both processes deployed together:
 
-- `apps/lets-park/api/src/realtime/realtime-io.adapter.spec.ts` constructs a real `socket.io` `Server`
+- `apps/garage/api/src/realtime/realtime-io.adapter.spec.ts` constructs a real `socket.io` `Server`
   through `RealtimeIoAdapter` and asserts `server.opts.path === SOCKET_IO_PATH` (imported from
   the contract).
-- `libs/lets-park/realtime-client/src/lib/socket.spec.ts` asserts `DEFAULT_SOCKET_PATH === SOCKET_IO_PATH`
+- `libs/garage/realtime-client/src/lib/socket.spec.ts` asserts `DEFAULT_SOCKET_PATH === SOCKET_IO_PATH`
   (same import).
-- `apps/lets-park/api/src/realtime/testing/realtime-test-client.ts` — the peer every other realtime spec in
-  `apps/lets-park/api` connects with — now builds its connection URL from the same constant, so a real path
+- `apps/garage/api/src/realtime/testing/realtime-test-client.ts` — the peer every other realtime spec in
+  `apps/garage/api` connects with — now builds its connection URL from the same constant, so a real path
   mismatch between the adapter and the contract would also surface as every existing
   `realtime.gateway.spec.ts` / `realtime-handshake.spec.ts` test failing to connect at all, not
   just the two spec files above.
 
-A single test that imports both `apps/lets-park/api`'s adapter and `libs/lets-park/realtime-client` in one file is not
+A single test that imports both `apps/garage/api`'s adapter and `libs/garage/realtime-client` in one file is not
 possible — that is the same module boundary this decision works around — so the guarantee is
 necessarily two tests, one per side, rather than one. That is weaker than an impossible-to-violate
 type-level guarantee, but strictly stronger than the "two literals, no test" state this replaces.
@@ -90,5 +90,5 @@ import should ask why.
 
 **The value itself did not change.** This decision moves the constant's home; it does not revisit
 whether `/socket.io` (Socket.io's own default) is the right path. Changing the value is now a
-one-line edit in `libs/lets-park/contract/src/realtime/socket-path.ts` rather than a coordinated edit across
+one-line edit in `libs/garage/contract/src/realtime/socket-path.ts` rather than a coordinated edit across
 two packages, which is the point.

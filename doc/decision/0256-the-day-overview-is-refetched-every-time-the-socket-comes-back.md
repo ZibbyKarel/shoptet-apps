@@ -2,10 +2,10 @@
 
 ## What
 
-`useLotRealtime` (`apps/lets-park/web/src/lot/lot-screen/use-lot-realtime.ts`) watches
+`useLotRealtime` (`apps/garage/web/src/lot/lot-screen/use-lot-realtime.ts`) watches
 `useRealtime().status` and invalidates the `overview.day` query on every
 transition **into** `connected`. The transition is derived locally with a ref;
-`libs/lets-park/realtime-client` is unchanged.
+`libs/garage/realtime-client` is unchanged.
 
 ## Why
 
@@ -45,7 +45,7 @@ transition **into** `connected`. The transition is derived locally with a ref;
 ## How
 
 `useReconnectReconciliation(queryKey)`, a private hook at the foot of
-`use-lot-realtime.ts`. `apps/lets-park/web/src/lot/lot-screen/use-lot-realtime.spec.tsx` gains a
+`use-lot-realtime.ts`. `apps/garage/web/src/lot/lot-screen/use-lot-realtime.spec.tsx` gains a
 controllable `useRealtime` double and eight tests: reconnect after a drop,
 recovery from `rejected`, once per reconnect rather than once per render, twice
 for two drops, the cold-page-load case, the already-connected mount, the day

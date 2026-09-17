@@ -1,6 +1,6 @@
 # API operations – logging, probes, shutdown, security baseline
 
-This document describes the **operational baseline of `apps/lets-park/api`**: what happens at
+This document describes the **operational baseline of `apps/garage/api`**: what happens at
 startup, what gets logged, what the health probes answer, how the process terminates
 cleanly, and what the API guards on input. The source of truth is the code; when they
 disagree, trust the code.
@@ -13,13 +13,13 @@ Env variable configuration (including defaults) is in `doc/environment.md`.
 
 | area | where it lives | note |
 | --- | --- | --- |
-| fail-fast env validation | `apps/lets-park/api/src/env.ts` | Zod, runs inside `ConfigModule.forRoot({ validate })` |
-| structured logging | `apps/lets-park/api/src/logging/logger.options.ts` | `nestjs-pino`, JSON, `doc/decision/0036-*` |
-| health probes | `apps/lets-park/api/src/health/` | `@nestjs/terminus`, `doc/decision/0035-*` |
-| graceful shutdown | `apps/lets-park/api/src/shutdown/` | `GracefulShutdownService` |
-| global error filter | `apps/lets-park/api/src/common/filters/` | `doc/decision/0032-*`, `doc/decision/0033-*` |
-| rate limiting | `apps/lets-park/api/src/common/throttling/` | `@nestjs/throttler`, `doc/decision/0034-*` |
-| helmet, CORS, prefix, body limit | `apps/lets-park/api/src/configure-app.ts` | called by both `main.ts` and the tests |
+| fail-fast env validation | `apps/garage/api/src/env.ts` | Zod, runs inside `ConfigModule.forRoot({ validate })` |
+| structured logging | `apps/garage/api/src/logging/logger.options.ts` | `nestjs-pino`, JSON, `doc/decision/0036-*` |
+| health probes | `apps/garage/api/src/health/` | `@nestjs/terminus`, `doc/decision/0035-*` |
+| graceful shutdown | `apps/garage/api/src/shutdown/` | `GracefulShutdownService` |
+| global error filter | `apps/garage/api/src/common/filters/` | `doc/decision/0032-*`, `doc/decision/0033-*` |
+| rate limiting | `apps/garage/api/src/common/throttling/` | `@nestjs/throttler`, `doc/decision/0034-*` |
+| helmet, CORS, prefix, body limit | `apps/garage/api/src/configure-app.ts` | called by both `main.ts` and the tests |
 
 What's **not** here and isn't meant to be: Sentry, metrics, APM, alerting, Redis, BullMQ,
 or any message broker. Structured logging, probes, and graceful shutdown are operational
@@ -28,8 +28,8 @@ hygiene, not monitoring.
 ### How it's tested
 
 The HTTP wiring (prefix, helmet, CORS, parsers, shutdown hooks) is deliberately pulled out
-into `apps/lets-park/api/src/configure-app.ts`, so that `main.ts` and the tests call it through the
-**same function**. `apps/lets-park/api/src/app/http-pipeline.spec.ts` then starts a real Nest server
+into `apps/garage/api/src/configure-app.ts`, so that `main.ts` and the tests call it through the
+**same function**. `apps/garage/api/src/app/http-pipeline.spec.ts` then starts a real Nest server
 on a random port and fires real requests against it.
 
 This isn't cosmetic. Two bugs this baseline shipped with – a 413 returned as a 500, and an
@@ -58,7 +58,7 @@ Actual output (missing `DATABASE_URL`, `BODY_LIMIT` is `100` with no unit):
 [Nest] 41685  - 08/28/2026, 2:12:32 PM   ERROR [ExceptionHandler] Error: Invalid or missing environment variables for api. Fix these and restart:
   - DATABASE_URL: Invalid input: expected string, received undefined
   - BODY_LIMIT: must be a byte size with a unit, e.g. "100kb"
-    at Object.validateApiEnv [as validate] (dist/apps/lets-park/api/main.js:3098:15)
+    at Object.validateApiEnv [as validate] (dist/apps/garage/api/main.js:3098:15)
     …
 ```
 
@@ -71,7 +71,7 @@ Two things worth remembering here:
   See "Risk" in `doc/decision/0036-*`.
 
 Reproducing this without Docker: build (`npx nx build api`) and run
-`node dist/apps/lets-park/api/main.js` with an incomplete environment – instructions in
+`node dist/apps/garage/api/main.js` with an incomplete environment – instructions in
 `doc/environment.md`, the "Demonstrating fail-fast" section.
 
 ---
@@ -115,7 +115,7 @@ logged, not an oversight.
 record. In the example above, the request carried `authorization: Bearer secret-token` and
 `cookie: session=abc`; neither appears in the log. Careful: redaction is a list of
 **specific paths** – a new header carrying a secret has to be added by hand
-(`apps/lets-park/api/src/logging/logger.options.ts`).
+(`apps/garage/api/src/logging/logger.options.ts`).
 
 **A credential in the URL is a separate job.** The ICS feed
 (`GET /api/calendar/<token>.ics`, `doc/ics.md`) authenticates with a token in the path, and
@@ -123,7 +123,7 @@ a path reaches the log through four routes, not one: `req.url` and `req.params` 
 request line above, and `path` and `reason` in `ContractExceptionFilter`'s `Request
 rejected` line – `reason` because Nest's 404 message for an unrouted URL is
 `Cannot GET <url>`. All four go through `redactIcsToken`
-(`apps/lets-park/api/src/logging/redact-ics-token.ts`), which replaces the segment after
+(`apps/garage/api/src/logging/redact-ics-token.ts`), which replaces the segment after
 `/api/calendar/` with `[redacted]`, case-insensitively because Express's router matches
 paths case-insensitively. `req.params` is not redacted but **dropped**: what lands there is
 the logging middleware's own catch-all splat, a second copy of the URL in a shape no
@@ -167,7 +167,7 @@ Failure means: the orchestrator should **take the instance out of rotation**, no
 it. Signaled with HTTP **503** (`ServiceUnavailableException`).
 
 Response when the database is unreachable (HTTP 503, captured with a real request against
-the built application – `apps/lets-park/api/src/app/http-pipeline.spec.ts`):
+the built application – `apps/garage/api/src/app/http-pipeline.spec.ts`):
 
 ```json
 {"status":"error","info":{},"error":{"database":{"reason":"Database is unreachable","timeoutMs":3000,"status":"down"}},"details":{"database":{"reason":"Database is unreachable","timeoutMs":3000,"status":"down"}}}
@@ -213,7 +213,7 @@ connections → lets in-flight requests finish → calls `onModuleDestroy` (wher
 GracefulShutdownService.registerCloser
 ```
 
-(`apps/lets-park/api/src/shutdown/graceful-shutdown.service.ts`)
+(`apps/garage/api/src/shutdown/graceful-shutdown.service.ts`)
 
 Socket.io doesn't close itself. A live WebSocket isn't an "in-flight request", so the HTTP
 shutdown doesn't touch it, and the process hangs around until the orchestrator's kill
@@ -270,7 +270,7 @@ gets `SPOT_ALREADY_RESERVED` (409), not 500. Details and the full mapping table:
 `THROTTLE_TTL_MS` (default 300 / minute), globally via `APP_GUARD`.
 
 A stricter tier for endpoints **without a session** – the `StrictThrottle()` decorator in
-`apps/lets-park/api/src/common/throttling/throttle-tiers.ts` (`THROTTLE_STRICT_LIMIT` /
+`apps/garage/api/src/common/throttling/throttle-tiers.ts` (`THROTTLE_STRICT_LIMIT` /
 `THROTTLE_STRICT_TTL_MS`, default 20 / minute). **Task 14 applied it, and it is on exactly one
 route**: the personal ICS feed, which is the only endpoint reachable without a token at all
 (`doc/ics.md`).

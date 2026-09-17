@@ -129,7 +129,7 @@ export interface TextProps extends HTMLAttributes<HTMLElement> {
   /**
    * Tag rendered. **Defaults to `p`, not `span`.** Do not change this
    * default: two Playwright locators in
-   * `apps/lets-park/web-e2e/src/admin-window.spec.ts` (`targetMonthRow` /
+   * `apps/garage/web-e2e/src/admin-window.spec.ts` (`targetMonthRow` /
    * `rangeText`, lines 99 and 212) select `locator('p').nth(1)` and depend on
    * real `<p>` elements sitting in DOM order — a default of `span` would
    * silently break both without touching a single assertion string.
@@ -178,7 +178,7 @@ export interface TextProps extends HTMLAttributes<HTMLElement> {
  * default margin, and this component's whole point is that vertical rhythm
  * is owned by `Stack`'s `spacing`/`Box`'s `margin` — never by an invisible
  * UA default a caller has to know to fight. Checked against the app's
- * current headings before deciding this (`grep '<h[1-6]' apps/lets-park/web/src`):
+ * current headings before deciding this (`grep '<h[1-6]' apps/garage/web/src`):
  * every one of them already sets its own `mt-*`/`mb-*`/`m-0` explicitly or
  * sits inside a `Stack`/flex gap, so none was relying on the UA default —
  * `brand.tsx`'s own `m-0` on its `<h1>`/`<span>` wordmark becomes redundant

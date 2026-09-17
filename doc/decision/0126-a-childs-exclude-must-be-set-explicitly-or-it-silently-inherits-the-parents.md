@@ -2,7 +2,7 @@
 
 ## What
 
-`apps/lets-park/web/tsconfig.spec.json` extends `apps/lets-park/web/tsconfig.json` and, until
+`apps/garage/web/tsconfig.spec.json` extends `apps/garage/web/tsconfig.json` and, until
 this fix, declared no `exclude` of its own. TypeScript's `extends` merges
 `compilerOptions` but does not merge `include`/`exclude`/`files` — a field a
 child omits is inherited from the parent **whole**, not defaulted to empty.
@@ -10,8 +10,8 @@ When Task 24's fix round widened the parent's `exclude` to also match
 `.spec.tsx`/`.test.tsx` (`doc/decision`'s own commit history, round 2 of that
 fix — see the fix report), the child inherited that widened glob too. The
 child's own `include` lists exactly those same patterns, so the two
-cancelled out: `tsc --listFiles -p apps/lets-park/web/tsconfig.spec.json` went from
-listing every spec/test file under `apps/lets-park/web/src` to listing **zero** of
+cancelled out: `tsc --listFiles -p apps/garage/web/tsconfig.spec.json` went from
+listing every spec/test file under `apps/garage/web/src` to listing **zero** of
 them, and the target stayed green throughout, because an empty TypeScript
 program has nothing to report errors about.
 
@@ -27,12 +27,12 @@ program — the identical "Property `#private` in type `QueryClient` refers to
 a different member" failure round 2 diagnosed in the app program, now
 reappearing in the spec program because it was the first time anything
 actually type-checked there. Fixed by changing `"module"` to `"esnext"`,
-matching the app program. This is safe at runtime: `apps/lets-park/web/jest.config.cts`
+matching the app program. This is safe at runtime: `apps/garage/web/jest.config.cts`
 builds its transform through `next/jest`, which constructs its own SWC
 options programmatically (`next/dist/build/swc/jest-transformer.js`) rather
 than reading this tsconfig — and unlike several other projects in this repo
 (`api`, `contract`, `database`, and others use `ts-jest`, which does read a
-`tsconfig`), `apps/lets-park/web` never uses `ts-jest` at all. This tsconfig is
+`tsconfig`), `apps/garage/web` never uses `ts-jest` at all. This tsconfig is
 `"noEmit": true` and used only for `tsc`'s static check, so its `module`
 setting has no bearing on what Jest actually executes here.
 
@@ -62,14 +62,14 @@ invocations (`tsconfig.json`, then `tsconfig.spec.json`) but only prints
 errors, never file counts — an empty program is indistinguishable from a
 clean one in the target's own output. The only way to have caught it earlier
 was the check the re-reviewer actually ran:
-`tsc --listFiles -p apps/lets-park/web/tsconfig.spec.json`, counted against the known
-number of `.spec.*`/`.test.*` files under `apps/lets-park/web/src`, and a canary — a
+`tsc --listFiles -p apps/garage/web/tsconfig.spec.json`, counted against the known
+number of `.spec.*`/`.test.*` files under `apps/garage/web/src`, and a canary — a
 deliberate, unmissable type error injected into a file the program is
 supposed to cover, proving the target goes red when it should.
 
 ## Consequences
 
-- Whoever next widens `apps/lets-park/web/tsconfig.json`'s `include`/`exclude` (or adds
+- Whoever next widens `apps/garage/web/tsconfig.json`'s `include`/`exclude` (or adds
   a new child tsconfig anywhere that extends a config with a non-trivial
   `exclude`) needs to check every child's own `exclude`, not assume `extends`
   merges them. This ADR is the pointer; `tsconfig.spec.json`'s new
@@ -87,20 +87,20 @@ supposed to cover, proving the target goes red when it should.
 ## Verified by
 
 ```
-rtk proxy npx tsc --noEmit -p apps/lets-park/web/tsconfig.spec.json --listFilesOnly \
-  | grep -c 'apps/lets-park/web/src/.*\.\(spec\|test\)\.'
+rtk proxy npx tsc --noEmit -p apps/garage/web/tsconfig.spec.json --listFilesOnly \
+  | grep -c 'apps/garage/web/src/.*\.\(spec\|test\)\.'
 ```
-→ `18`, matching every `.spec.ts(x)`/`.test.ts(x)` file under `apps/lets-park/web/src`
+→ `18`, matching every `.spec.ts(x)`/`.test.ts(x)` file under `apps/garage/web/src`
 (confirmed by listing them individually, not just counting).
 
 A deliberate, unmissable type error
 (`const FIXED_TODAY: number = '2026-01-31';` in `lot-screen.spec.tsx`, a
 string literal assigned to a `number`) was injected and confirmed to fail
-`nx run web:typecheck` (`tsc --noEmit -p apps/lets-park/web/tsconfig.spec.json` exits
+`nx run web:typecheck` (`tsc --noEmit -p apps/garage/web/tsconfig.spec.json` exits
 non-zero, attributing 6 errors to that line), then reverted.
 
-`tsc --noEmit -p apps/lets-park/web/tsconfig.json` (the app program alone) and
-`tsc --noEmit -p apps/lets-park/web/tsconfig.spec.json` (the spec program alone) each
+`tsc --noEmit -p apps/garage/web/tsconfig.json` (the app program alone) and
+`tsc --noEmit -p apps/garage/web/tsconfig.spec.json` (the spec program alone) each
 independently exit `0` with the mutation reverted — the original leak (spec
 files inside the app program) has not returned, and the app program was
 never the one with the `module`/`moduleResolution` mismatch, so it needed no

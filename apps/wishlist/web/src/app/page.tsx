@@ -1,10 +1,10 @@
-import { Button, Card, Container, Stack } from '@lets-park/design-system/primitives';
+import { Button, Card, Container, Stack } from '@garage/design-system/primitives';
 
 /**
  * The scaffold's one screen.
  *
  * It is a hello world with a job: everything on it comes from
- * `@lets-park/design-system`, so rendering it proves the whole shared chain
+ * `@garage/design-system`, so rendering it proves the whole shared chain
  * resolves from a second application — the TypeScript path alias, the Nx
  * module boundary (`type:app` may depend on anything, `scope:web` on
  * `scope:web` and `scope:shared`), the Tailwind v4 `@source` scan that has to

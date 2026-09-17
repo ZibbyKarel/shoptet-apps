@@ -1,7 +1,7 @@
 /**
  * The height scale shared by every control that sits on a form row — Button,
  * Input, Select, Stepper. The pixel values live in
- * `@lets-park/design-system/tokens` (`--control-h-*`); this module only names
+ * `@garage/design-system/tokens` (`--control-h-*`); this module only names
  * the steps and picks the matching horizontal padding and type size, both of
  * which come from the ordinary `--space-*` / `--fs-*` scales.
  */

@@ -14,7 +14,7 @@ carries an entry for it, so nothing enforces a wrapper that no longer exists.
 
 This is a deliberate, explicit override of `plan.md`'s wrapper mandate,
 requested by the repository owner: there is exactly one consumer of TanStack
-Query in this workspace (`apps/lets-park/web`), so a wrapper lib bought no swappability
+Query in this workspace (`apps/garage/web`), so a wrapper lib bought no swappability
 it wasn't already getting for free, and cost an extra package, an extra Jest
 environment, and an extra dual-package-hazard workaround (`doc/decision/0038-*`)
 for no second consumer to justify it.
@@ -26,16 +26,16 @@ actually used, rather than to one replacement package:
 
 | old (`libs/query`)                                                                         | new                                                                                  | why there                                                                                                                                                                                                                        |
 | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `createApiQueryUtils` (the oRPC ↔ TanStack Query bridge, built on `@orpc/tanstack-query`) | `libs/shared/api-client/src/lib/api-query.ts`, exported from `@lets-park/api-client`        | `libs/shared/api-client` already owns the oRPC client and already allow-lists `@orpc/tanstack-query` as a `type:util` companion package (same precedent as `@hookform/resolvers`); the bridge is oRPC-shaped, not TanStack-Query-shaped |
-| `createQueryClient` + the retry policy (`shouldRetryQuery`, `MAX_QUERY_RETRIES`)           | `apps/lets-park/web/src/shell/query/query-client.ts` (+ `retry.ts`)                            | single consumer, app-level policy — `apps/lets-park/web/src/shell/` already hosts other single-consumer app utilities (e.g. `api-provider/`)                                                                                               |
+| `createApiQueryUtils` (the oRPC ↔ TanStack Query bridge, built on `@orpc/tanstack-query`) | `libs/shared/api-client/src/lib/api-query.ts`, exported from `@garage/api-client`        | `libs/shared/api-client` already owns the oRPC client and already allow-lists `@orpc/tanstack-query` as a `type:util` companion package (same precedent as `@hookform/resolvers`); the bridge is oRPC-shaped, not TanStack-Query-shaped |
+| `createQueryClient` + the retry policy (`shouldRetryQuery`, `MAX_QUERY_RETRIES`)           | `apps/garage/web/src/shell/query/query-client.ts` (+ `retry.ts`)                            | single consumer, app-level policy — `apps/garage/web/src/shell/` already hosts other single-consumer app utilities (e.g. `api-provider/`)                                                                                               |
 | `QueryProvider`                                                                            | deleted; call sites use `@tanstack/react-query`'s own `QueryClientProvider` directly | a provider that only forwarded a client to the real provider had nothing left to add once the import ban was lifted                                                                                                              |
 
 Tests moved with their code: key-shape and delegation tests that don't need a
 real `QueryClient` are in `libs/shared/api-client` (`api-query.spec.ts`); tests that
 need both a real client and the bridge together — the branch-key invalidation
 tests, and the end-to-end "component reads/mutates/invalidates through the
-real stack" test — live in `apps/lets-park/web/src/shell/query/` (`query-client.spec.ts`,
-`query-integration.spec.tsx`), because only `apps/lets-park/web`'s `tsconfig.json` uses
+real stack" test — live in `apps/garage/web/src/shell/query/` (`query-client.spec.ts`,
+`query-integration.spec.tsx`), because only `apps/garage/web`'s `tsconfig.json` uses
 `module: esnext`; constructing a real `QueryClient` next to
 `@orpc/tanstack-query` output under a `commonjs`-resolving tsconfig is exactly
 the dual-package hazard `doc/decision/0038-*` documents, so the split keeps
@@ -60,7 +60,7 @@ outweighs a mistake that a code-review glance at "why is this file importing
 
 `npx nx run api-client:test`, `npx nx run web:test`, `npx nx run web:lint`,
 `npx nx run api-client:lint` and `npx nx run web:typecheck` all pass. 743
-tests total in `apps/lets-park/web` (up from 738 before this branch — 5 more from the
+tests total in `apps/garage/web` (up from 738 before this branch — 5 more from the
 ported end-to-end usage test), plus `api-client`'s own suite. `libs/query` no
 longer appears in `nx show projects`.
 

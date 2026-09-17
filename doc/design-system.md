@@ -64,7 +64,7 @@ libs/shared/design-system/
       tokens.ts                   – DESIGN_TOKENS = everything above, combined
       generate-css.ts               – generateTokensCss(tokens) -> CSS text (a pure function)
       generate-css.spec.ts           – test that the committed tokens.css == generateTokensCss(...)
-    index.ts                          – public API (@lets-park/design-system/tokens)
+    index.ts                          – public API (@garage/design-system/tokens)
   scripts/
     build-tokens-css.ts                 – writes generateTokensCss(...) into assets/tokens.css
   assets/
@@ -133,9 +133,9 @@ test exists to catch.
 `assets/theme.css` is the entry CSS file for consumers. The first consumer is
 the primitives' Storybook, which imports it via a **relative path** –
 `@import '../../tokens/assets/theme.css'` in `.storybook/preview.css`. Reason:
-`@lets-park/design-system/tokens` is only a TS `tsconfig` path alias for
+`@garage/design-system/tokens` is only a TS `tsconfig` path alias for
 module resolution in JS/TS; neither CSS `@import` nor bundlers understand it
-automatically. How `theme.css` reaches `apps/lets-park/web`'s output CSS (a relative
+automatically. How `theme.css` reaches `apps/garage/web`'s output CSS (a relative
 path vs. an `exports` mapping in the lib's `package.json`) is decided by
 whichever task first styles the web app:
 
@@ -176,9 +176,9 @@ whichever task first styles the web app:
   that's reserved for `@container` query breakpoints, a different concept.
   Use them directly as a CSS variable, e.g. `max-w-[var(--container)]`.
 - `tailwindcss` and `@tailwindcss/vite` are already in the repo (added by
-  Task 7 for Storybook). The PostCSS/Next.js pipeline in `apps/lets-park/web` is still
+  Task 7 for Storybook). The PostCSS/Next.js pipeline in `apps/garage/web` is still
   outside the scope of this document – it belongs to the task that touches
-  `apps/lets-park/web`.
+  `apps/garage/web`.
 
 ## The occupied-spot car color – why it lives elsewhere
 
@@ -205,7 +205,7 @@ which is why `FONT_FAMILIES.sans` always has a working fallback (`Neue Haas Grot
 
 # Primitives (`libs/shared/design-system/src/primitives`)
 
-The entry point `@lets-park/design-system/primitives`, in the `design-system`
+The entry point `@garage/design-system/primitives`, in the `design-system`
 project (tags `type:ui`, `scope:web`). **Fourteen components** in two batches – nine
 form controls (Task 7) and five overlay/navigation ones (Task 8) – each with a
 **story alongside the component** and a Jest + Testing Library test (187 tests
@@ -238,7 +238,7 @@ libs/shared/design-system/
 
 The last three rows above (`text.tsx` through `spinner.tsx`) and `list.tsx`
 were added, and `Badge`/`Box`/`Stack`/`Card`/`Input`/`Select` extended, while
-removing every Tailwind class-name string from `apps/lets-park/web/src` –
+removing every Tailwind class-name string from `apps/garage/web/src` –
 `doc/decision/0311-the-application-layer-carries-no-tailwind.md`. The
 "Fourteen components" count and the two-batch (Task 7 / Task 8) history above
 predate that work and predate the layout primitives (`Box`, `Stack`, `Card`,
@@ -697,7 +697,7 @@ prevent.
 
 # Compounds (`libs/shared/design-system/src/compounds`)
 
-The entry point `@lets-park/design-system/compounds`, in the `design-system`
+The entry point `@garage/design-system/compounds`, in the `design-system`
 project (tags `type:ui`, `scope:web`). **Three components** (Task 22), each with a story and a Jest +
 Testing Library spec alongside it (47 tests across 3 suites).
 

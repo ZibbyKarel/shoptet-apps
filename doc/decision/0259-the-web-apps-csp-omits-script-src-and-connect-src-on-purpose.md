@@ -2,7 +2,7 @@
 
 ## What
 
-`apps/lets-park/web/next.config.ts` sets `poweredByHeader: false` and a `headers()` rule
+`apps/garage/web/next.config.ts` sets `poweredByHeader: false` and a `headers()` rule
 matching `/:path*` that sends `Content-Security-Policy`, `X-Frame-Options`,
 `X-Content-Type-Options` and `Referrer-Policy`. The policy is:
 
@@ -45,7 +45,7 @@ base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'
 
 ## How
 
-`apps/lets-park/web/next.config.ts`. `apps/lets-park/web/src/security-headers.spec.ts` asserts the
+`apps/garage/web/next.config.ts`. `apps/garage/web/src/security-headers.spec.ts` asserts the
 rule matches every path and carries each header, and — the load-bearing one —
 asserts the *absence* of `script-src`, `connect-src`, `default-src` and
 `unsafe-inline`, so anyone adding either directive has to come to that test and

@@ -4,7 +4,7 @@
 
 ## What
 
-`libs/lets-park/shared-types` is split into two layers with a sharp boundary:
+`libs/garage/shared-types` is split into two layers with a sharp boundary:
 
 - **`date-only.ts` – purely calendar-based.** Shifting days, day differences,
   comparisons, start/end of month, day of week. It knows nothing about any

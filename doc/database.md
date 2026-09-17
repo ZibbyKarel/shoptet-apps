@@ -1,11 +1,11 @@
 # Database – schema, migrations, seed, backups
 
-PostgreSQL 17 + Prisma 7. Everything database-related lives in `libs/lets-park/database`
+PostgreSQL 17 + Prisma 7. Everything database-related lives in `libs/garage/database`
 (tag `type:data`, `scope:api`); the CLI configuration is in `prisma.config.ts`
 at the repo root.
 
 The source of truth for **the shape of the data** is the contract
-(`libs/lets-park/contract/src/schemas/entities.ts`). The Prisma schema mirrors it – the
+(`libs/garage/contract/src/schemas/entities.ts`). The Prisma schema mirrors it – the
 same field names, the same nullability, the same enums. Where storage
 differs, it's deliberate and described below in the section
 [Where storage differs from the contract](#where-storage-differs-from-the-contract).
@@ -17,13 +17,13 @@ differs, it's deliberate and described below in the section
 | file                                                      | what it's for                                                                                     |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `prisma.config.ts` (root)                                 | Prisma CLI configuration: the path to the schema, to migrations, `DATABASE_URL`, the seed command |
-| `libs/lets-park/database/prisma/schema.prisma`            | the domain model                                                                                  |
-| `libs/lets-park/database/prisma/migrations/`              | SQL migrations + `migration_lock.toml`                                                            |
-| `libs/lets-park/database/src/generated/prisma/`           | the **generated** Prisma Client (committed, never hand-edited)                                    |
-| `libs/lets-park/database/src/lib/create-prisma-client.ts` | the single place the client is created (the driver adapter)                                       |
-| `libs/lets-park/database/src/lib/seed-data.ts`            | seed data as plain data (testable without a database)                                             |
-| `libs/lets-park/database/src/scripts/seed.ts`             | the script that writes it (idempotent)                                                            |
-| `libs/lets-park/database/src/index.ts`                    | the public entry point, `@lets-park/database`                                                     |
+| `libs/garage/database/prisma/schema.prisma`            | the domain model                                                                                  |
+| `libs/garage/database/prisma/migrations/`              | SQL migrations + `migration_lock.toml`                                                            |
+| `libs/garage/database/src/generated/prisma/`           | the **generated** Prisma Client (committed, never hand-edited)                                    |
+| `libs/garage/database/src/lib/create-prisma-client.ts` | the single place the client is created (the driver adapter)                                       |
+| `libs/garage/database/src/lib/seed-data.ts`            | seed data as plain data (testable without a database)                                             |
+| `libs/garage/database/src/scripts/seed.ts`             | the script that writes it (idempotent)                                                            |
+| `libs/garage/database/src/index.ts`                    | the public entry point, `@garage/database`                                                     |
 
 `prisma.config.ts` sits at the root because that's where the Prisma CLI looks
 for configuration, and it's also where the root `.env` lives (see
@@ -158,7 +158,7 @@ sequentially scan the whole table).
 The reservation day is a calendar day in `Europe/Prague`, not an instant.
 `TIMESTAMP` would anchor it to a timezone, and the day would shift depending
 on the client's and the server's zone – exactly the class of bug Task 3's
-work in `libs/lets-park/shared-types` addressed
+work in `libs/garage/shared-types` addressed
 (`doc/decision/0013-calendar-arithmetic-and-single-timezone-boundary.md`). In
 the contract it's `z.iso.date()` (`YYYY-MM-DD`); in Postgres it's `DATE`; and
 the **only** place the conversion happens is the service layer in Task 10.
@@ -291,7 +291,7 @@ More detail: `doc/decision/0027-hard-delete-and-append-only-auditlog.md`.
 ## Where storage differs from the contract
 
 Everything else is 1:1 (and guarded by
-`libs/lets-park/database/src/lib/schema-contract-parity.spec.ts`).
+`libs/garage/database/src/lib/schema-contract-parity.spec.ts`).
 
 | field                                        | contract (wire)                            | storage                      | why                                                                                                                                                                                                                                         |
 | -------------------------------------------- | ------------------------------------------ | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -323,17 +323,17 @@ cp .env.example .env      # once
 ```
 
 Every command runs **from the repo root** – `prisma.config.ts` resolves the
-paths into `libs/lets-park/database` itself.
+paths into `libs/garage/database` itself.
 
 | command                                | what it does                                                                                    |
 | -------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `npx prisma validate`                  | validates the schema (no database needed)                                                       |
 | `npx prisma format`                    | formats `schema.prisma` (no database needed)                                                    |
-| `npx prisma generate`                  | regenerates the client into `libs/lets-park/database/src/generated/prisma` (no database needed) |
+| `npx prisma generate`                  | regenerates the client into `libs/garage/database/src/generated/prisma` (no database needed) |
 | `npx prisma migrate dev --name <name>` | dev: creates a new migration and applies it                                                     |
 | `npx prisma migrate deploy`            | production/CI: applies existing migrations, generates nothing                                   |
 | `npx prisma migrate status`            | what's applied and what's missing                                                               |
-| `npx prisma db seed`                   | runs `libs/lets-park/database/src/scripts/seed.ts`                                              |
+| `npx prisma db seed`                   | runs `libs/garage/database/src/scripts/seed.ts`                                              |
 | `npx prisma studio`                    | a data browser (dev)                                                                            |
 
 A typical first run:
@@ -401,13 +401,13 @@ A single-instance deployment, no managed backup – the backup is `pg_dump`.
 
 ```bash
 # full backup (custom format, compressed; best for pg_restore)
-pg_dump "$DATABASE_URL" --format=custom --file=lets-park-$(date +%F).dump
+pg_dump "$DATABASE_URL" --format=custom --file=garage-$(date +%F).dump
 
 # data only, no schema (migrations can restore the schema)
-pg_dump "$DATABASE_URL" --format=custom --data-only --file=lets-park-data-$(date +%F).dump
+pg_dump "$DATABASE_URL" --format=custom --data-only --file=garage-data-$(date +%F).dump
 
 # restore into an empty database (full dump, schema included)
-pg_restore --dbname="$DATABASE_URL" --clean --if-exists lets-park-2026-08-28.dump
+pg_restore --dbname="$DATABASE_URL" --clean --if-exists garage-2026-08-28.dump
 
 # restore data into a database where `prisma migrate deploy` has already run.
 # The init migration inserted `ReservationWindowSettings (id = 1)` there itself,
@@ -416,7 +416,7 @@ pg_restore --dbname="$DATABASE_URL" --clean --if-exists lets-park-2026-08-28.dum
 # silently discarded (see below).
 psql "$DATABASE_URL" -c 'DELETE FROM "ReservationWindowSettings";'
 psql "$DATABASE_URL" -c 'DELETE FROM "ReservationLimitSettings";'
-pg_restore --dbname="$DATABASE_URL" --data-only lets-park-data-2026-08-28.dump
+pg_restore --dbname="$DATABASE_URL" --data-only garage-data-2026-08-28.dump
 ```
 
 From a running container with no local `pg_dump`:
@@ -424,7 +424,7 @@ From a running container with no local `pg_dump`:
 ```bash
 docker compose exec -T postgres \
   sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom' \
-  > lets-park-$(date +%F).dump
+  > garage-$(date +%F).dump
 ```
 
 `sh -c '…'`, in single quotes, so that `$POSTGRES_USER` and `$POSTGRES_DB` are

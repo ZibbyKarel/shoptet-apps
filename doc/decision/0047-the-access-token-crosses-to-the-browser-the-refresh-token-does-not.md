@@ -1,6 +1,6 @@
 # 0047 – The access token crosses to the browser; the refresh token never does
 
-**Date:** 2026-09-02 · **Status:** accepted · **Task:** 20 (`libs/lets-park/auth`)
+**Date:** 2026-09-02 · **Status:** accepted · **Task:** 20 (`libs/garage/auth`)
 
 ## What
 
@@ -14,7 +14,7 @@ the browser the access token exists only as React state inside `SessionProvider`
 
 ## Why
 
-**The browser genuinely needs the access token.** `libs/lets-park/realtime-client` (Task 21) opens a
+**The browser genuinely needs the access token.** `libs/garage/realtime-client` (Task 21) opens a
 Socket.io connection from the browser and puts the token in the handshake; the API validates
 it with the same JWKS logic as the REST guard (Task 11, Task 15). There is no arrangement in
 which that token stays server-side. So the honest question is not "does it cross?" but "what
@@ -41,12 +41,12 @@ since been renewed.
 
 ## How
 
-`projectSession` in `libs/lets-park/auth/src/lib/config.ts` rebuilds `accessToken`/`error` from the
+`projectSession` in `libs/garage/auth/src/lib/config.ts` rebuilds `accessToken`/`error` from the
 token rather than merging over whatever the incoming session held — which is also what
 guarantees a stale token cannot survive a failed refresh (`doc/decision/0044-*`).
 
 Secrets stay server-side by construction: `AUTH_SECRET` and `AUTH_OKTA_CLIENT_SECRET` are
-passed to `createAuth` as arguments, are validated in `apps/lets-park/web/src/env.ts`, and carry no
+passed to `createAuth` as arguments, are validated in `apps/garage/web/src/env.ts`, and carry no
 `NEXT_PUBLIC_` prefix — the only thing that puts a value in a Next.js client bundle.
 
 Verified three ways:

@@ -75,9 +75,9 @@ The spec program now resolves modules differently from how `ts-jest` would if th
 adopted it, so a construct that typechecks here could fail there. Low: babel-jest strips
 types without checking them, so the two are not currently required to agree — but a future
 migration of `libs/query` to ts-jest has to revisit this file rather than assume it matches
-`libs/lets-park/contract`'s.
+`libs/garage/contract`'s.
 
 The wider risk is that the same dual-package split reappears in the **next** lib that pairs an
-ESM-only package with a dual one — `libs/lets-park/realtime-client` (Task 21, `socket.io-client`) is the
+ESM-only package with a dual one — `libs/garage/realtime-client` (Task 21, `socket.io-client`) is the
 likely next case. The symptom is unmistakable once seen (`#private … refers to a different
 member`), and the fix is this file; the trap is reading it as a generics problem and casting.

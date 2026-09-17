@@ -21,7 +21,7 @@ Worked case, already set up by `reservations.db.spec.ts`: a user queued for spot
 A and spot B on the same day; A's holder cancels; the user is promoted onto A
 and their entry on **B is deleted**. B's queue went 1 → 0 and no event said so.
 
-`apps/lets-park/web/src/lot/lot-screen/day-overview-cache.ts` patches `waitlistCount` only for the
+`apps/garage/web/src/lot/lot-screen/day-overview-cache.ts` patches `waitlistCount` only for the
 cell an event names, so every open day view kept showing B's badge as "1
 waiting", and anyone queued behind the promoted user on B kept a
 `viewerWaitlistPosition` one too high — until an unrelated event or a navigation

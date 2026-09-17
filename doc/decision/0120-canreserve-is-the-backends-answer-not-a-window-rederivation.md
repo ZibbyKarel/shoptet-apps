@@ -77,7 +77,7 @@ modal offers the action anyway.
 
 ## Verified by
 
-`apps/lets-park/web/src/lot/lot-view.spec.ts`, "reads canReserve from the payload rather
+`apps/garage/web/src/lot/lot-view.spec.ts`, "reads canReserve from the payload rather
 than re-deriving it from the window", which asserts **both** directions
 (`canReserve: false, isAdmin: true` is still `window-locked`). Measured, not
 estimated (mutants M2 and M18 in the task report): mutating `toSpotView`'s

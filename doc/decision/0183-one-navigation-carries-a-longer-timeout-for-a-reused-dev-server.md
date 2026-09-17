@@ -2,7 +2,7 @@
 
 ## What
 
-`openSettings()` in `apps/lets-park/web-e2e/src/support/lot-page.ts` waits up to
+`openSettings()` in `apps/garage/web-e2e/src/support/lot-page.ts` waits up to
 `FIRST_ROUTE_VISIT_TIMEOUT_MS` (30 s) for `/settings` and for its modal.
 Everything else in the suite uses Playwright's 5 s default. The global `expect`
 timeout is **not** raised, and no `waitForTimeout` is used anywhere.
@@ -57,10 +57,10 @@ are different bugs, and the failure report should say which one happened.
 
 ## How
 
-- `apps/lets-park/web-e2e/src/support/lot-page.ts` — `FIRST_ROUTE_VISIT_TIMEOUT_MS` and
+- `apps/garage/web-e2e/src/support/lot-page.ts` — `FIRST_ROUTE_VISIT_TIMEOUT_MS` and
   `openSettings()`.
-- `apps/lets-park/web-e2e/src/ics-feed.spec.ts` — the only caller.
-- `apps/lets-park/web-e2e/playwright.config.mts` — `retries: 0`. A flake is a bug here; a
+- `apps/garage/web-e2e/src/ics-feed.spec.ts` — the only caller.
+- `apps/garage/web-e2e/playwright.config.mts` — `retries: 0`. A flake is a bug here; a
   retry would hide exactly the failure this record is about.
 
 ## Risk

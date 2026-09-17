@@ -5,8 +5,8 @@
 
 ## What
 
-`apps/lets-park/web/eslint.config.mjs` now bans `className` — and, by the same
-selector, `wrapperClassName` — anywhere under `apps/lets-park/web/src`:
+`apps/garage/web/eslint.config.mjs` now bans `className` — and, by the same
+selector, `wrapperClassName` — anywhere under `apps/garage/web/src`:
 
 ```js
 'no-restricted-syntax': [
@@ -21,7 +21,7 @@ selector, `wrapperClassName` — anywhere under `apps/lets-park/web/src`:
 
 Every Tailwind utility that used to sit in app markup has moved into either a
 design-system primitive/compound or, for the handful of things no primitive
-can express, hand-written CSS in `global.css`. `apps/lets-park/web/src/app/global.css`
+can express, hand-written CSS in `global.css`. `apps/garage/web/src/app/global.css`
 no longer names its own `src` as a Tailwind source at all:
 
 ```css
@@ -33,7 +33,7 @@ Only the two design-system layers are scanned. The app's own `@source '../../src
 line — the one the design system's Storybook still carries for the same reason
 (`doc/design-system.md`, "Wiring into Tailwind v4") — is gone from this file,
 and `global.css`'s own comment states why: with the rule enforced, no Tailwind
-utility class-name string can exist under `apps/lets-park/web/src` any more,
+utility class-name string can exist under `apps/garage/web/src` any more,
 so there is nothing left for the scanner to find there. Removing the line is
 the stronger of the two proofs available — a utility that crept back into app
 markup would simply not be emitted, rather than passing lint and quietly
@@ -69,7 +69,7 @@ Flat ESLint config replaces a rule's whole option array for a later matching
 block; it does not merge it. A block that added the `className` selector
 without repeating the root config's wrapper-library entries would have
 silently turned that enforcement off for everything under
-`apps/lets-park/web/src` — the dynamic-`import()` half of the wrapper ban that
+`apps/garage/web/src` — the dynamic-`import()` half of the wrapper ban that
 a static read of the file cannot see is missing.
 
 ## How it was probed, not just read

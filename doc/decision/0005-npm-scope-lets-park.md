@@ -8,9 +8,9 @@ Every lib in the workspace lives under the `@lets-park` scope:
 
 | `plan.md` says | Reality |
 | --- | --- |
-| `@myorg/contract` | `@lets-park/contract` |
-| `@myorg/contract/realtime` | `@lets-park/contract/realtime` |
-| `@myorg/design-system/primitives` | `@lets-park/design-system/primitives` |
+| `@myorg/contract` | `@garage/contract` |
+| `@myorg/contract/realtime` | `@garage/contract/realtime` |
+| `@myorg/design-system/primitives` | `@garage/design-system/primitives` |
 | … | … |
 
 ## Why
@@ -23,7 +23,7 @@ The user confirmed the choice.
 
 The scope is set in Task 1 (root `package.json`, `nx.json`, path aliases in
 `tsconfig.base.json`, and generator defaults), so every lib created in later tasks
-falls under `@lets-park/*` automatically.
+falls under `@garage/*` automatically.
 
 ## Risk if this is wrong
 

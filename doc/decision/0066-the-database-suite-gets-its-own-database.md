@@ -6,9 +6,9 @@
 
 `nx run api:test-db` now creates a throwaway PostgreSQL database for the run, applies the committed
 migrations to it, points `DATABASE_URL` at it for every spec, and drops it afterwards
-(`apps/lets-park/api/src/testing/database/`, wired as Jest's `globalSetup` / `globalTeardown`).
+(`apps/garage/api/src/testing/database/`, wired as Jest's `globalSetup` / `globalTeardown`).
 
-The developer's seeded `lets_park` is never written to. Task 12's
+The developer's seeded `garage` is never written to. Task 12's
 `database-contract.db.spec.ts` is carried along and keeps its own rollback discipline; the two are
 complementary, not alternatives.
 
@@ -45,7 +45,7 @@ would break production breaks this suite too.
 
 - `test-database.ts` — creates, migrates and drops. Database names are generated, matched against
   `^[a-z][a-z0-9_]*$` before being interpolated into `CREATE`/`DROP DATABASE` (which take no bound
-  parameters), and prefixed `lets_park_dbspec_`.
+  parameters), and prefixed `garage_dbspec_`.
 - **Leaks heal themselves.** A run killed between setup and teardown leaves its database behind, so
   setup drops every database matching the prefix before creating its own — with `WITH (FORCE)`, to
   terminate connections a crashed run left open.

@@ -90,7 +90,7 @@ above); it is worth stating so that it is not rediscovered later as a bug.
 
 ## What was measured
 
-`apps/lets-park/api/src/database/database-contract.db.spec.ts` asserts all three cells of
+`apps/garage/api/src/database/database-contract.db.spec.ts` asserts all three cells of
 the constraint against a real PostgreSQL 17: a row with neither `userId` nor
 `guestName` is rejected, a row with both is rejected, and two guest rows on
 different spots on the same day are accepted in the same transaction. `npx nx

@@ -8,7 +8,7 @@ to change them.
 
 This record used to say the opposite. An earlier version of it, titled *"The
 e2e API gets throttle limits that suit a test run"*, described a
-`webServer[0].env` block in `apps/lets-park/web-e2e/playwright.config.mts` setting
+`webServer[0].env` block in `apps/garage/web-e2e/playwright.config.mts` setting
 `THROTTLE_LIMIT=10000` and `THROTTLE_STRICT_LIMIT=1000`. **Those two variables
 never reached the API.** The block has been removed and this record rewritten to
 describe what happens.
@@ -112,7 +112,7 @@ the suite:
 
 Because the honest options are all worse than documenting the truth.
 
-- **Setting them in `apps/lets-park/api/project.json`'s `serve` target** would give every
+- **Setting them in `apps/garage/api/project.json`'s `serve` target** would give every
   developer's `npm run dev` a 10000/minute throttler. That is a production-shaped
   guard silently disabled in the environment where it is most likely to catch a
   runaway client.
@@ -131,10 +131,10 @@ production-likeness to get it.
 
 ## How
 
-- `apps/lets-park/web-e2e/playwright.config.mts` — `webServer[0]` has no `env` block, and
+- `apps/garage/web-e2e/playwright.config.mts` — `webServer[0]` has no `env` block, and
   a comment saying why one would not work.
 - `doc/testing.md` — the symptom, and the two remedies.
-- Nothing in `apps/lets-park/api` changes, and nothing ever did.
+- Nothing in `apps/garage/api` changes, and nothing ever did.
 
 ## Risk
 
@@ -146,5 +146,5 @@ production-likeness to get it.
   second attempt is hiding something, and a throttled first attempt is exactly
   the kind of something worth seeing.
 - **The suite cannot notice if the throttler broke.** It never could — no
-  scenario asserts a `429`. The throttler's coverage is in `apps/lets-park/api`'s unit
+  scenario asserts a `429`. The throttler's coverage is in `apps/garage/api`'s unit
   tests, where the numbers are inputs rather than ambient configuration.

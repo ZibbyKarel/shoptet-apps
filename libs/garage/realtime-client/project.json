@@ -1,0 +1,20 @@
+{
+  "name": "realtime-client",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/garage/realtime-client/src",
+  "projectType": "library",
+  "tags": ["type:util", "scope:web", "app:garage"],
+  "// targets": "to see all targets run: nx show project realtime-client --web",
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "tsc --noEmit -p libs/garage/realtime-client/tsconfig.lib.json",
+          "tsc --noEmit -p libs/garage/realtime-client/tsconfig.spec.json"
+        ],
+        "parallel": false
+      }
+    }
+  }
+}

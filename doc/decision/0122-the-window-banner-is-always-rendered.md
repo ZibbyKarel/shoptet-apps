@@ -86,6 +86,6 @@ from a mis-captioned screenshot.
 ## Verified by
 
 The measurement above (reproducible from `doc/design/screens/`), and the two
-`grep`-able lines of the design source. `apps/lets-park/web/src/lot/lot-view.spec.ts`
+`grep`-able lines of the design source. `apps/garage/web/src/lot/lot-view.spec.ts`
 covers the six banner variants; no test asserts absence, because there is no
 absent case.

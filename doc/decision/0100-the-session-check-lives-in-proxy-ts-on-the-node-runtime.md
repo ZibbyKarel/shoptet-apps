@@ -2,7 +2,7 @@
 
 ## What
 
-`apps/lets-park/web/src/proxy.ts` re-exports Auth.js's `auth` as the app's request
+`apps/garage/web/src/proxy.ts` re-exports Auth.js's `auth` as the app's request
 interceptor and lists, in a single matcher, the paths it does **not** run on:
 
 ```ts
@@ -45,7 +45,7 @@ There is no `middleware.ts`, and no `runtime` export.
 ## How
 
 - `signInPath` in `createAuth()` and the matcher both read `LOGIN_ROUTE` from
-  `apps/lets-park/web/src/routes.ts`, so the redirect target and the protected set cannot
+  `apps/garage/web/src/routes.ts`, so the redirect target and the protected set cannot
   drift into a loop.
 - `proxy.spec.ts` reconstructs the compiled regex and pins each intent: the
   four protected paths, the six exempt ones, and — the point of the file —

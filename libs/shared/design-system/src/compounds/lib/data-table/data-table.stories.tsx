@@ -1,4 +1,4 @@
-import { Badge, Button, Input, Switch } from '@lets-park/design-system/primitives';
+import { Badge, Button, Input, Switch } from '@garage/design-system/primitives';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 

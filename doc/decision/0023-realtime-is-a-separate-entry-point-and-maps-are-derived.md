@@ -2,12 +2,12 @@
 
 ## What
 
-`@lets-park/contract/realtime` is a **second entry point** of the same lib, not
+`@garage/contract/realtime` is a **second entry point** of the same lib, not
 a section of the first one:
 
-- `libs/lets-park/contract/src/realtime/*` imports nothing from `src/api`,
-- the root `libs/lets-park/contract/src/index.ts` does **not** re-export realtime,
-- the alias `@lets-park/contract/realtime` lives in `tsconfig.base.json`,
+- `libs/garage/contract/src/realtime/*` imports nothing from `src/api`,
+- the root `libs/garage/contract/src/index.ts` does **not** re-export realtime,
+- the alias `@garage/contract/realtime` lives in `tsconfig.base.json`,
 - isolation is guarded by `src/realtime/no-orpc.spec.ts`, which walks the
   actual module graph.
 
@@ -18,7 +18,7 @@ payload type is a `z.infer`.
 
 ## Why
 
-**Why two entry points at all.** `@lets-park/contract` pulls in
+**Why two entry points at all.** `@garage/contract` pulls in
 `@orpc/contract`. A browser bundle that only opens a socket, or the Socket.io
 gateway, gets nothing out of that — and worse, a single barrel would spread
 that dependency everywhere a realtime type is touched. The shared shapes stay
@@ -76,7 +76,7 @@ forbids that, correctly, since such an import can be used to launder cycles.
 ## Risk
 
 **The alias is only tested declaratively.** Whether
-`@lets-park/contract/realtime` actually resolves in Jest and in a Next.js
+`@garage/contract/realtime` actually resolves in Jest and in a Next.js
 build is first verified in Tasks 15 and 24. The test here only guarantees the
 alias exists and points at an existing file — not that every resolver
 understands it. If one doesn't, that shows up immediately on the consumer's

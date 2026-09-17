@@ -4,7 +4,7 @@ import { cx } from '../cx';
 
 /**
  * The product's one loading animation — until now hand-rolled in app code at
- * `apps/lets-park/web/src/shell/screen-state/screen-state.tsx`'s
+ * `apps/garage/web/src/shell/screen-state/screen-state.tsx`'s
  * `ScreenLoading`, byte-for-byte: `size-6 animate-spin rounded-cta border-2
  * border-border border-t-brand-blue`. A spinning ring is exactly the kind of
  * decorative, state-carrying markup the design system should own rather than

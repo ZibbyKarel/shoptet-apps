@@ -2,7 +2,7 @@ import { forwardRef, type HTMLAttributes, type Ref } from 'react';
 
 import { cx } from '../cx';
 import { PADDING_CLASSES } from '../padding';
-import type { SpacingKey } from '@lets-park/design-system/tokens';
+import type { SpacingKey } from '@garage/design-system/tokens';
 
 export type DividerOrientation = 'horizontal' | 'vertical';
 export type DividerTone = 'border' | 'divider';
@@ -15,7 +15,7 @@ const TONE_CLASSES: Record<DividerTone, string> = {
 export interface DividerProps extends HTMLAttributes<HTMLElement> {
   /** Line axis. Defaults to `horizontal`. */
   orientation?: DividerOrientation | undefined;
-  /** Which of the two border-color tokens `apps/lets-park/web` uses today. Defaults to `border`. */
+  /** Which of the two border-color tokens `apps/garage/web` uses today. Defaults to `border`. */
   tone?: DividerTone | undefined;
   /**
    * Margin *perpendicular* to the line: `my-*` for a horizontal divider
@@ -27,7 +27,7 @@ export interface DividerProps extends HTMLAttributes<HTMLElement> {
 
 /**
  * Thin rule replacing `border-t`/`border-b` `border-border`/`border-divider`
- * (7 occurrences in `apps/lets-park/web`).
+ * (7 occurrences in `apps/garage/web`).
  *
  * Renders a real `<hr>` for the horizontal case — it already carries the
  * separator semantics and needs no ARIA. A vertical rule has no native HTML

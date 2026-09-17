@@ -1,18 +1,18 @@
-# 0082 — The feed's Czech copy lives in `libs/lets-park/calendar-export`, not in `libs/shared/i18n`
+# 0082 — The feed's Czech copy lives in `libs/garage/calendar-export`, not in `libs/shared/i18n`
 
 ## What
 
 The three user-facing strings in the ICS feed — the calendar's name
 (`Parkování`), each event's summary (`Parkování – E2.92`) and its description
 (`Rezervované parkovací místo E2.92.`) — are exported constants and functions in
-`libs/lets-park/calendar-export/src/lib/reservation-calendar.ts`, not entries in the
+`libs/garage/calendar-export/src/lib/reservation-calendar.ts`, not entries in the
 `libs/shared/i18n` message catalog.
 
 They stay **Czech**, like the rest of the UI (`doc/decision/0029-*`).
 
 ## Why
 
-`libs/shared/i18n` is tagged `scope:web`. `libs/lets-park/calendar-export` and `apps/lets-park/api` are
+`libs/shared/i18n` is tagged `scope:web`. `libs/garage/calendar-export` and `apps/garage/api` are
 `scope:api`, and `@nx/enforce-module-boundaries` refuses the dependency:
 
 ```
@@ -34,9 +34,9 @@ So there were three options:
    saying "Parkování" in one place and "Parkovací místo" in another.
 3. **Keep the strings where the only backend consumer is.** Chosen.
 
-This is not a general licence to scatter Czech copy through `apps/lets-park/api`. It
+This is not a general licence to scatter Czech copy through `apps/garage/api`. It
 applies because the ICS feed is the **only** backend-rendered surface a user ever
-reads — every other response is JSON that `apps/lets-park/web` turns into words. If a
+reads — every other response is JSON that `apps/garage/web` turns into words. If a
 second one appears (Slack notifications, Task 16), that is the moment to
 reconsider option 2 with two real call sites in view rather than one.
 
@@ -51,10 +51,10 @@ contract's `icsCalendarEntrySchema` has no group field for the same reason.
 
 ## How
 
-- `libs/lets-park/calendar-export/src/lib/reservation-calendar.ts` — `ICS_CALENDAR_NAME`,
+- `libs/garage/calendar-export/src/lib/reservation-calendar.ts` — `ICS_CALENDAR_NAME`,
   `icsEventSummary`, `icsEventDescription`.
-- `libs/lets-park/calendar-export/src/lib/reservation-calendar.spec.ts` — asserts the
+- `libs/garage/calendar-export/src/lib/reservation-calendar.spec.ts` — asserts the
   Czech strings by reading them back through `ical.js`, including that the
   diacritics survive line folding.
-- `apps/lets-park/api/src/calendar/calendar-pipeline.spec.ts` — asserts they survive the
+- `apps/garage/api/src/calendar/calendar-pipeline.spec.ts` — asserts they survive the
   HTTP round trip as UTF-8.

@@ -8,7 +8,7 @@
 Every route segment this application serves is spelled in English. Three were
 Czech and are not any more:
 
-| Constant in `apps/lets-park/web/src/routes.ts` | Was           | Is          |
+| Constant in `apps/garage/web/src/routes.ts` | Was           | Is          |
 | ------------------------------------ | ------------- | ----------- |
 | `LOGIN_ROUTE`                        | `/prihlaseni` | `/login`    |
 | `SETTINGS_ROUTE`                     | `/nastaveni`  | `/settings` |
@@ -18,7 +18,7 @@ Czech and are not any more:
 (`/api/auth`, fixed by Auth.js and by the callback URL registered with Okta)
 and `HEALTH_ROUTE` (`/api/health`) were already English and did not move.
 
-Nothing the user reads changed. Every UI string in `apps/lets-park/web` is still Czech.
+Nothing the user reads changed. Every UI string in `apps/garage/web` is still Czech.
 
 No redirect from the old paths was added: this is an internal application
 behind Okta, with no external inbound links to preserve.
@@ -39,9 +39,9 @@ addressed by page objects, matchers, redirect configuration and deployment
 routing far more often than it is read off a screen by an employee, and each
 of those readers is working in English.
 
-The practical argument points the same way. `apps/lets-park/web-e2e/src/support/*`
-addresses these paths by name; `libs/lets-park/auth`'s `signInPath` must name the exact
-segment the App Router serves it under (`apps/lets-park/web/src/app/login/`), or
+The practical argument points the same way. `apps/garage/web-e2e/src/support/*`
+addresses these paths by name; `libs/garage/auth`'s `signInPath` must name the exact
+segment the App Router serves it under (`apps/garage/web/src/app/login/`), or
 Auth.js's configured sign-in page 404s; `proxy.ts`'s matcher is a regex over
 path segments. A mixed-language path table makes every one of those harder to
 read for no benefit to the person reserving a parking spot, who arrives by
@@ -52,12 +52,12 @@ has not changed: the app renders in Czech.
 
 ## How it is verified
 
-`npm run build`'s route table for `apps/lets-park/web` lists `/`, `/admin`, `/login` and
+`npm run build`'s route table for `apps/garage/web` lists `/`, `/admin`, `/login` and
 `/settings` — the four routes this application serves, spelled the way this
 record says they should be. `web-e2e:e2e` is 21 passed: the eight spec files
 and their support setup drive the browser against those exact paths (sign-in
 redirects to `/login`, the settings modal is reached at `/settings`, the admin
-tabs at `/admin`), so the page objects in `apps/lets-park/web-e2e/src/support/*` and the
+tabs at `/admin`), so the page objects in `apps/garage/web-e2e/src/support/*` and the
 routes they navigate to are the same thing, not two lists that happen to agree
 today.
 

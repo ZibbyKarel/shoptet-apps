@@ -15,7 +15,7 @@ This is a decision, not an oversight, and it is recorded rather than fixed.
 
 `socket.ts` passes `auth` as a **function**, not an object, so Socket.io re-reads it on every
 engine open — the first connect and every reconnect alike. A socket therefore never re-presents a
-stale token *across* a reconnect; it presents whatever `libs/lets-park/auth`'s provider has at that moment.
+stale token *across* a reconnect; it presents whatever `libs/garage/auth`'s provider has at that moment.
 A refused handshake is terminal and recovered by building a **new** socket
 (`doc/decision/0061-*`), which re-runs the same callback.
 
@@ -29,7 +29,7 @@ transport happens to drop".
   to everyone in the room, and already scoped to a day the socket joined while it *was*
   authorised. Every action a socket can take is separately authorised on the API side, where the
   token is checked per request; the cell lock is explicitly a courtesy and not an authorisation
-  step (`libs/lets-park/contract/src/realtime/commands.ts`).
+  step (`libs/garage/contract/src/realtime/commands.ts`).
 - **The window is short in practice.** Single-instance deployment, a 30 s lock TTL, and Socket.io
   ping/pong that drops an idle transport. A revoked session survives until the next transport
   event, not indefinitely.
@@ -42,11 +42,11 @@ transport happens to drop".
 
 If the deployment ever stops being single-instance, or the broadcast payloads ever carry something
 not already public to the room, this should be revisited — and revisited as a gateway change, not
-a client one: `libs/lets-park/realtime-client` cannot enforce it, because the client is the party whose
+a client one: `libs/garage/realtime-client` cannot enforce it, because the client is the party whose
 token is in question.
 
 ## Where it is written down
 
-`libs/lets-park/realtime-client/src/lib/socket.ts`, in the "Why `auth` is a function" section — the exact
+`libs/garage/realtime-client/src/lib/socket.ts`, in the "Why `auth` is a function" section — the exact
 place a reader forms the belief that the token is kept fresh, which was the finding: the file said
 a true thing about reconnects in a way that read as a claim about the whole connection.

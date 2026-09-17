@@ -5,7 +5,7 @@
 
 ## What
 
-`libs/lets-park/shared-types/src/lib/czech-holidays.ts` computes the thirteen Czech public holidays
+`libs/garage/shared-types/src/lib/czech-holidays.ts` computes the thirteen Czech public holidays
 itself — eleven fixed dates plus Good Friday and Easter Monday from a Meeus/Jones/Butcher
 Easter algorithm. No npm package replaces it, and none will be adopted without this record
 being revisited.
@@ -33,8 +33,8 @@ need a hand-written declaration file — the same maintenance, moved somewhere l
 
 **`date-holidays` fails on weight, in the one place weight is not negotiable.** It is well
 maintained and it is the right library for an app that needs holidays in arbitrary countries.
-This app needs thirteen dates a year in one country. `libs/lets-park/shared-types`' barrel is re-exported
-wholesale as `@lets-park/i18n` (`doc/decision/0003-*`) and `apps/lets-park/web/src/lot/lot-view.ts` calls
+This app needs thirteen dates a year in one country. `libs/garage/shared-types`' barrel is re-exported
+wholesale as `@garage/i18n` (`doc/decision/0003-*`) and `apps/garage/web/src/lot/lot-view.ts` calls
 `czechPublicHolidayOn`, so **everything this lib publishes reaches the browser bundle**.
 Adopting it would put `lodash` and a YAML parser in front of the user to replace sixty lines of
 integer arithmetic. Its CC-BY-3.0 holiday data would also oblige an attribution the product
@@ -56,11 +56,11 @@ things were fixed:
   `[7, 6, 'JAN_HUS', …]`), where a month/day transposition was invisible to the type system.
   It is now a named-field table.
 - `czechPublicHolidays(year)` rebuilt and re-sorted the year on every call. The real per-day
-  callers are `buildMonthGrid` in `apps/lets-park/web/src/lot/bulk-modal/bulk-view.ts` (28–31 days per
-  rendered month), `planDay` in `apps/lets-park/api/src/reservations/bulk-allocator.ts` (once per date in
-  a bulk request), and `isReservableDay` in `apps/lets-park/api/src/overview/day-overview.service.ts` — so
+  callers are `buildMonthGrid` in `apps/garage/web/src/lot/bulk-modal/bulk-view.ts` (28–31 days per
+  rendered month), `planDay` in `apps/garage/api/src/reservations/bulk-allocator.ts` (once per date in
+  a bulk request), and `isReservableDay` in `apps/garage/api/src/overview/day-overview.service.ts` — so
   walking a month's worth of days re-ran the Easter algorithm thirty-odd times, server-side as
-  well as in the browser. (`apps/lets-park/web/src/lot/lot-view.ts`'s `toDayNoteView` is called once per
+  well as in the browser. (`apps/garage/web/src/lot/lot-view.ts`'s `toDayNoteView` is called once per
   rendered day _screen_, not once per day of a month, so it was not the driver.) The list is now
   memoized per year in a module-level `Map`, and both it and its entries are frozen before it
   escapes. It is a pure function of the year, so there is nothing to invalidate.
@@ -85,7 +85,7 @@ and the `CzechHoliday` type keep their names, signatures and semantics.
   writable and make the situation strictly worse than before the cache. The nested freeze is
   load-bearing, not decoration, and `czech-holidays.spec.ts` fails if the inner one is
   removed. `czechPublicHolidays` itself is not exported from the lib's barrel
-  (`libs/lets-park/shared-types/src/index.ts`), so no consumer outside `libs/lets-park/shared-types` is affected
+  (`libs/garage/shared-types/src/index.ts`), so no consumer outside `libs/garage/shared-types` is affected
   either way — but `czechPublicHolidayOn` **is** barrel-exported, and it now returns an element
   of that same shared, frozen array rather than a fresh object. A future caller that writes to a
   field of the holiday it gets back sees a silent no-op or a `TypeError`, depending on strict
@@ -96,13 +96,13 @@ and the `CzechHoliday` type keep their names, signatures and semantics.
   distinct years through a request-influenced path in a long-lived API process. It is bounded
   and does not need a code change, just this note so nobody has to re-derive it.
 - This record's rejection of `date-holidays` rests on this lib's barrel being re-exported
-  wholesale as `@lets-park/i18n` (`doc/decision/0003-*`), which puts everything it publishes in
+  wholesale as `@garage/i18n` (`doc/decision/0003-*`), which puts everything it publishes in
   the browser bundle. Adding a second country would not change that fact, so this record is
   **not** a green light for adopting `date-holidays` later — a second country still means an
   11 MB dependency reaching the browser unless the consumer changes shape. The one case where
   the calculus could differ is a holiday lookup that stays entirely server-side and never
-  reaches `apps/lets-park/web` (so it could live outside this barrel, or behind a lib that is not
-  re-exported as `@lets-park/i18n`) — anyone reaching for `date-holidays` should confirm that
+  reaches `apps/garage/web` (so it could live outside this barrel, or behind a lib that is not
+  re-exported as `@garage/i18n`) — anyone reaching for `date-holidays` should confirm that
   condition first, not treat "a second country" alone as sufficient.
 
 ## Alternatives considered

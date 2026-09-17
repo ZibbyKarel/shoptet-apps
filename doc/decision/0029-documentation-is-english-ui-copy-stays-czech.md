@@ -15,7 +15,7 @@ a doc/ česky` – "code, identifiers, and comments in English; UI copy and
 `doc/` in Czech").
 
 This decision does **not** touch the application's interface language. Every
-UI string in `apps/lets-park/web` and any domain-facing copy in `libs/*` **stays in
+UI string in `apps/garage/web` and any domain-facing copy in `libs/*` **stays in
 Czech** — this is, and remains, a Czech company's internal app. Interface
 language is a product decision made by the user, not a documentation
 convention, and it is not being revisited here.

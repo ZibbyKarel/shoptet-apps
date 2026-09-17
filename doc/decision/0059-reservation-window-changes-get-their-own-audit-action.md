@@ -4,8 +4,8 @@
 
 ## What
 
-`AUDIT_LOG_ACTIONS` in `libs/lets-park/contract/src/schemas/entities.ts` and `enum AuditLogAction` in
-`libs/lets-park/database/prisma/schema.prisma` gained one member: **`RESERVATION_WINDOW_UPDATED`**.
+`AUDIT_LOG_ACTIONS` in `libs/garage/contract/src/schemas/entities.ts` and `enum AuditLogAction` in
+`libs/garage/database/prisma/schema.prisma` gained one member: **`RESERVATION_WINDOW_UPDATED`**.
 Migration `20260902090000_audit_reservation_window_updated` adds it to the Postgres type with
 `ALTER TYPE … ADD VALUE IF NOT EXISTS`.
 
@@ -44,5 +44,5 @@ sentinel UUID for a row that does not have one, would both be worse.
   transaction cannot be used in that same transaction.
 - The admin audit view (a later task) gets a fourth entity type to render. `entityType` is a plain
   string in the contract, so nothing else has to change for it.
-- `libs/lets-park/contract/src/schemas/entities.spec.ts` asserts the enum's exact membership, so the next
+- `libs/garage/contract/src/schemas/entities.spec.ts` asserts the enum's exact membership, so the next
   addition is a deliberate edit in two places plus a migration — which is the intended friction.

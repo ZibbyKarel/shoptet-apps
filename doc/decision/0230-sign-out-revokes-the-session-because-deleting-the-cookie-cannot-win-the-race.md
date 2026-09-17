@@ -7,8 +7,8 @@ and every later session read refuses a token carrying it. Cookie deletion still
 happens — Auth.js does it — but it is no longer the thing that makes sign-out
 work.
 
-`libs/lets-park/auth/src/lib/revocation.ts` holds the revoked set;
-`applySessionLifecycle` in `libs/lets-park/auth/src/lib/config.ts` consults them from the
+`libs/garage/auth/src/lib/revocation.ts` holds the revoked set;
+`applySessionLifecycle` in `libs/garage/auth/src/lib/config.ts` consults them from the
 `jwt` callback and returns `null` for a revoked session, which `@auth/core`
 answers by **clearing the session cookie instead of re-issuing it**
 (`lib/actions/session.js`).
@@ -25,7 +25,7 @@ hypothesis — a concurrent `GET /api/auth/session`, which next-auth's own
 `signOut` triggers — and asked for the request `Cookie` header to be captured
 first.
 
-That capture was done (`apps/lets-park/web-e2e/src/support/auth-network-log.ts`,
+That capture was done (`apps/garage/web-e2e/src/support/auth-network-log.ts`,
 `doc/decision/0232-*`). Three things came out of it, and the fix follows from
 them rather than from the hypothesis.
 
@@ -96,7 +96,7 @@ the trace above.
 | `GET /api/auth/session` | — | — | **0 occurrences**; not on this path at all (§1) |
 
 The three that re-issue do so through **one mechanism, not three**: the proxy's
-`auth()` (`apps/lets-park/web/src/proxy.ts`, `doc/decision/0100-*`), which under
+`auth()` (`apps/garage/web/src/proxy.ts`, `doc/decision/0100-*`), which under
 `strategy: 'jwt'` re-encodes and re-sets the cookie on every read. `/` and both
 `?_rsc` requests match `proxy.ts`'s `config.matcher`; the two `/api/auth/*`
 requests are excluded by it by name, which is why their non-re-issuance is a
@@ -165,11 +165,11 @@ is not merely refused — it deletes itself on first use.
 
 **Closed.** A session cookie that outlives its sign-out — by this race, by a
 copy taken from a browser profile, by anything — no longer authenticates against
-`apps/lets-park/web`. The realistic harm `0189` named, a shared or unattended machine,
+`apps/garage/web`. The realistic harm `0189` named, a shared or unattended machine,
 is gone.
 
 **Not closed: the Okta access token.** The session carries a bearer that
-`apps/lets-park/api` validates against the issuer's JWKS, and nothing here revokes it at
+`apps/garage/api` validates against the issuer's JWKS, and nothing here revokes it at
 Okta. Somebody who has extracted that token from a session can keep calling the
 API directly until it expires.
 

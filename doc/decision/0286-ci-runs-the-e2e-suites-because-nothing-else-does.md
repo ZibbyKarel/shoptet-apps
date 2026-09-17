@@ -13,7 +13,7 @@ journey is a red build.
 
 The workflow had three jobs — `verify`, `database`, `images` — and `verify` ran
 `-t lint,typecheck,test,build`. `e2e` was in no list and no other job invoked
-it. So the 8 tests in `apps/lets-park/api-e2e` and the 20 in `apps/lets-park/web-e2e` ran only when
+it. So the 8 tests in `apps/garage/api-e2e` and the 20 in `apps/garage/web-e2e` ran only when
 a developer remembered.
 
 That is not a general coverage complaint. Those journeys are the **only** place
@@ -83,7 +83,7 @@ line per request and the browser suite makes several hundred.
 
 A workflow cannot be exercised from a laptop, so the part that *can* be wrong
 was exercised instead: whether the environment block alone is enough, with no
-`.env` file anywhere. Both `.env` and `apps/lets-park/web/.env` were moved out of the
+`.env` file anywhere. Both `.env` and `apps/garage/web/.env` were moved out of the
 worktree and the three commands run from a stripped environment
 (`env -i`) carrying only the job's variables:
 

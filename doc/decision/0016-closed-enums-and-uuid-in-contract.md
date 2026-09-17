@@ -55,11 +55,11 @@ behavior, in both places.
 
 ## How
 
-- The enum lives in `libs/lets-park/contract/src/schemas/entities.ts` as
+- The enum lives in `libs/garage/contract/src/schemas/entities.ts` as
   `AUDIT_LOG_ACTIONS` (a tuple) and `auditLogActionSchema` (`z.enum`). A test
   on the exact composition of the list is deliberate — it forces whoever
   extends the enum to see the change.
-- `idSchema` is a single place in `libs/lets-park/contract/src/schemas/primitives.ts`;
+- `idSchema` is a single place in `libs/garage/contract/src/schemas/primitives.ts`;
   entities just use it.
 - `AuditLog.actorUserId` is required (not nullable) per `plan.md`: even an
   automatic waitlist promotion is triggered by a user canceling their

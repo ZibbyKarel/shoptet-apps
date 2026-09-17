@@ -2,7 +2,7 @@
 
 ## What
 
-`libs/lets-park/database/src/scripts/reset-e2e.ts` deletes every `ParkingSpot` whose
+`libs/garage/database/src/scripts/reset-e2e.ts` deletes every `ParkingSpot` whose
 label is not one of the nine in `SEED_PARKING_SPOTS`, together with any
 reservation or queue entry on it, before it clears the target month.
 
@@ -13,13 +13,13 @@ seed` owns those, and `globalSetup` runs it first.
 
 ## Why
 
-`apps/lets-park/web-e2e/src/admin-spots.spec.ts` exercises spot administration, and the
+`apps/garage/web-e2e/src/admin-spots.spec.ts` exercises spot administration, and the
 only honest way to test "an admin adds a bay and it appears on the lot" is to
 add one. The spec removes it again, but a spec's teardown is exactly the thing
 that does not run when the spec fails halfway, or when somebody presses
 Ctrl-C.
 
-Nothing else would ever remove it. `libs/lets-park/database/src/scripts/seed.ts` is
+Nothing else would ever remove it. `libs/garage/database/src/scripts/seed.ts` is
 idempotent *by upsert on the natural key*:
 
 ```ts
@@ -62,7 +62,7 @@ promise about a run that was killed.
 
 `assertDisposableDatabase` runs first and reads the connection string, so the
 only databases this can reach without an explicit
-`LETS_PARK_ALLOW_DESTRUCTIVE_RESET=1` are local, disposable ones
+`GARAGE_ALLOW_DESTRUCTIVE_RESET=1` are local, disposable ones
 (`0276-*`). A developer's own reservations on other months survive — the month
 sweep is still scoped — and a developer's own *hand-created spot* does not,
 which is a new and stated cost of running this script. It is the same trade the
@@ -71,7 +71,7 @@ un-restored reservation window already makes, and for the same reason.
 ## The order of the deletes is load-bearing
 
 `Reservation.parkingSpotId` and `WaitlistEntry.parkingSpotId` are
-`onDelete: Restrict` (`libs/lets-park/database/prisma/schema.prisma`), so the spot cannot
+`onDelete: Restrict` (`libs/garage/database/prisma/schema.prisma`), so the spot cannot
 go first: PostgreSQL would refuse the delete rather than cascade it. Rows on
 the stray spot are removed, then the spot. The counts are reported separately,
 because "removed a spot that had reservations on it" is a different sentence

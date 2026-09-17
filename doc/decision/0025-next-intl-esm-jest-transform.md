@@ -12,7 +12,7 @@ both in the shape described in
    `intl-messageformat`, `@formatjs/*`, `@schummar/icu-type-parser`,
    `icu-minify`) — published as `"type": "module"`, plain `.js`.
 2. `@orpc/contract` (a single `.mjs` build) — pulled in transitively, because
-   `errors.spec.ts` imports `ERROR_CODES` from `@lets-park/contract` **at
+   `errors.spec.ts` imports `ERROR_CODES` from `@garage/contract` **at
    runtime** (not just as a type).
 
 Without intervention, Jest fails with
@@ -21,7 +21,7 @@ Without intervention, Jest fails with
 ## Why
 
 `libs/shared/i18n` is a React lib (generator `@nx/react:lib`), so unlike
-`libs/lets-park/contract` it doesn't transpile via `ts-jest`, but via `babel-jest`
+`libs/garage/contract` it doesn't transpile via `ts-jest`, but via `babel-jest`
 (`@nx/react/babel`). The fix therefore differs from `doc/decision/0020-*` in
 three ways, not just a copy:
 
@@ -39,7 +39,7 @@ three ways, not just a copy:
   add `mjs` to that negation, not to add another rule after it — a new rule
   placed after an existing match would never be reached.
 
-A second, separate problem: the `@lets-park/contract` barrel (`src/index.ts`)
+A second, separate problem: the `@garage/contract` barrel (`src/index.ts`)
 also re-exports `src/api`, which at runtime imports `@orpc/client` (for the
 oRPC procedure builder). That in turn references the web `TransformStream`,
 which jsdom (the default test environment for `libs/shared/i18n`, needed for
@@ -59,7 +59,7 @@ been global since Node 18.
 - `doc/decision/0020-*` itself says that once this fix is needed a third time,
   it belongs in the root `jest.preset.js` instead of being copied — but Task
   17 is only allowed to touch `libs/shared/i18n/**`, so it stays local for now.
-  Whoever eventually unifies it should unify both copies (`libs/lets-park/contract` and
+  Whoever eventually unifies it should unify both copies (`libs/garage/contract` and
   `libs/shared/i18n`) at once.
 
 ## Risk if this is wrong
@@ -69,5 +69,5 @@ drift apart. A risk specific to `libs/shared/i18n` is that ordering in `transfor
 if someone added another `'^.+\\.mjs$'` rule without fixing the negation in
 the first pattern, the fix would silently stop working again. Both
 `dates.spec.ts` and `errors.spec.ts` would fail immediately in that case
-(importing `next-intl` and `@lets-park/contract` respectively is required by
+(importing `next-intl` and `@garage/contract` respectively is required by
 both), so the regression wouldn't go unnoticed.

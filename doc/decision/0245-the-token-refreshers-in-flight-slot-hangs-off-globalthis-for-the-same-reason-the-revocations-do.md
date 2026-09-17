@@ -10,7 +10,7 @@
 They live in a `TokenRefreshState` bag passed in by the caller, and
 `createAuthConfig` passes `sharedRefreshState(issuer, clientId)` — a per-(issuer,
 client) record anchored to `globalThis` under
-`Symbol.for('@lets-park/auth:token-refresh-state')`.
+`Symbol.for('@garage/auth:token-refresh-state')`.
 
 A refresher built without a `state` still gets a private bag. That is what a test
 wants, and it keeps the process-global state named at the call site rather than
@@ -21,7 +21,7 @@ reached for from inside a module — the same shape as
 
 `doc/decision/0051-*` rested its whole design on one sentence:
 
-> `apps/lets-park/web/src/auth.ts` calls `createAuth()` at module scope, so the refresher
+> `apps/garage/web/src/auth.ts` calls `createAuth()` at module scope, so the refresher
 > closure is created once per server process and shared by every request that
 > process handles.
 
@@ -30,7 +30,7 @@ was written.** `doc/decision/0231-*` measured, with instrumentation in a running
 `next start`, **three `createAuthConfig` instances in one process**: Next.js
 compiles the proxy, the `/api/auth/*` route handlers and the server components
 into separate bundles, each with its own module registry. The final review
-confirmed the shape independently from the committed `apps/lets-park/web/.next` — three
+confirmed the shape independently from the committed `apps/garage/web/.next` — three
 server chunks, each carrying its own minified copy of the module.
 
 So there were three refreshers with three private `inFlight` slots. The review
@@ -41,7 +41,7 @@ refresh token and measured:
 PROBE RESULT: token grants=2 discoveries=2      (doc/decision/0051 claims 1)
 ```
 
-**How it reaches a user.** The proxy (`apps/lets-park/web/src/proxy.ts` → `auth()`) and the
+**How it reaches a user.** The proxy (`apps/garage/web/src/proxy.ts` → `auth()`) and the
 root layout's `await auth()` read the **same request cookie**, so inside the
 60-second skew both hold the same refresh token and both exchange it. With
 refresh-token rotation enabled — Okta's default for a new authorization server —
@@ -73,14 +73,14 @@ refused to boot before any refresher exists.
 
 ## How
 
-`libs/lets-park/auth/src/lib/refresh.ts` — `TokenRefreshState`, `sharedRefreshStates()`,
+`libs/garage/auth/src/lib/refresh.ts` — `TokenRefreshState`, `sharedRefreshStates()`,
 `sharedRefreshState(issuer, clientId)`; `exchange` and the returned `refresh`
 read and write `state.discovery` / `state.inFlight`. The discovery reset on
 failure now also checks that the promise it is clearing is still the current one,
 so a slow failure cannot wipe a newer attempt's cache — the rule the in-flight
 slot already followed.
 
-`libs/lets-park/auth/src/lib/config.ts` — passes `state: sharedRefreshState(...)`, and its
+`libs/garage/auth/src/lib/config.ts` — passes `state: sharedRefreshState(...)`, and its
 file docblock no longer claims to be "a pure function of its arguments, no
 `process.env`, no module-level state". It never was, once `sharedRevokedStore()`
 appeared in it; it is less so now. What is still true, and is what the claim was

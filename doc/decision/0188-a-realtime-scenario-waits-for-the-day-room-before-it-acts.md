@@ -11,7 +11,7 @@ await openSpot(userPage, SPOT);
 await expect(observed).toContainText('právě upravuje');
 ```
 
-`waitForDayRoom` (`apps/lets-park/web-e2e/src/support/realtime.ts`) watches the page's own
+`waitForDayRoom` (`apps/garage/web-e2e/src/support/realtime.ts`) watches the page's own
 network traffic for a `day:subscribe` naming that date — on the HTTP polling
 request before socket.io upgrades, and on the WebSocket frame after. The
 recorder is attached by the persona fixture when the page is created, so it
@@ -72,12 +72,12 @@ assertion after it runs exactly once.
 
 ## How
 
-- `apps/lets-park/web-e2e/src/support/realtime.ts` — `recordDayRoomSubscriptions`,
+- `apps/garage/web-e2e/src/support/realtime.ts` — `recordDayRoomSubscriptions`,
   `subscribedDates`, `waitForDayRoom`, and the `E2E_TRACE_REALTIME` switch that
   found the real bug.
-- `apps/lets-park/web-e2e/src/support/fixtures.ts` — the recorder is attached in
+- `apps/garage/web-e2e/src/support/fixtures.ts` — the recorder is attached in
   `pageFor`, before the page navigates.
-- `apps/lets-park/web-e2e/src/cell-lock.spec.ts` — both tests.
+- `apps/garage/web-e2e/src/cell-lock.spec.ts` — both tests.
 
 The payload is matched as text rather than parsed: engine.io frames a polling
 request as one or more `\x1e`-separated packets with a type digit in front, and

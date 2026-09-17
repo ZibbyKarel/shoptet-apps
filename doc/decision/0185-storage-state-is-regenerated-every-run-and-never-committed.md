@@ -4,7 +4,7 @@
 
 The `setup` project signs all three personas in through the real OIDC flow at
 the start of **every** invocation of the suite, and writes
-`apps/lets-park/web-e2e/.auth/storage-state-<persona>.json`. That directory is
+`apps/garage/web-e2e/.auth/storage-state-<persona>.json`. That directory is
 git-ignored. Nothing reads a state file that a previous run left behind, and no
 state file is ever assembled by hand.
 
@@ -31,23 +31,23 @@ has to start without one.
 
 ## How
 
-- `apps/lets-park/web-e2e/src/support/auth.setup.ts` — one `setup()` per persona, each in
+- `apps/garage/web-e2e/src/support/auth.setup.ts` — one `setup()` per persona, each in
   its own browser context, each calling `signInThroughOidc` and then
   `context.storageState({ path })`.
-- `apps/lets-park/web-e2e/src/support/personas.ts` — `storageStatePath()`.
-- `apps/lets-park/web-e2e/playwright.config.mts` — the `chromium` project declares
+- `apps/garage/web-e2e/src/support/personas.ts` — `storageStatePath()`.
+- `apps/garage/web-e2e/playwright.config.mts` — the `chromium` project declares
   `dependencies: ['setup']`.
-- `apps/lets-park/web-e2e/src/support/fixtures.ts` — `adminPage` / `userPage` /
+- `apps/garage/web-e2e/src/support/fixtures.ts` — `adminPage` / `userPage` /
   `userTwoPage`, each a fresh context built from its persona's file, so the
   multi-user scenarios get genuinely separate cookie jars and sockets.
-- `.gitignore` — `apps/lets-park/web-e2e/.auth/`. The repository's pre-existing
+- `.gitignore` — `apps/garage/web-e2e/.auth/`. The repository's pre-existing
   `storage-state*.json` rule covers the filenames too; both are kept, because a
   credential leaking into git is not a place to rely on one rule.
 
   **That last sentence was written as reasoning and was half wrong for as long
   as it stood.** `storageStatePath()` returned a relative path that both
   callers resolved against `process.cwd()` — the *project* root under Nx — so
-  the files were really written to `apps/lets-park/web-e2e/apps/lets-park/web-e2e/.auth/`. In git
+  the files were really written to `apps/garage/web-e2e/apps/garage/web-e2e/.auth/`. In git
   that changed nothing: `.gitignore` patterns containing no slash match at any
   depth, so `storage-state*.json` was doing all of the work
   (`git check-ignore -v` names it), and the directory rule matched a directory

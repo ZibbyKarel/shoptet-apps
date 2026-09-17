@@ -6,7 +6,7 @@ import {
   resolveGapX,
   resolveGapY,
 } from './gap';
-import type { SpacingKey } from '@lets-park/design-system/tokens';
+import type { SpacingKey } from '@garage/design-system/tokens';
 
 const STEPS: readonly SpacingKey[] = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32];
 

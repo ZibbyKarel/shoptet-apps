@@ -1,4 +1,4 @@
-# 0131 — Slack's Czech copy stays in `apps/lets-park/api/src/slack/`, and there is still no backend catalog
+# 0131 — Slack's Czech copy stays in `apps/garage/api/src/slack/`, and there is still no backend catalog
 
 **Date:** 2026-09-03 · **Status:** accepted · **Task:** 16 ·
 **Reconsiders:** `doc/decision/0082-*`
@@ -7,7 +7,7 @@
 
 The three Slack messages — the freed-spot notice, the promotion DM and the daily
 summary — are Czech strings built by functions in
-`apps/lets-park/api/src/slack/slack-messages.ts`. They are **not** entries in the
+`apps/garage/api/src/slack/slack-messages.ts`. They are **not** entries in the
 `libs/shared/i18n` catalog, and **no** second, backend-side message catalog was
 created.
 
@@ -17,7 +17,7 @@ with a hand-written Czech month table.
 ## Why this needed deciding at all
 
 `doc/decision/0082-*` put the ICS feed's three Czech strings in
-`libs/lets-park/calendar-export` because `libs/shared/i18n` is tagged `scope:web`, `apps/lets-park/api` is
+`libs/garage/calendar-export` because `libs/shared/i18n` is tagged `scope:web`, `apps/garage/api` is
 `scope:api`, and `@nx/enforce-module-boundaries` refuses the dependency — for
 good reason: `libs/shared/i18n` wraps `next-intl`, a React package with no place in a
 Nest process. That record closed with an explicit instruction:
@@ -37,7 +37,7 @@ This is that reconsideration, with the second surface now real.
    **Rejected — after actually looking at the two sets.** They share not one
    word:
 
-   | ICS (`libs/lets-park/calendar-export`) | Slack (`apps/lets-park/api/src/slack`) |
+   | ICS (`libs/garage/calendar-export`) | Slack (`apps/garage/api/src/slack`) |
    | --- | --- |
    | `Parkování` (calendar name) | `Uvolnilo se parkovací místo …` |
    | `Parkování – E2.92` (event summary) | `Máte parkovací místo …` |
@@ -56,7 +56,7 @@ This is that reconsideration, with the second surface now real.
 3. **Keep each surface's copy next to its only consumer.** Chosen, consistent
    with 0082.
 
-**This is not a licence to scatter Czech through `apps/lets-park/api`.** The rule stays as
+**This is not a licence to scatter Czech through `apps/garage/api`.** The rule stays as
 0082 put it: backend-rendered user-facing copy lives with the one surface that
 renders it, and a *third* surface is the moment to revisit again — by then the
 sets may genuinely overlap, and the argument above would flip.
@@ -82,7 +82,7 @@ would render the wrong day on some hosts and on DST Sundays.
 ## Consequences
 
 - Czech copy now lives in three places: `libs/shared/i18n` (the web UI),
-  `libs/lets-park/calendar-export` (the ICS feed) and `apps/lets-park/api/src/slack` (Slack). Each
+  `libs/garage/calendar-export` (the ICS feed) and `apps/garage/api/src/slack` (Slack). Each
   has exactly one consumer.
 - ESLint enforces nothing here — there is no rule that could distinguish "a
   Czech sentence with one backend consumer" from "a Czech sentence that should
@@ -94,6 +94,6 @@ would render the wrong day on some hosts and on DST Sundays.
 
 ## How
 
-- `apps/lets-park/api/src/slack/slack-messages.ts`, `slack-messages.spec.ts`.
-- `apps/lets-park/api/src/slack/slack.db.spec.ts` — the strings survive the round trip
+- `apps/garage/api/src/slack/slack-messages.ts`, `slack-messages.spec.ts`.
+- `apps/garage/api/src/slack/slack.db.spec.ts` — the strings survive the round trip
   through the real SDK's form encoding, diacritics intact.

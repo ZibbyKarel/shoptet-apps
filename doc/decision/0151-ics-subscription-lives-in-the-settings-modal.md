@@ -5,7 +5,7 @@
 `doc/design/screens/11-settings.png` shows only the licence-plate and
 preferred-spot form. `plan.md` separately requires that the caller be able to
 see their ICS calendar-subscription URL, copy it, and regenerate the token
-behind a confirmation. `apps/lets-park/web/src/shell/settings-screen/settings-screen.tsx` adds this as a
+behind a confirmation. `apps/garage/web/src/shell/settings-screen/settings-screen.tsx` adds this as a
 second `<section>` inside the *same* `Modal`, below the form and above the
 footer, rather than as its own route or its own dialog.
 
@@ -13,8 +13,8 @@ footer, rather than as its own route or its own dialog.
 
 - **It is caller-scoped settings, not a feature with its own workflow.** The
   ICS feed is a personal credential — `icsToken` on the user entity
-  (`libs/lets-park/contract/src/schemas/entities.ts`'s `userSchema`, re-exported as part
-  of `myProfileSchema` in `libs/lets-park/contract/src/api/me.ts`; `libs/lets-park/contract/src/api/ics.ts`
+  (`libs/garage/contract/src/schemas/entities.ts`'s `userSchema`, re-exported as part
+  of `myProfileSchema` in `libs/garage/contract/src/api/me.ts`; `libs/garage/contract/src/api/ics.ts`
   only defines the URL-building helpers, not the field itself) — exactly like
   the licence plate and preferred spot are personal preferences — all three
   are read from and written back to the same `me.*`
@@ -72,7 +72,7 @@ footer, rather than as its own route or its own dialog.
   `copyState('failed')`, and `SettingsPage`'s mutation error handling never
   serialises the mutation's variables or result — see the ICS token's prior
   logged-in-four-places defect this task was warned about, which lived on the
-  server side (`apps/lets-park/api/src/me/`) and predates this change; no client-side
+  server side (`apps/garage/api/src/me/`) and predates this change; no client-side
   logging call was added here at all.
 
 ## Risk

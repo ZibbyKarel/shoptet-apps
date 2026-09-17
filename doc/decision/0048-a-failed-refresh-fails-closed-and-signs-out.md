@@ -1,6 +1,6 @@
 # 0048 – A failed refresh drops the token and signs the user out, rather than retrying or serving a stale bearer
 
-**Date:** 2026-09-02 · **Status:** accepted · **Task:** 20 (`libs/lets-park/auth`)
+**Date:** 2026-09-02 · **Status:** accepted · **Task:** 20 (`libs/garage/auth`)
 
 ## What
 
@@ -42,7 +42,7 @@ client hook running.
 
 ## How
 
-`markRefreshFailed` in `libs/lets-park/auth/src/lib/config.ts` builds the new token by destructuring the
+`markRefreshFailed` in `libs/garage/auth/src/lib/config.ts` builds the new token by destructuring the
 three fields away rather than assigning `undefined` — `exactOptionalPropertyTypes` is on, so
 an optional property either holds a value or is absent. `projectSession` likewise rebuilds
 `accessToken` from the token rather than merging, which is what makes "a stale token cannot

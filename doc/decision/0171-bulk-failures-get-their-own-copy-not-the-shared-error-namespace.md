@@ -1,13 +1,13 @@
 # 0171 – Bulk failures get their own Czech copy, one sentence per code
 
-**Date:** 2026-09-03 · **Status:** accepted · **Affects:** `libs/shared/i18n`, `apps/lets-park/web/src/lot/bulk-*`
+**Date:** 2026-09-03 · **Status:** accepted · **Affects:** `libs/shared/i18n`, `apps/garage/web/src/lot/bulk-*`
 **Follows on from:** `doc/decision/0016-*`, `doc/decision/0090-*`
 
 ## What
 
 A failed `reservation.previewBulk` / `reservation.confirmBulk` is rendered from the **`bulk`**
 message namespace, not from the shared `errors` one. `toBulkErrorMessageKey` (in
-`apps/lets-park/web/src/lot/bulk-modal/bulk-view.ts`) reads the contract code through `toContractError` and maps each of
+`apps/garage/web/src/lot/bulk-modal/bulk-view.ts`) reads the contract code through `toContractError` and maps each of
 the six codes the two procedures can produce onto its own key:
 
 | code | key | says |
@@ -58,12 +58,12 @@ plus a fallback says exactly what is known.
 ## How
 
 - `libs/shared/i18n/src/lib/messages.ts` — the `bulk` namespace and `CzechBulkMessages`.
-- `apps/lets-park/web/src/lot/bulk-modal/bulk-view.ts` — `BULK_ERROR_KEYS` and `toBulkErrorMessageKey`.
-- `apps/lets-park/web/src/lot/bulk-modal/bulk-modal.tsx` — one `role="alert"` paragraph, rendered on whichever step the
+- `apps/garage/web/src/lot/bulk-modal/bulk-view.ts` — `BULK_ERROR_KEYS` and `toBulkErrorMessageKey`.
+- `apps/garage/web/src/lot/bulk-modal/bulk-modal.tsx` — one `role="alert"` paragraph, rendered on whichever step the
   failure happened on; a failed confirmation deliberately leaves the user on the proposal, because
   there is no result to show.
 - `bulk-view.spec.ts` builds every failure by driving a **real** `RPCLink` with a stubbed `fetch`
-  (`apps/lets-park/web` may not import `@orpc/client`), the same technique `screen-state.spec.tsx` uses, so
+  (`apps/garage/web` may not import `@orpc/client`), the same technique `screen-state.spec.tsx` uses, so
   the mapping is tested against the transport's wire shape rather than the spec's idea of it.
 
 ## Risk

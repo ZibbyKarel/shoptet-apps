@@ -1,6 +1,6 @@
 /**
  * UI copy for the contract's closed error-code enum
- * (`libs/lets-park/contract/src/schemas/errors.ts`, `doc/contract.md`), outside React.
+ * (`libs/garage/contract/src/schemas/errors.ts`, `doc/contract.md`), outside React.
  *
  * Inside a component, `useTranslations('errors')` is the way — it reads the
  * catalog already on the provider. This factory exists for the plain-TypeScript
@@ -9,12 +9,12 @@
  * so the two paths cannot drift.
  *
  * The catalog is a parameter because it now lives in the application
- * (`apps/lets-park/web/messages/*.json`) and there is more than one of them — see
+ * (`apps/garage/web/messages/*.json`) and there is more than one of them — see
  * `./provider.tsx`.
  */
 
 import { createTranslator } from 'next-intl';
-import type { ErrorCode } from '@lets-park/contract';
+import type { ErrorCode } from '@garage/contract';
 import type { Locale } from './locale';
 import type { AppMessages } from './provider';
 
@@ -22,7 +22,7 @@ import type { AppMessages } from './provider';
  * Builds the `code → sentence` function for one locale's catalog.
  *
  * Completeness is not this function's job to assert: `ErrorCode` is a closed
- * union, and `apps/lets-park/web/messages/messages.spec.ts` fails if any locale's
+ * union, and `apps/garage/web/messages/messages.spec.ts` fails if any locale's
  * `errors` namespace is missing one of its members — which is a better place
  * for that check than here, because it can see every locale at once.
  */
@@ -35,7 +35,7 @@ export function createErrorTranslator(
   // a type error. Narrowing to the one namespace this function reads is what
   // gives it `ErrorCode` keys — and it is an honest narrowing: a catalog whose
   // `errors` namespace is incomplete fails
-  // `apps/lets-park/web/messages/messages.spec.ts`, which is the check that makes this
+  // `apps/garage/web/messages/messages.spec.ts`, which is the check that makes this
   // assertion safe rather than hopeful.
   const translator = createTranslator({
     locale,

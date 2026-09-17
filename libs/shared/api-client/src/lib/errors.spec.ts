@@ -6,8 +6,8 @@
  * object constructed by hand would look like.
  */
 
-import { ERROR_CODES, ERROR_DEFINITIONS } from '@lets-park/contract';
-import type { ErrorCode } from '@lets-park/contract';
+import { ERROR_CODES, ERROR_DEFINITIONS } from '@garage/contract';
+import type { ErrorCode } from '@garage/contract';
 import { createApiClient, errorStatus, toContractError } from '../index';
 import { failingTransport, rpcPayload, stubTransport } from '../__fixtures__/stub-transport';
 
@@ -22,8 +22,8 @@ const URL_BASE = 'https://api.test/rpc';
  * rather than that flag.
  *
  * This is a **local restatement**, not a shared fixture: nothing here is
- * imported from `apps/lets-park/api`, and nothing can be — `libs/shared/api-client` is
- * `type:util`/`scope:web`, `apps/lets-park/api` is `type:app`/`scope:api`, and the Nx
+ * imported from `apps/garage/api`, and nothing can be — `libs/shared/api-client` is
+ * `type:util`/`scope:web`, `apps/garage/api` is `type:app`/`scope:api`, and the Nx
  * boundaries forbid both directions. So this helper proves nothing about what
  * the server actually sends. See the note on the last test in this file.
  */
@@ -157,7 +157,7 @@ describe('toContractError', () => {
 
   /**
    * Documents a property of `@orpc/client@1.15.0`, and **nothing about
-   * `apps/lets-park/api`**.
+   * `apps/garage/api`**.
    *
    * The RPC protocol reads a response payload out of a `{ json, meta }`
    * envelope. An error body placed at the top level instead deserialises to
@@ -166,13 +166,13 @@ describe('toContractError', () => {
    * 409 it is replaced by `CONFLICT`, which is *also* a member of `ERROR_CODES`.
    * It does not fail closed: the wrong domain error arrives looking valid.
    *
-   * `apps/lets-park/api` **used to** write its error body at the top level
+   * `apps/garage/api` **used to** write its error body at the top level
    * (`response.status(...).json(body)`, `doc/decision/0033-*`), which produced
    * exactly this failure against a real server. It no longer does:
-   * `rpcEnvelope` in `apps/lets-park/api/src/common/errors/error-body.ts` wraps every
+   * `rpcEnvelope` in `apps/garage/api/src/common/errors/error-body.ts` wraps every
    * contract-error body on an `/api/rpc` path in `{ json: … }`
    * (`doc/decision/0058-*`), and the guard
-   * that watches it lives in `apps/lets-park/api/src/orpc/orpc-pipeline.spec.ts`, which
+   * that watches it lives in `apps/garage/api/src/orpc/orpc-pipeline.spec.ts`, which
    * asserts the enveloped shape against a live server. That is where the guard
    * has to be: the coupling cannot be written from here, because the Nx
    * boundaries forbid a `type:util`/`scope:web` lib from depending on

@@ -16,10 +16,10 @@ There is no add field, no remove ×, and no button.
 ## Why
 
 - **A category is not data, it is a type.** `PARKING_GROUPS = ['IT', 'SHARED']`
-  is a `const` tuple in `libs/lets-park/shared-types/src/lib/domain-constants.ts`. Every
-  layer is built on it: `libs/lets-park/contract` derives `parkingGroupSchema` with
+  is a `const` tuple in `libs/garage/shared-types/src/lib/domain-constants.ts`. Every
+  layer is built on it: `libs/garage/contract` derives `parkingGroupSchema` with
   `z.enum(PARKING_GROUPS)`, Prisma has it as a Postgres `enum` column, and
-  `apps/lets-park/api` filters and orders by it.
+  `apps/garage/api` filters and orders by it.
 - **So "Přidat kategorii" is not a feature that was skipped — it is one that
   cannot exist without a migration.** Adding a value at runtime would need a
   `ParkingGroupCategory` table, a foreign key from `ParkingSpot`, a data
@@ -64,7 +64,7 @@ Reopened `04-admin-spots.png`: it draws `IT 4 ×`, `Shared 5 ×`, a
 `Nová kategorie` field and a `Přidat kategorii` button — three controls, all
 absent here. The premise is unchanged and so is the conclusion:
 
-- `PARKING_GROUPS` is a `const` tuple in `libs/lets-park/shared-types`, `parkingGroupSchema`
+- `PARKING_GROUPS` is a `const` tuple in `libs/garage/shared-types`, `parkingGroupSchema`
   is `z.enum(PARKING_GROUPS)`, and Prisma has it as a Postgres enum. Adding a
   category needs a migration, a contract change and a deploy. There is no
   procedure any of those three controls could call.

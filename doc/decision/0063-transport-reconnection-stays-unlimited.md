@@ -1,6 +1,6 @@
 # 0063 – Transport reconnection stays unlimited; only handshake refusals have a ceiling
 
-**Date:** 2026-09-02 · **Status:** accepted · **Task:** 21 (`libs/lets-park/realtime-client`, fix round 1)
+**Date:** 2026-09-02 · **Status:** accepted · **Task:** 21 (`libs/garage/realtime-client`, fix round 1)
 
 ## What
 

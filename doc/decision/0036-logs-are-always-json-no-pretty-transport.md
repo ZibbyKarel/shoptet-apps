@@ -12,7 +12,7 @@ in development pipes it themselves:
 npx nx run api:serve | npx pino-pretty
 ```
 
-`console.log` is not used anywhere in `apps/lets-park/api`.
+`console.log` is not used anywhere in `apps/garage/api`.
 
 Fixed fields on every record: `level` as a **name** (`"info"`, not `30`), `time`,
 `app: "api"`, `env`, and the message text under the key `message` (not pino's default

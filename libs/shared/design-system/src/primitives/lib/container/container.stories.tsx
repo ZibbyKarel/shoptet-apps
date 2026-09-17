@@ -10,7 +10,7 @@ const meta: Meta<typeof Container> = {
 export default meta;
 type Story = StoryObj<typeof Container>;
 
-/** Default: `base` max-width, `py-8 px-4` — matches `app/(app)/layout.tsx`, 1 of the 4 `apps/lets-park/web` call sites this replaces. */
+/** Default: `base` max-width, `py-8 px-4` — matches `app/(app)/layout.tsx`, 1 of the 4 `apps/garage/web` call sites this replaces. */
 export const Default: Story = {
   render: (args) => (
     <div className="w-full bg-bg-muted">

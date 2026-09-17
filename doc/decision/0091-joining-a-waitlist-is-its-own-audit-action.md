@@ -1,7 +1,7 @@
 # 0091 – Joining a waitlist is its own audit action
 
-**Date:** 2026-09-02 · **Status:** accepted · **Affects:** `libs/lets-park/contract`, `libs/lets-park/database`,
-`apps/lets-park/api/src/reservations/` · **Follows on from:** `doc/decision/0016-*`, `doc/decision/0059-*`
+**Date:** 2026-09-02 · **Status:** accepted · **Affects:** `libs/garage/contract`, `libs/garage/database`,
+`apps/garage/api/src/reservations/` · **Follows on from:** `doc/decision/0016-*`, `doc/decision/0059-*`
 
 ## What
 
@@ -44,9 +44,9 @@ opposite things: one is a request, the other is a grant.
 
 ## How
 
-- `libs/lets-park/contract/src/schemas/entities.ts` — the member, last in the tuple; `entities.spec.ts`
+- `libs/garage/contract/src/schemas/entities.ts` — the member, last in the tuple; `entities.spec.ts`
   asserts the exact membership, so schema and contract cannot drift apart silently.
-- `libs/lets-park/database/prisma/schema.prisma` + the migration above. `ADD VALUE IF NOT EXISTS` keeps the
+- `libs/garage/database/prisma/schema.prisma` + the migration above. `ADD VALUE IF NOT EXISTS` keeps the
   migration re-runnable; `schema-contract-parity.spec.ts` fails if either side forgets.
 - `AuditLogService.recordMany` — added for the bulk path, which would otherwise issue one `INSERT`
   per day inside an already long transaction. It takes the same optional transaction client as

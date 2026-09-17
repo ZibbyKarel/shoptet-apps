@@ -4,14 +4,14 @@
 
 ## What
 
-`DateOnly` in `libs/lets-park/shared-types` is a plain alias:
+`DateOnly` in `libs/garage/shared-types` is a plain alias:
 
 ```ts
 export type DateOnly = string;
 ```
 
 It is not a branded type (`string & { __brand: 'DateOnly' }`). Runtime
-guarantees come from `isDateOnly()` / `assertDateOnly()` in `libs/lets-park/shared-types`
+guarantees come from `isDateOnly()` / `assertDateOnly()` in `libs/garage/shared-types`
 and from `dateOnlySchema` (`z.iso.date()`) at the contract boundary — not from
 the type system.
 
@@ -19,9 +19,9 @@ the type system.
 
 A brand would have to exist twice, and differently in each place:
 
-- `libs/lets-park/shared-types` must not depend on Zod (see `doc/decision/0003-*`), so it
+- `libs/garage/shared-types` must not depend on Zod (see `doc/decision/0003-*`), so it
   would have to define its own brand;
-- `libs/lets-park/contract` derives types exclusively via `z.infer`, so its `DateOnly`
+- `libs/garage/contract` derives types exclusively via `z.infer`, so its `DateOnly`
   would be `z.infer<typeof dateOnlySchema>` — either a plain `string`, or Zod's
   own brand (`.brand<'DateOnly'>()`), which is structurally **different** from
   the hand-rolled one.
@@ -37,7 +37,7 @@ date" — dates come from the DB (a `DATE` column) and from the contract
 
 ## How
 
-- `libs/lets-park/shared-types`'s public API validates every input value
+- `libs/garage/shared-types`'s public API validates every input value
   (`parseDateOnly()` calls `assertDateOnly()`), so an invalid string fails with
   a `TypeError` immediately, not three layers further down.
 - `dateOnlySchema` in the contract also validates **calendar validity** —

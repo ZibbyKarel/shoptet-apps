@@ -1,0 +1,351 @@
+/*
+ * The application's one stylesheet.
+ *
+ * It imports the tokens lib's `theme.css` — the documented consumer entry
+ * point (`doc/design-system.md`, §"Wiring into Tailwind v4") — which itself
+ * pulls in `tailwindcss` and the generated `tokens.css`. Importing
+ * `tokens.css` directly would give the custom properties but no Tailwind
+ * utilities to spend them through, and hand-writing any of these values here
+ * would be the drift the token generator exists to prevent.
+ *
+ * The path is **relative**. `@garage/design-system/tokens` is a TypeScript
+ * path alias for module resolution in TS/JS; CSS `@import` does not understand
+ * it. The primitives' Storybook already resolves the same file the same way.
+ *
+ * The `@font-face` blocks for Neue Haas Grotesk Display Pro come from
+ * `tokens.css`, whose `url("./fonts/*.otf")` references resolve relative to
+ * that file — so importing it here is also what wires the fonts up. The family
+ * has a full fallback stack (`--font-sans`), because the licence for those
+ * files is unverified (`doc/decision/0012-otf-fonts-committed-*`).
+ */
+
+@import '../../../../../libs/shared/design-system/assets/theme.css';
+
+/*
+ * Tailwind v4 detects sources from the directory of the file that holds
+ * `@import "tailwindcss"` — which is the design system's tokens layer, not
+ * this app. Nothing would point it at either tree by default, so both are
+ * named explicitly: the primitives and compounds layers, whose components
+ * ship Tailwind class names as string literals (`INSET_FOCUS_RING`, spent by
+ * `spot-tile.tsx`, is one such literal reaching app code from there).
+ *
+ * This app's own `src` is deliberately **not** a source: the ESLint rule
+ * banning `className`/`wrapperClassName` in this app (`doc/decision/0311-the-
+ * application-layer-carries-no-tailwind.md`) means no Tailwind utility
+ * class-name string exists anywhere under it any more, so there is nothing
+ * here for the scanner to find. Removing the line is the stronger proof of
+ * that: a utility that crept back into app markup would simply not be
+ * emitted, rather than passing lint and quietly working.
+ */
+@source '../../../../../libs/shared/design-system/src/primitives';
+@source '../../../../../libs/shared/design-system/src/compounds';
+
+/*
+ * Light theme only: the design defines one appearance and the token set has no
+ * dark palette to switch to. Stated on `html`/`body` rather than inherited, so
+ * the page does not borrow the browser's colours.
+ */
+html {
+  -webkit-text-size-adjust: 100%;
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-soft);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Geometry of the parking-lot map (Task 24).
+ *
+ * These four are the only numbers on that screen the token scale cannot
+ * express: a parking bay is a physical shape from the design
+ * (`doc/design/lets-park-design.dc.html`, the `sc-for` over `group.spots`),
+ * not a step on a 4px spacing ramp, and rounding 236px onto `--space-*`
+ * would change the drawing. They live here — one place, named, with the
+ * design line beside them — rather than as literals sprinkled through TSX,
+ * and are spent as `h-[var(--lot-tile-h)]`, exactly the way
+ * `--control-h-*`, `--modal-w-*` and `--z-*` are spent (see the note at the
+ * bottom of `theme.css` for why those have no Tailwind namespace either).
+ *
+ * They are deliberately NOT in `libs/shared/design-system/src/tokens`: a parking bay is
+ * domain geometry, and the design system must stay domain-free.
+ */
+:root {
+  /* `height:236px` on the bay. */
+  --lot-tile-h: 236px;
+  /* `flex:1 0 116px; max-width:152px` — a bay never stretches into a hall. */
+  --lot-tile-min-w: 116px;
+  --lot-tile-max-w: 152px;
+  /* The painted lines between bays: `3px` sides, `4px` at the kerb. */
+  --lot-line-w: 3px;
+  --lot-kerb-w: 4px;
+}
+
+/*
+ * The asphalt: two offset dot grids over the base fill, straight from the
+ * design's `background-image` on the map surface. Written as a class rather
+ * than a Tailwind arbitrary value because it is four comma-separated
+ * multi-value properties, which arbitrary-value syntax cannot carry legibly.
+ *
+ * Colours are token references, the same treatment `.lot-hatch` gives its own
+ * `rgba()` below: `color-mix(…, var(--neutral-0|--neutral-900) …, transparent)`
+ * in place of the design's literal white/black, so a token change (a theme
+ * pass, a brand refresh) moves the speckle along with everything else that
+ * reads `--neutral-0`/`--neutral-900` rather than leaving it behind.
+ *
+ * The fill colour (`lot-grid.tsx`'s outer `Box`) joins the speckle here too:
+ * `Box`'s `background` prop only names design-system surface tokens
+ * (`bg`/`bg-soft`/`bg-muted`), not an arbitrary neutral step. The drop shadow
+ * that used to live in this same class moved to the `Box`'s own `shadow="lg"`
+ * prop, now that `Box` has one.
+ */
+.lot-asphalt {
+  background-image:
+    radial-gradient(color-mix(in srgb, var(--neutral-0) 4.5%, transparent) 1px, transparent 1px),
+    radial-gradient(color-mix(in srgb, var(--neutral-900) 6%, transparent) 1px, transparent 1px);
+  background-size:
+    7px 7px,
+    11px 11px;
+  background-position:
+    0 0,
+    4px 6px;
+  background-color: var(--neutral-600);
+}
+
+/* The hatching over a cell somebody else is editing. */
+.lot-hatch {
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--brand-yellow) 22%, transparent) 0px,
+    color-mix(in srgb, var(--brand-yellow) 22%, transparent) 7px,
+    transparent 7px,
+    transparent 15px
+  );
+}
+
+/*
+ * The bulk modal's and the date-picker dialog's day grid: a `<table>` whose
+ * cells are spaced rather than collapsed. `border-spacing` has no Tailwind
+ * utility that takes a token, and the two pickers are the only tables in the
+ * product.
+ */
+.calendar-grid {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: var(--space-2);
+}
+
+/*
+ * The weekday head row's own bottom padding, for the same two tables.
+ * `Text` (rendered `as="th"`) has no padding prop by design, and this was
+ * the last Tailwind utility (`pb-1`) left in the application layer — folded
+ * in here rather than kept as a class so the app can stop being scanned for
+ * utilities at all (see the `@source` note above). Same token the rest of
+ * this file spends.
+ */
+.calendar-grid th {
+  padding-bottom: var(--space-1);
+}
+
+/*
+ * One labelled band of bays. `lot-grid.tsx` now renders this as `<Box
+ * as="section">`, which carries the layout (padding/margin/radius) as real
+ * props — this class is left with only the tint and hairline border `Box`'s
+ * `background`/`border` cannot reach: both are alpha-mixed over the asphalt,
+ * and `Box`'s versions are fixed, opaque tones.
+ */
+.lot-group-panel {
+  border: 1px solid color-mix(in srgb, var(--neutral-0) 15%, transparent);
+  background-color: color-mix(in srgb, var(--brand-dark) 10%, transparent);
+}
+
+/*
+ * The hairline that separates a band's name from its free count. A `Divider`
+ * won't do: it is a bordered `<hr>` in one of two fixed tones, and this is an
+ * unbordered filled rule at an alpha step meant for the dark asphalt, not for
+ * `--border`/`--divider`.
+ */
+.lot-group-rule {
+  height: 1px;
+  flex: 1 1 auto;
+  background-color: color-mix(in srgb, var(--neutral-0) 15%, transparent);
+}
+
+/*
+ * The legend's three paint swatches (taken / free / waitlist). Below
+ * `IconCircle`'s smallest step (`size-5`) and needing a dashed border no
+ * primitive exposes, so they are drawn as what they are: samples of the
+ * map's own paint.
+ */
+.lot-swatch {
+  display: inline-block;
+  width: var(--space-3);
+  height: var(--space-3);
+  border-radius: var(--radius-photos);
+}
+
+.lot-swatch--taken {
+  background-color: var(--color-car-1);
+}
+
+.lot-swatch--free {
+  border: 2px dashed color-mix(in srgb, var(--neutral-0) 50%, transparent);
+}
+
+.lot-swatch--waitlist {
+  background-color: var(--brand-yellow);
+}
+
+/*
+ * The left edge of a band's tile row (`lot-grid.tsx`) — the same painted
+ * line each bay draws on its own right/top edges, once for the row as a
+ * whole. `Stack` has no border prop, so this is the row's one class.
+ */
+.lot-bay-row {
+  border-left: var(--lot-line-w) solid color-mix(in srgb, var(--neutral-0) 50%, transparent);
+}
+
+/*
+ * One parking bay's outer cell (`spot-tile.tsx`) — the painted divider lines
+ * between bays and at the kerb. A plain native `<div>`, so its flex sizing
+ * lives in the same class as the border it draws; there is no `Box` prop for
+ * either the bay's stretch/max-width pair or a border at this alpha.
+ */
+.lot-bay {
+  position: relative;
+  display: flex;
+  flex: 1 0 var(--lot-tile-min-w);
+  max-width: var(--lot-tile-max-w);
+  flex-direction: column;
+  border-right: var(--lot-line-w) solid color-mix(in srgb, var(--neutral-0) 50%, transparent);
+  border-top: var(--lot-kerb-w) solid color-mix(in srgb, var(--neutral-0) 50%, transparent);
+}
+
+/*
+ * The bay's own `<button>`. Native, so its full chrome (height, the gap
+ * between the label and the state below it, the hover/disabled paint) lives
+ * here rather than half in props and half in CSS. Hover and disabled are
+ * real pseudo-classes rather than a conditional class name, because the
+ * button's own `disabled` attribute already carries that state.
+ */
+.lot-bay-button {
+  display: flex;
+  width: 100%;
+  height: var(--lot-tile-h);
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--dur-base) ease-out;
+}
+
+.lot-bay-button:disabled {
+  cursor: default;
+  background-color: color-mix(in srgb, var(--brand-yellow) 6%, transparent);
+}
+
+.lot-bay-button:not(:disabled):hover {
+  background-color: color-mix(in srgb, var(--neutral-0) 6%, transparent);
+}
+
+/*
+ * The three appearance states a bay's content area can be in. Each sets the
+ * text colour the state's icon and caption inherit — `IconCircle`'s
+ * `translucent` tone deliberately carries no foreground of its own, so this
+ * is not decoration but the only place that colour is set at all.
+ *
+ * `spot-tile.tsx` renders each of these as `Stack as="span"` now that
+ * `Stack` takes an `as` — the flex layout (`display:flex`, column,
+ * centred, `gap-3`) that used to live here moved onto it. What is left is
+ * the item's own flex-sizing (`width`/`flex`, properties a flex *container*
+ * does not set on itself) and the border radius, which `Stack` has no prop
+ * for.
+ */
+.lot-bay-free,
+.lot-bay-locked,
+.lot-bay-editing {
+  width: 100%;
+  flex: 1 1 auto;
+  border-radius: var(--radius-sm);
+}
+
+.lot-bay-free {
+  border: 2px dashed color-mix(in srgb, var(--neutral-0) 30%, transparent);
+  color: color-mix(in srgb, var(--neutral-0) 70%, transparent);
+}
+
+.lot-bay-locked {
+  border: 2px solid color-mix(in srgb, var(--neutral-0) 20%, transparent);
+  background-color: color-mix(in srgb, var(--brand-dark) 15%, transparent);
+  color: color-mix(in srgb, var(--neutral-0) 60%, transparent);
+}
+
+.lot-bay-editing {
+  border: 2px solid color-mix(in srgb, var(--brand-yellow) 65%, transparent);
+}
+
+/*
+ * A taken bay's content: the car glyph over the holder's name/plate. No
+ * border or tint of its own — unlike the three states above, this one sets
+ * no inherited text colour either, because each caption below carries its
+ * own `Text tone`.
+ *
+ * Same move as the three states above: `spot-tile.tsx` renders this as
+ * `Stack as="span" justify="start"` (the design starts this group at the top
+ * of the bay rather than centring it, unlike the empty/locked/editing
+ * placeholders), so only the item's own flex-sizing is left here.
+ */
+.lot-bay-taken {
+  width: 100%;
+  flex: 1 1 auto;
+}
+
+/*
+ * The admin `⋯` menu button pinned to a taken bay's corner (positioned by
+ * `Box placement="top-right"`; this class is only the button's own chrome).
+ * `IconCircle`'s closest tone (`translucent`, 15% alpha) is not this
+ * button's 20%, and no primitive expresses the hover colour inversion below
+ * — see the report for both gaps.
+ */
+.lot-spot-menu {
+  display: flex;
+  width: var(--space-6);
+  height: var(--space-6);
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background-color: color-mix(in srgb, var(--neutral-0) 20%, transparent);
+  color: var(--neutral-0);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-base) ease-out,
+    color var(--dur-base) ease-out;
+}
+
+.lot-spot-menu:hover {
+  background-color: var(--neutral-0);
+  color: var(--fg);
+}
+
+/*
+ * The car glyph's own chrome (`car-glyph.tsx`): the drop shadow that lifts it
+ * off the asphalt. `--drop-shadow-md`'s value is Tailwind's own default (no
+ * token overrides it — `theme.css` only touches `--shadow-*`, the box-shadow
+ * scale, which is a different CSS property), copied from
+ * `node_modules/tailwindcss/theme.css` rather than reconstructed from memory.
+ */
+.lot-car {
+  flex-shrink: 0;
+  filter: drop-shadow(0 3px 3px rgb(0 0 0 / 0.12));
+}

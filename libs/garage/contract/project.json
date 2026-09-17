@@ -1,0 +1,20 @@
+{
+  "name": "contract",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/garage/contract/src",
+  "projectType": "library",
+  "tags": ["type:contract", "scope:shared", "app:garage"],
+  "// targets": "to see all targets run: nx show project contract --web",
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "tsc --noEmit -p libs/garage/contract/tsconfig.lib.json",
+          "tsc --noEmit -p libs/garage/contract/tsconfig.spec.json"
+        ],
+        "parallel": false
+      }
+    }
+  }
+}

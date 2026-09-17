@@ -15,7 +15,7 @@ field under two names**.
 
 Specifically:
 
-- `libs/lets-park/contract/src/api/errors.ts` holds `ERROR_DEFINITIONS` — one definition
+- `libs/garage/contract/src/api/errors.ts` holds `ERROR_DEFINITIONS` — one definition
   per code, with an HTTP status and a default (developer-facing, English)
   message. `satisfies Record<ErrorCode, …>` guards against the two lists
   drifting apart; a test also verifies it at runtime.
@@ -74,7 +74,7 @@ export const createReservationContract = authed          // declares FORBIDDEN
 
 The backend (Task 12/13) throws the error via
 `errors.SPOT_ALREADY_RESERVED({ data: { … } })`. The global exception filter in
-`apps/lets-park/api` is the last safeguard for anything untyped.
+`apps/garage/api` is the last safeguard for anything untyped.
 
 A new code is added in **three steps, in this order**: `ERROR_CODES` (the Task
 3 file) → `ERROR_DEFINITIONS` (status + message) → `contractErrors(...)` on

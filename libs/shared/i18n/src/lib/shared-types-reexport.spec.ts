@@ -1,10 +1,10 @@
 /**
  * Proves the `doc/decision/0003-*` re-export actually works — feature code
- * imports `@lets-park/i18n` alone and gets the Europe/Prague date logic and
- * Czech holidays, without reaching into `@lets-park/shared-types` itself.
+ * imports `@garage/i18n` alone and gets the Europe/Prague date logic and
+ * Czech holidays, without reaching into `@garage/shared-types` itself.
  *
  * This does not re-derive the holiday rules (Easter, weekends, …) — those
- * have their own 148 tests in `libs/lets-park/shared-types`. It only checks that the
+ * have their own 148 tests in `libs/garage/shared-types`. It only checks that the
  * values reaching feature code through this lib's barrel are the same ones.
  */
 import { czechPublicHolidayOn, isBusinessDay, isCzechPublicHoliday, isWeekend } from '../index';

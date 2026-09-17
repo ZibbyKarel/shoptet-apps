@@ -9,7 +9,7 @@ not in `.env.example`.
 
 ## Why
 
-Next.js's request interceptor (`apps/lets-park/web/src/proxy.ts`, Node runtime) sees a
+Next.js's request interceptor (`apps/garage/web/src/proxy.ts`, Node runtime) sees a
 request URL built from the address the server bound, not from the Host header.
 Auth.js writes that origin into the `callbackUrl` it appends when it redirects
 an unauthenticated visitor to the sign-in page, and after a successful sign-in
@@ -35,7 +35,7 @@ step 1 reads `callbackUrl=http%3A%2F%2Flets-park-web%3A4200%2F` and step 4 lands
 on `/`.
 
 This does mean Auth.js reads one variable out of the environment on its own,
-which `apps/lets-park/web/src/auth.ts` otherwise deliberately prevents — it passes the
+which `apps/garage/web/src/auth.ts` otherwise deliberately prevents — it passes the
 issuer, both client credentials and the secret in as arguments so that Auth.js's
 implicit `AUTH_SECRET`/`AUTH_OKTA_ID`/`AUTH_OKTA_SECRET` inference cannot pick
 anything up behind `webEnvSchema`'s back. `AUTH_URL` is a different kind of
@@ -48,8 +48,8 @@ because only the deployment knows what address a browser reaches it on.
   set (`doc/decision/0205-the-app-profile-names-every-variable-it-passes`).
 - `.env.docker.example` — set to `http://localhost:4200`, the published host
   port, with the reason next to it.
-- `libs/lets-park/auth` and `apps/lets-park/web/src/auth.ts` are unchanged. `trustHost` was already
-  stated as `true` in `libs/lets-park/auth/src/lib/config.ts` and is not affected by this
+- `libs/garage/auth` and `apps/garage/web/src/auth.ts` are unchanged. `trustHost` was already
+  stated as `true` in `libs/garage/auth/src/lib/config.ts` and is not affected by this
   variable's presence.
 
 ## Risk

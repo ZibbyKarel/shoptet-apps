@@ -4,7 +4,7 @@
 
 ## What
 
-Every schema in `libs/lets-park/contract` that narrows `userSchema` for an audience is a
+Every schema in `libs/garage/contract` that narrows `userSchema` for an audience is a
 `.pick()` over a named field list, never a `.omit()`.
 
 - `userSummarySchema` (`schemas/entities.ts`) — already a `pick`. Unchanged.
@@ -51,13 +51,13 @@ with pick(ADMIN_USER_FIELDS): adminUserSchema has passwordResetToken: false (exi
 ```
 
 `adminUserSchema` keeps `oktaId` and `email`, which the `omit` also exposed.
-Narrowing that is a separate question with a UI consequence (`apps/lets-park/web`'s admin
+Narrowing that is a separate question with a UI consequence (`apps/garage/web`'s admin
 table), and this record deliberately does not decide it — the point here is the
 *direction of the default*, not a change to what admins can see today.
 
 ## How
 
-`libs/lets-park/contract/src/api/users.ts` exports `ADMIN_USER_FIELDS`, the allowlist, and
+`libs/garage/contract/src/api/users.ts` exports `ADMIN_USER_FIELDS`, the allowlist, and
 builds `adminUserSchema` from it. Two tests in `users.spec.ts`:
 
 - *is exactly the declared allowlist, so widening it takes an edit here* — the

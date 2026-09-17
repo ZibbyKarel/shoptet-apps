@@ -70,7 +70,7 @@ is not.
 
 ## Verified by
 
-`apps/lets-park/web/src/lot/lot-view.spec.ts`, §`toBannerView` — six tests, one per row
+`apps/garage/web/src/lot/lot-view.spec.ts`, §`toBannerView` — six tests, one per row
 of the table above. Mutating `toBannerView` to drop the `isAuto` guard and
 always interpolate the dates fails 2 tests by name
 ("never quotes a date when an admin forced the state", "drops the opening date

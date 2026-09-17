@@ -1,6 +1,6 @@
 # Workspace – structure, scripts, boundaries
 
-Nx 23 monorepo for Let's Park. This document describes **how the repo is put
+Nx 23 monorepo for Garage. This document describes **how the repo is put
 together**, **how the checks are run**, and **how to add a new lib so that it
 gets watched by the same boundaries as everything else**.
 
@@ -22,7 +22,7 @@ debt `api-client`'s placement carries.
 
 ```
 apps/
-  lets-park/
+  garage/
     web/        Next.js 16 (App Router, React 19)   tags: type:app,  scope:web
     web-e2e/    Playwright e2e for web              tags: type:app,  scope:web
     api/        NestJS 11 (API + Socket.io gateway) tags: type:app,  scope:api
@@ -40,14 +40,14 @@ libs/
     form/       react-hook-form wrapper              tags: type:util, scope:web
     i18n/       next-intl wrapper + Czech messages   tags: type:util, scope:web
     api-client/ oRPC client typed from the contract  tags: type:util, scope:web
-  lets-park/    only the parking app consumes these
+  garage/    only the parking app consumes these
     contract/   Zod schemas + oRPC contract + realtime events
-                (two entry points: @lets-park/contract and @lets-park/contract/realtime)
+                (two entry points: @garage/contract and @garage/contract/realtime)
                                       tags: type:contract, scope:shared
     database/   Prisma 7 schema, migrations, seed + generated client
                                       tags: type:data,     scope:api
     auth/       next-auth v5 (Auth.js) wrapper
-                (two entry points: @lets-park/auth and @lets-park/auth/client)
+                (two entry points: @garage/auth and @garage/auth/client)
                                       tags: type:util, scope:web
     realtime-client/
                 socket.io-client wrapper typed from the contract
@@ -61,7 +61,7 @@ libs/
                 application uses it (decision 0310).
                                       tags: type:util,     scope:shared
 doc/            documentation, decisions, visual design export
-prisma.config.ts  Prisma CLI configuration (schema in libs/lets-park/database, `.env` from the root)
+prisma.config.ts  Prisma CLI configuration (schema in libs/garage/database, `.env` from the root)
 ```
 
 **Nx project names are flat and unprefixed** (`web`, `api`, `contract`, …),
@@ -81,22 +81,22 @@ Configuration that applies to the whole workspace:
 | file | what it's for |
 | --- | --- |
 | `nx.json` | plugins, cache, `targetDefaults`, generator defaults |
-| `tsconfig.base.json` | shared `compilerOptions` + `@lets-park/*` path aliases |
+| `tsconfig.base.json` | shared `compilerOptions` + `@garage/*` path aliases |
 | `eslint.config.mjs` | flat config: module boundaries, wrapper layers, `no-console` |
 | `.prettierrc`, `.editorconfig` | formatting for TS/TSX/JSON/MD |
 | `jest.preset.js`, `jest.config.ts` | shared Jest preset and project aggregation |
 
-A lib can have more than one entry point: `libs/lets-park/contract` has
-`@lets-park/contract/realtime` alongside `@lets-park/contract`, so the
+A lib can have more than one entry point: `libs/garage/contract` has
+`@garage/contract/realtime` alongside `@garage/contract`, so the
 Socket.io half of the contract doesn't pull in `@orpc/contract`;
-`libs/lets-park/auth` has `@lets-park/auth/client`, so a browser component doesn't pull
+`libs/garage/auth` has `@garage/auth/client`, so a browser component doesn't pull
 in Auth.js's server runtime. A second entry point means a second entry in
 `paths` in `tsconfig.base.json`, plus **a test that proves the isolation**
-(`libs/lets-park/contract/src/realtime/no-orpc.spec.ts`,
-`libs/lets-park/auth/src/lib/client-boundary.spec.ts`) — see `doc/decision/0023-*` and
+(`libs/garage/contract/src/realtime/no-orpc.spec.ts`,
+`libs/garage/auth/src/lib/client-boundary.spec.ts`) — see `doc/decision/0023-*` and
 `doc/decision/0046-*`.
 
-Packages are named `@lets-park/<lib>` (see
+Packages are named `@garage/<lib>` (see
 `doc/decision/0005-npm-scope-lets-park.md`). The scope was derived from the
 root `package.json`'s name, which Nx generators read to fill the alias in
 automatically.
@@ -104,7 +104,7 @@ automatically.
 **That derivation no longer matches what is on disk.** The root package is
 now `@shoptet-apps/source` — the repository hosts two applications and is
 named after itself rather than after the first one — while every existing
-lib keeps `@lets-park/*`, because renaming the scope touches every import in
+lib keeps `@garage/*`, because renaming the scope touches every import in
 the workspace and `doc/decision/0310-*` defers it. So a generator will offer
 `@shoptet-apps/<lib>` for a new lib and be inconsistent with its fourteen
 neighbours. Choose the alias deliberately rather than accepting the default,
@@ -121,7 +121,7 @@ suffix scopes a script to one application.
 
 | command | what it does |
 | --- | --- |
-| `npm run dev:lets-park` | `serve` + `dev` for that app's `api` and `web` – continuous |
+| `npm run dev:garage` | `serve` + `dev` for that app's `api` and `web` – continuous |
 | `npm run dev:wishlist` | the wishlist board's `web` on :4300 – continuous |
 | `npm run lint` | ESLint across every project (`nx run-many -t lint`), **`--max-warnings=0`** |
 | `npm run typecheck` | `tsc --noEmit` against every project's tsconfigs |
@@ -131,13 +131,13 @@ suffix scopes a script to one application.
 | `npm run format` | Prettier write |
 | `npm run format:check` | Prettier check (fails if anything is unformatted) |
 
-`dev:lets-park` is the only script that needs scoping today, because serving
+`dev:garage` is the only script that needs scoping today, because serving
 two applications' `api` and `web` at once is never what you want. It selects
-`-p tag:app:lets-park`, **not** `-p api,web`: Nx project names are globally
+`-p tag:app:garage`, **not** `-p api,web`: Nx project names are globally
 unique, so a second application cannot own a project called `api` and
 scaffolding it forces a rename of these. A list of project names breaks then;
-the `app:` tag does not. Every project carries one — `app:lets-park` or
-`app:shared` — and `nx show projects -p tag:app:lets-park` is how you ask what
+the `app:` tag does not. Every project carries one — `app:garage` or
+`app:shared` — and `nx show projects -p tag:app:garage` is how you ask what
 it covers. Adding `dev:<second-app>` is then one line.
 
 E2e tests aren't part of `npm run test`; they run on demand:
@@ -209,8 +209,8 @@ carries exactly one `type:` tag), which is why the npm allow-list
 | `type:feature` | domain composition | `feature`, `ui`, `util`, `contract`, `data` | `tslib` |
 | `type:ui` | the design system, domain-free | `ui`, `util` | React, `clsx`, `tailwind-merge`, `class-variance-authority`, TanStack Table, Storybook |
 | `type:util` | wrapper layers and helpers | `util`, `contract` | React/Next + the union of packages from `WRAPPED_LIBRARIES` |
-| `type:contract` | `libs/lets-park/contract` – Zod + oRPC | `layer:foundation` | `zod`, `@orpc/contract`, `tslib` |
-| `type:data` | data access (`libs/lets-park/database`) | `data`, `util`, `contract` | Prisma |
+| `type:contract` | `libs/garage/contract` – Zod + oRPC | `layer:foundation` | `zod`, `@orpc/contract`, `tslib` |
+| `type:data` | data access (`libs/garage/database`) | `data`, `util`, `contract` | Prisma |
 
 ### The `layer:` dimension – the bottom of the graph
 
@@ -218,7 +218,7 @@ carries exactly one `type:` tag), which is why the npm allow-list
 | --- | --- | --- |
 | `layer:foundation` | **nothing** | **nothing** |
 
-Only one project carries it, `libs/lets-park/shared-types`. It separates it from the
+Only one project carries it, `libs/garage/shared-types`. It separates it from the
 wrappers, which share the same `type:util` tag but sit **above** the contract,
 whereas `shared-types` sits **below** it. Without this, `type:util →
 type:contract` and `type:contract → type:util` would form a cycle. The
@@ -239,8 +239,8 @@ foundation`.
 | `scope:api` | `scope:api`, `scope:shared` |
 | `scope:shared` | `scope:shared` |
 
-This dimension enforces decision `0003`: `apps/lets-park/api` (`scope:api`) may depend
-on `libs/lets-park/shared-types` (`scope:shared`), but **not** on `libs/shared/i18n`
+This dimension enforces decision `0003`: `apps/garage/api` (`scope:api`) may depend
+on `libs/garage/shared-types` (`scope:shared`), but **not** on `libs/shared/i18n`
 (`scope:web`), so `next-intl` never reaches the backend.
 
 ### The `ds:` dimension – gone, and what replaced it
@@ -288,29 +288,29 @@ only allowed place is the wrapper lib that owns them:
 
 | forbidden package | use instead | only allowed directory |
 | --- | --- | --- |
-| `react-hook-form` | `@lets-park/form` | `libs/shared/form` (done) |
-| `@tanstack/react-table` | `@lets-park/design-system/compounds` | `libs/shared/design-system/src/compounds` |
-| `@tanstack/react-query` | `@lets-park/query` | `libs/query` (done) |
-| `@orpc/client` | `@lets-park/api-client` | `libs/shared/api-client` (done) |
-| `socket.io-client` | `@lets-park/realtime-client` | `libs/lets-park/realtime-client` (done) |
-| `next-auth` | `@lets-park/auth` / `@lets-park/auth/client` | `libs/lets-park/auth` (done) |
-| `ical-generator` | `@lets-park/calendar-export` | `libs/lets-park/calendar-export` (done) |
-| `next-intl` | `@lets-park/i18n` | `libs/shared/i18n` |
+| `react-hook-form` | `@garage/form` | `libs/shared/form` (done) |
+| `@tanstack/react-table` | `@garage/design-system/compounds` | `libs/shared/design-system/src/compounds` |
+| `@tanstack/react-query` | `@garage/query` | `libs/query` (done) |
+| `@orpc/client` | `@garage/api-client` | `libs/shared/api-client` (done) |
+| `socket.io-client` | `@garage/realtime-client` | `libs/garage/realtime-client` (done) |
+| `next-auth` | `@garage/auth` / `@garage/auth/client` | `libs/garage/auth` (done) |
+| `ical-generator` | `@garage/calendar-export` | `libs/garage/calendar-export` (done) |
+| `next-intl` | `@garage/i18n` | `libs/shared/i18n` |
 
 The list lives in `eslint.config.mjs` in a single map, `WRAPPED_LIBRARIES`;
 the global ban and the per-wrapper exceptions are both generated from it, so
 they can't drift apart. The error message always states which wrapper lib the
 developer should use instead.
 
-`no-console: error` also applies in `apps/lets-park/api/**` and `libs/**` – the backend
+`no-console: error` also applies in `apps/garage/api/**` and `libs/**` – the backend
 logs through `nestjs-pino`. Console is allowed only in `tools/**`,
 `scripts/**`, `**/scripts/**`, and in configuration files.
 
-`libs/lets-park/shared-types` is handled specially: it has its own
+`libs/garage/shared-types` is handled specially: it has its own
 `no-restricted-imports` block that additionally bans **`zod`** there. The Nx
 `type:util` dimension can't express this – the wrapper libs, which must
 depend on third parties, share the same tag. Without this block, nothing
-would stop `apps/lets-park/api` from pulling in Zod through `shared-types` (see
+would stop `apps/garage/api` from pulling in Zod through `shared-types` (see
 `doc/decision/0003-*`).
 
 > **Trap when editing `eslint.config.mjs`:** Nx runs `eslint .` with **cwd set
@@ -325,12 +325,12 @@ would stop `apps/lets-park/api` from pulling in Zod through `shared-types` (see
 
 ## How to add a new lib
 
-1. **Generate it.** The `@lets-park/<name>` alias is added to
+1. **Generate it.** The `@garage/<name>` alias is added to
    `tsconfig.base.json` automatically.
 
    ```bash
    # a pure TypeScript lib (contract, util, backend service)
-   npx nx g @nx/js:lib libs/lets-park/shared-types --name=shared-types \
+   npx nx g @nx/js:lib libs/garage/shared-types --name=shared-types \
      --unitTestRunner=jest --bundler=none --linter=eslint --useProjectJson
 
    # a React lib (design system, frontend wrappers)
@@ -350,12 +350,12 @@ would stop `apps/lets-park/api` from pulling in Zod through `shared-types` (see
 
    | lib | tags |
    | --- | --- |
-   | `libs/lets-park/contract` | `type:contract`, `scope:shared` |
-   | `libs/lets-park/shared-types` | `type:util`, `scope:shared`, `layer:foundation` |
+   | `libs/garage/contract` | `type:contract`, `scope:shared` |
+   | `libs/garage/shared-types` | `type:util`, `scope:shared`, `layer:foundation` |
    | `libs/shared/design-system` | `type:ui`, `scope:web` |
-   | `libs/shared/form`, `libs/query`, `libs/shared/api-client`, `libs/lets-park/realtime-client`, `libs/lets-park/auth`, `libs/shared/i18n` | `type:util`, `scope:web` |
-   | `libs/lets-park/calendar-export` | `type:util`, `scope:api` |
-   | `libs/lets-park/database` | `type:data`, `scope:api` |
+   | `libs/shared/form`, `libs/query`, `libs/shared/api-client`, `libs/garage/realtime-client`, `libs/garage/auth`, `libs/shared/i18n` | `type:util`, `scope:web` |
+   | `libs/garage/calendar-export` | `type:util`, `scope:api` |
+   | `libs/garage/database` | `type:data`, `scope:api` |
 
    A project with no tags is restricted by nothing – **an untagged lib is a
    hole in the boundaries.** When a lib needs an npm package that isn't in the

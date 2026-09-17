@@ -5,7 +5,7 @@ consumes it
 
 ## What
 
-Token verification lives in `JwksVerifierService` (`apps/lets-park/api/src/auth/jwks-verifier.service.ts`),
+Token verification lives in `JwksVerifierService` (`apps/garage/api/src/auth/jwks-verifier.service.ts`),
 not in the Passport strategy. The service owns:
 
 - **one** `jwks-rsa` `JwksClient` for the process — one key cache, one rate limiter, one

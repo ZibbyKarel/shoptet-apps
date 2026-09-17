@@ -2,10 +2,10 @@
 
 ## What
 
-`apps/lets-park/web-e2e/playwright.config.mts`'s web `webServer` entry changed in three
-ways, and `apps/lets-park/web-e2e/project.json` in one:
+`apps/garage/web-e2e/playwright.config.mts`'s web `webServer` entry changed in three
+ways, and `apps/garage/web-e2e/project.json` in one:
 
-- The command is `npx next start --port 4200` with `cwd` set to `apps/lets-park/web`,
+- The command is `npx next start --port 4200` with `cwd` set to `apps/garage/web`,
   not `npx nx run web:start -- --port 4200`.
 - `reuseExistingServer` is `false`, not `!process.env['CI']`.
 - `NODE_ENV: production` is pinned on the entry, which is what `web:start`'s
@@ -78,7 +78,7 @@ Playwright try to bind an occupied 3000.
 
 ## How the identity check works, and what it took to trust it
 
-`next build` writes a fresh random id to `apps/lets-park/web/.next/BUILD_ID`, and a
+`next build` writes a fresh random id to `apps/garage/web/.next/BUILD_ID`, and a
 server stamps the id it holds into the flight payload of every document, as
 `"b":"<id>"`. The check compares that against the file `web:build` just wrote.
 
@@ -107,7 +107,7 @@ row alone, which would have made it a comment with an `expect()` around it.
   port first. A developer running `nx run web:dev` alongside the suite will now
   be told.
 - **The web server no longer inherits Nx's environment**, since Nx no longer
-  starts it. In practice `next start` loads `apps/lets-park/web/.env` itself and
+  starts it. In practice `next start` loads `apps/garage/web/.env` itself and
   Playwright merges `process.env` under the entry's `env`, and the whole suite
   was re-run with **both `.env` files removed** and only the CI job's
   environment set: 21 passed, exit 0.

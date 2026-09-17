@@ -1,6 +1,6 @@
 # 0060 – The websocket token is a handshake callback, not a query string
 
-**Date:** 2026-09-02 · **Status:** accepted · **Task:** 21 (`libs/lets-park/realtime-client`)
+**Date:** 2026-09-02 · **Status:** accepted · **Task:** 21 (`libs/garage/realtime-client`)
 
 ## What
 
@@ -26,7 +26,7 @@ Three consequences follow from the function form specifically:
 
 - the provider is re-read on **every** engine open — the first connect and every reconnect;
 - the CONNECT packet is not sent until the callback fires, so an `async` provider (which
-  `libs/lets-park/auth`'s is, once a refresh is in flight) is awaited rather than raced;
+  `libs/garage/auth`'s is, once a refresh is in flight) is awaited rather than raced;
 - a provider that rejects, or that has no session, produces `{}` — an empty handshake the
   gateway refuses — rather than a connection that quietly proceeds unauthenticated.
 
@@ -47,7 +47,7 @@ header is the right answer for HTTP (`libs/shared/api-client`) and simply is not
 
 **An object would pin the token.** `auth` as a plain object is read once, when the socket is
 constructed. This socket is meant to live as long as the tab, across a token expiry, a refresh
-and any number of transport drops. `libs/lets-park/auth` rotates the access token in the `jwt` callback
+and any number of transport drops. `libs/garage/auth` rotates the access token in the `jwt` callback
 and the browser polls `/api/auth/session` every five minutes (`doc/decision/0049-*`), so the
 token the socket was built with is *expected* to go stale. Re-reading a provider is the same
 per-request seam `libs/shared/api-client` already uses for its `Authorization` header — which is why
@@ -62,7 +62,7 @@ failed to refresh (`doc/decision/0048-*`).
 
 ## How it is verified
 
-`libs/lets-park/realtime-client/src/lib/socket.spec.ts` asserts on packets a **real**
+`libs/garage/realtime-client/src/lib/socket.spec.ts` asserts on packets a **real**
 `socket.io-client` socket produced — the fixture replaces only the transport, never the
 protocol (`src/__fixtures__/offline-transport.ts`).
 
@@ -93,7 +93,7 @@ nothing re-reads the provider by itself. `doc/decision/0061-*` is what makes the
 **A `cb` that is never called hangs the socket open.** Socket.io does not time the `auth`
 callback out; if a provider neither resolved nor rejected, the CONNECT packet would never be
 sent and the connection would sit in `connecting` forever. Every provider in this workspace is
-either synchronous or a settled promise, and `libs/lets-park/auth`'s refresher has its own error path,
+either synchronous or a settled promise, and `libs/garage/auth`'s refresher has its own error path,
 so this is a contract on the provider rather than a live hazard — but it is the reason the
 rejection branch exists at all instead of leaving the promise unhandled.
 

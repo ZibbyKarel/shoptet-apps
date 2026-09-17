@@ -23,7 +23,7 @@ Read from the installed sources rather than inferred:
   `connect_error`. `destroy()` clears `this.subs`, and `active` is `!!this.subs` — so the
   socket is left inactive and socket.io's own reconnection loop will never touch it again.
 
-`libs/lets-park/realtime-client` branches on exactly that field (`doc/decision/0061-*`). A refusal
+`libs/garage/realtime-client` branches on exactly that field (`doc/decision/0061-*`). A refusal
 becomes the user-visible `rejected` status, recovered by building a **new** socket — which
 re-runs the `auth` callback and therefore presents whatever token the provider has now — three
 times, at 1 s / 5 s / 30 s, and then stops.
@@ -50,10 +50,10 @@ the auth object — and both are refused.
 socket.io's own connection-state-recovery puts `pid` and `offset`, so extra keys are the
 library working rather than a client disagreeing.
 
-The handshake credential is deliberately **not** in `@lets-park/contract/realtime`, and that is
+The handshake credential is deliberately **not** in `@garage/contract/realtime`, and that is
 not a contract-first exception: the contract's realtime entry point declares *events and their
 payloads*, and this is a connection-level auth object that exists before any event does.
-`libs/lets-park/realtime-client` makes the same call with its local `RealtimeHandshakeAuth`.
+`libs/garage/realtime-client` makes the same call with its local `RealtimeHandshakeAuth`.
 
 ## What a refusal says, and to whom
 
@@ -110,6 +110,6 @@ reviewer would look.
 
 **The rejection message is a string, not a code.** A client cannot distinguish "your token
 expired, refresh and retry" from "your account is deactivated, stop trying" — so
-`libs/lets-park/realtime-client` retries all of them three times. That is the deliberate trade
+`libs/garage/realtime-client` retries all of them three times. That is the deliberate trade
 (`doc/decision/0061-*`): an oracle for an unauthenticated caller is worth more to an attacker
 than three wasted handshakes are to a deactivated employee.

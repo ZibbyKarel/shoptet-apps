@@ -2,15 +2,15 @@
 
 ## What
 
-`nx run database:check-schema` (`libs/lets-park/database/project.json`), four commands in
+`nx run database:check-schema` (`libs/garage/database/project.json`), four commands in
 order:
 
 ```
 prisma migrate status
 prisma migrate diff --from-config-datasource \
-  --to-schema libs/lets-park/database/prisma/schema.prisma --exit-code
+  --to-schema libs/garage/database/prisma/schema.prisma --exit-code
 prisma generate
-git diff --exit-code -- libs/lets-park/database/src/generated
+git diff --exit-code -- libs/garage/database/src/generated
 ```
 
 It needs a live PostgreSQL and `DATABASE_URL`, so it is **not** part of
@@ -26,7 +26,7 @@ job**, which already has the `postgres:17` service and already runs
     client** against the contract, and says so in its own header. Nothing
     regenerated that client in CI and nothing diffed it against the schema:
     `database:prisma-generate` existed but **nothing depended on it** — no
-    reference from `nx.json`, `package.json`, `.github/`, `apps/lets-park/api/project.json`
+    reference from `nx.json`, `package.json`, `.github/`, `apps/garage/api/project.json`
     or either Dockerfile. Edit the schema without regenerating and that spec
     compares a stale client against the contract, and passes.
   - `migration-sql.spec.ts` never read `schema.prisma` at all.
@@ -47,7 +47,7 @@ job**, which already has the `postgres:17` service and already runs
 - **`--from-migrations` was tried and rejected.** It is the more hermetic form —
   it replays the history into a throwaway database — but Prisma requires
   `datasource.shadowDatabaseUrl` in `prisma.config.ts` and then **refuses to
-  create** the named database (`P1003: Database lets_park_shadow does not
+  create** the named database (`P1003: Database garage_shadow does not
   exist`). Configuring one would also change `prisma migrate dev` for every
   developer, which is a real regression to buy a marginal improvement over
   `migrate status` + `--from-config-datasource`. `prisma.config.ts` is therefore
@@ -64,14 +64,14 @@ job**, which already has the `postgres:17` service and already runs
 - `parallel: false`, so the commands run in order and the first failure stops
   the target. `--exit-code` makes `migrate diff` exit `2` on a difference and
   `1` on an error; both fail the target, which is correct.
-- `git diff --exit-code -- libs/lets-park/database/src/generated` is the honest form of
+- `git diff --exit-code -- libs/garage/database/src/generated` is the honest form of
   "the committed client is current": it compares what `prisma generate` just
   produced against what is committed. In a clean CI checkout that is exactly the
   question. **Locally it will fail while a legitimate schema edit's regenerated
   client is still uncommitted** — commit it and the target goes green.
 - `database:prisma-generate`'s `inputs` were `["{projectRoot}/prisma/schema.prisma"]`,
   which **replaced** Nx's default input set instead of extending it. Measured:
-  with that list, touching `libs/lets-park/database/README.md` still produced a cache hit;
+  with that list, touching `libs/garage/database/README.md` still produced a cache hit;
   with `["default", { "externalDependencies": ["prisma", "@prisma/client"] }]` it
   re-runs, and a Prisma version bump now misses the cache too.
 

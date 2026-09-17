@@ -1,6 +1,6 @@
 # 0050 – `next-auth` is pinned to an exact v5 **beta**, and `latest` must never be taken
 
-**Date:** 2026-09-02 · **Status:** accepted · **Task:** 20 (`libs/lets-park/auth`), review fix round 1
+**Date:** 2026-09-02 · **Status:** accepted · **Task:** 20 (`libs/garage/auth`), review fix round 1
 
 ## What
 
@@ -38,7 +38,7 @@ usual reflexes all fail:
 - `next-auth@next` installs **v4.0.0-next.26**, an ancient prerelease, because that tag was
   never repurposed.
 
-**v4 is not a fallback; it is a different library.** `libs/lets-park/auth` is built on the v5 App Router
+**v4 is not a fallback; it is a different library.** `libs/garage/auth` is built on the v5 App Router
 API throughout: `NextAuth()` returning `{ handlers, auth, signIn, signOut }`, the universal
 `auth()` in Server Components and middleware, and the `authorized` callback. v4 has
 `getServerSession`, `withAuth` and a `[...nextauth].ts` default export, and none of the four
@@ -57,7 +57,7 @@ that a particular break is known.)
 
 ## How
 
-`npm install next-auth@5.0.0-beta.32 --save-exact`. `libs/lets-park/auth` is the only importer
+`npm install next-auth@5.0.0-beta.32 --save-exact`. `libs/garage/auth` is the only importer
 (`eslint.config.mjs`, `WRAPPED_LIBRARIES`), so the blast radius of a bump is one lib and its
 79 tests.
 

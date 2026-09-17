@@ -1,7 +1,7 @@
 /**
  * What a locale *is* in this application, and how one is chosen.
  *
- * Deliberately free of `next-intl`: both the server (`apps/lets-park/web`'s root layout,
+ * Deliberately free of `next-intl`: both the server (`apps/garage/web`'s root layout,
  * reading a cookie and a request header) and the client (`app/global-error.tsx`,
  * reading `navigator.language` with no layout above it) need this answer, and
  * neither should have to stand up an intl runtime to get it.

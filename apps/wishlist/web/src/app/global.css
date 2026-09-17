@@ -8,10 +8,10 @@
  * utilities to spend them through, and hand-writing any of these values here
  * would be the drift the token generator exists to prevent.
  *
- * The path is **relative**. `@lets-park/design-system/tokens` is a TypeScript
+ * The path is **relative**. `@garage/design-system/tokens` is a TypeScript
  * path alias for module resolution in TS/JS; CSS `@import` does not understand
  * it. Five levels up from `apps/wishlist/web/src/app`, the same depth as
- * `apps/lets-park/web` — a relative depth is exactly the kind of path that
+ * `apps/garage/web` — a relative depth is exactly the kind of path that
  * survives a search-and-replace unchanged, so count it rather than copy it.
  *
  * That this app reads the very same file as the parking app is the reason it
