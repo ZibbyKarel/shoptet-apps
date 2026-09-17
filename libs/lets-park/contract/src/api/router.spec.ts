@@ -1,13 +1,25 @@
 import { type AnyContractProcedure, isContractProcedure } from '@orpc/contract';
+import {
+  DEFAULT_MONTHLY_RESERVATION_CAP,
+  MAX_MONTHLY_RESERVATION_CAP,
+  MIN_MONTHLY_RESERVATION_CAP,
+} from '@lets-park/shared-types';
 import { DATE_A, TIMESTAMP, UUID_A, UUID_B, UUID_C } from '../__fixtures__/fixtures';
+import { AUDIT_LOG_ACTIONS } from '../schemas/entities';
 import { ERROR_CODES } from '../schemas/errors';
+import { reservationLimitSettingsSchema } from '../schemas/reservation-limits';
 import { noInputSchema } from './builder';
+import {
+  getReservationLimitSettingsContract,
+  updateReservationLimitSettingsContract,
+} from './reservation-limits';
 import type { ContractClient } from './router';
 import { contract } from './router';
 import {
   adminUserMonthReservationsInputSchema,
   getMyMonthReservationsContract,
   getUserMonthReservationsContract,
+  monthReservationsOutputSchema,
   myMonthReservationsInputSchema,
 } from './reservations';
 
@@ -47,6 +59,8 @@ const EXPECTED_PROCEDURES = [
   'me.updateSettings',
   'me.regenerateIcsToken',
   'admin.reservation.month',
+  'admin.reservationLimits.get',
+  'admin.reservationLimits.update',
   'admin.spot.list',
   'admin.spot.create',
   'admin.spot.update',
@@ -130,6 +144,8 @@ const EXPECTED_ERROR_CODES: Record<string, readonly string[]> = {
   'me.updateSettings': ['FORBIDDEN', 'NOT_FOUND', 'VALIDATION_FAILED'],
   'me.regenerateIcsToken': ['FORBIDDEN'],
   'admin.reservation.month': ['FORBIDDEN'],
+  'admin.reservationLimits.get': ['FORBIDDEN'],
+  'admin.reservationLimits.update': ['FORBIDDEN', 'VALIDATION_FAILED', 'CONFLICT'],
   'admin.spot.list': ['FORBIDDEN'],
   'admin.spot.create': ['FORBIDDEN', 'CONFLICT', 'VALIDATION_FAILED'],
   'admin.spot.update': ['FORBIDDEN', 'NOT_FOUND', 'CONFLICT', 'VALIDATION_FAILED'],
@@ -306,6 +322,8 @@ describe('contract router', () => {
     expect(procedurePaths.filter((path) => path.startsWith('admin.')).sort()).toEqual(
       [
         'admin.reservation.month',
+        'admin.reservationLimits.get',
+        'admin.reservationLimits.update',
         'admin.spot.create',
         'admin.spot.deactivate',
         'admin.spot.list',
@@ -317,5 +335,55 @@ describe('contract router', () => {
         'admin.window.update',
       ].sort()
     );
+  });
+
+  it('exposes the admin reservation-limit settings at admin.reservationLimits', () => {
+    expect(contract.admin.reservationLimits.get).toBe(getReservationLimitSettingsContract);
+    expect(contract.admin.reservationLimits.update).toBe(updateReservationLimitSettingsContract);
+  });
+
+  it('defaults the monthly cap so a partial settings payload is accepted', () => {
+    expect(reservationLimitSettingsSchema.parse({})).toEqual({
+      monthlyReservationCap: DEFAULT_MONTHLY_RESERVATION_CAP,
+    });
+  });
+
+  it('bounds the monthly cap the way the migration will', () => {
+    expect(
+      reservationLimitSettingsSchema.safeParse({
+        monthlyReservationCap: MIN_MONTHLY_RESERVATION_CAP - 1,
+      }).success
+    ).toBe(false);
+    expect(
+      reservationLimitSettingsSchema.safeParse({
+        monthlyReservationCap: MAX_MONTHLY_RESERVATION_CAP + 1,
+      }).success
+    ).toBe(false);
+    expect(reservationLimitSettingsSchema.safeParse({ monthlyReservationCap: 12 }).success).toBe(
+      true
+    );
+  });
+
+  it('carries the effective cap on the month summary both procedures answer', () => {
+    // The client cannot import a constant for this any more — the cap is a
+    // setting, and this is the one field that tells it what is in force. One
+    // schema shared by `reservation.myMonth` and `admin.reservation.month`, so
+    // the two cannot disagree.
+    expect(
+      monthReservationsOutputSchema.parse({
+        month: '2026-09',
+        reservedDates: [],
+        count: 0,
+        cap: 5,
+      })
+    ).toEqual({ month: '2026-09', reservedDates: [], count: 0, cap: 5 });
+    expect(
+      monthReservationsOutputSchema.safeParse({ month: '2026-09', reservedDates: [], count: 0 })
+        .success
+    ).toBe(false);
+  });
+
+  it('declares an audit action for a limits change, because no existing member describes it', () => {
+    expect(AUDIT_LOG_ACTIONS).toContain('RESERVATION_LIMITS_UPDATED');
   });
 });

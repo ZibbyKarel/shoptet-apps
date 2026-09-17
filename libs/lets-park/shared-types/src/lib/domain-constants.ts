@@ -92,13 +92,39 @@ export type BulkUnavailableReason = (typeof BULK_UNAVAILABLE_REASONS)[number];
 export const MAX_BULK_BOOKING_DAYS = 31;
 
 /**
- * Upper bound on how many confirmed reservations one user may hold in a single
- * calendar month. Enforced server-side, inside the same transaction as every
- * insert, by `assertWithinMonthlyReservationCap`
- * (`apps/lets-park/api/src/reservations/monthly-reservation-cap.ts`) — this is
- * the single source of the number `5`; nothing else may write it as a literal.
+ * Default number of confirmed reservations one user may hold in a single
+ * calendar month.
+ *
+ * A **default**, not the effective limit: the cap is an admin setting stored on
+ * the `ReservationLimitSettings` singleton, and this is the value that row is
+ * created with and the value the API answers with when the row has never been
+ * written. The effective cap is enforced by
+ * `assertWithinMonthlyReservationCap`
+ * (`apps/lets-park/api/src/reservations/monthly-reservation-cap.ts`), which
+ * takes it as a parameter — nothing may read this constant as though it were
+ * the limit in force.
+ *
+ * It was `MONTHLY_RESERVATION_CAP` while the limit was fixed at 5. The rename
+ * is the point: a constant called `MONTHLY_RESERVATION_CAP` next to a
+ * configurable cap is a name that tells a reader the wrong thing.
  */
-export const MONTHLY_RESERVATION_CAP = 5;
+export const DEFAULT_MONTHLY_RESERVATION_CAP = 5;
+
+/**
+ * Bounds on the configurable cap, mirrored by a `CHECK` in the migration that
+ * introduces the column — the same two-sided arrangement as
+ * {@link MIN_OPEN_DAYS_BEFORE}: the contract so a client knows the limit rather
+ * than discovering it by being rejected, the constraint so the database cannot
+ * hold a value the contract would refuse.
+ *
+ * `1` rather than `0`: a cap of zero would mean "nobody may book", which is what
+ * the reservation window's `FORCE_LOCKED` is for, and expressing one rule two
+ * ways is how the two start disagreeing. `31` because a calendar month has at
+ * most 31 days and a reservation is unique per `(user, date)`, so a larger cap
+ * could never bind.
+ */
+export const MIN_MONTHLY_RESERVATION_CAP = 1;
+export const MAX_MONTHLY_RESERVATION_CAP = 31;
 
 /**
  * Upper bound on the number of months `admin.window.months` may report on in

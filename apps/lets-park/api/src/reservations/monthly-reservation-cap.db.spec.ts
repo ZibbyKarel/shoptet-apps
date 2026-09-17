@@ -16,7 +16,7 @@ import {
   waitForBlockedBackend,
 } from '../testing/database/reservation-harness';
 import {
-  MONTHLY_RESERVATION_CAP,
+  DEFAULT_MONTHLY_RESERVATION_CAP,
   assertWithinMonthlyReservationCap,
 } from './monthly-reservation-cap';
 
@@ -79,7 +79,7 @@ describe('assertWithinMonthlyReservationCap against a real PostgreSQL', () => {
   it('passes when the user is under the cap for the month', async () => {
     const user = await seedUser(client);
     const spot = await seedSpot(client);
-    const dates = businessDaysInMonth(MONTHLY_RESERVATION_CAP - 1);
+    const dates = businessDaysInMonth(DEFAULT_MONTHLY_RESERVATION_CAP - 1);
     for (const date of dates) {
       await client.reservation.create({
         data: { parkingSpotId: spot.id, userId: user.id, date: toDateColumn(date) },
@@ -94,7 +94,7 @@ describe('assertWithinMonthlyReservationCap against a real PostgreSQL', () => {
   it('rejects with MONTHLY_RESERVATION_LIMIT_REACHED once the cap would be exceeded', async () => {
     const user = await seedUser(client);
     const spot = await seedSpot(client);
-    const dates = businessDaysInMonth(MONTHLY_RESERVATION_CAP);
+    const dates = businessDaysInMonth(DEFAULT_MONTHLY_RESERVATION_CAP);
     for (const date of dates) {
       await client.reservation.create({
         data: { parkingSpotId: spot.id, userId: user.id, date: toDateColumn(date) },
@@ -110,7 +110,7 @@ describe('assertWithinMonthlyReservationCap against a real PostgreSQL', () => {
   it("does not count another user's reservations toward this user's cap", async () => {
     const [userA, userB] = [await seedUser(client), await seedUser(client)];
     const spot = await seedSpot(client);
-    const dates = businessDaysInMonth(MONTHLY_RESERVATION_CAP);
+    const dates = businessDaysInMonth(DEFAULT_MONTHLY_RESERVATION_CAP);
     for (const date of dates) {
       await client.reservation.create({
         data: { parkingSpotId: spot.id, userId: userB.id, date: toDateColumn(date) },
@@ -129,7 +129,7 @@ describe('assertWithinMonthlyReservationCap against a real PostgreSQL', () => {
     // 4 + 1 = 5 passes, and the next-month row counted too would be 5 + 1 = 6
     // and would throw. Seeding fewer would make this test pass either way —
     // which it did, until the numbers were tightened to discriminate.
-    const [inMonth, ...rest] = businessDaysInMonth(MONTHLY_RESERVATION_CAP);
+    const [inMonth, ...rest] = businessDaysInMonth(DEFAULT_MONTHLY_RESERVATION_CAP);
     for (const date of rest) {
       await client.reservation.create({
         data: { parkingSpotId: spot.id, userId: user.id, date: toDateColumn(date) },
@@ -150,13 +150,13 @@ describe('assertWithinMonthlyReservationCap against a real PostgreSQL', () => {
   it('serializes two callers on the same (user, month), so the recount is authoritative', async () => {
     const user = await seedUser(client);
     const spot = await seedSpot(client);
-    const dates = businessDaysInMonth(MONTHLY_RESERVATION_CAP);
-    for (const date of dates.slice(0, MONTHLY_RESERVATION_CAP - 1)) {
+    const dates = businessDaysInMonth(DEFAULT_MONTHLY_RESERVATION_CAP);
+    for (const date of dates.slice(0, DEFAULT_MONTHLY_RESERVATION_CAP - 1)) {
       await client.reservation.create({
         data: { parkingSpotId: spot.id, userId: user.id, date: toDateColumn(date) },
       });
     }
-    const lastDate = nth(dates, MONTHLY_RESERVATION_CAP - 1);
+    const lastDate = nth(dates, DEFAULT_MONTHLY_RESERVATION_CAP - 1);
 
     const other = connect();
     try {

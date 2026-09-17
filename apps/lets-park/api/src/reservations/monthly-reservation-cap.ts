@@ -34,7 +34,7 @@
 import type { Prisma } from '@lets-park/database';
 import {
   endOfMonth,
-  MONTHLY_RESERVATION_CAP,
+  DEFAULT_MONTHLY_RESERVATION_CAP,
   startOfMonth,
   toYearMonth,
   type DateOnly,
@@ -42,11 +42,11 @@ import {
 import { toDateColumn } from '../common/prisma-mapping';
 import { DomainError } from '../common/errors/domain-error';
 
-export { MONTHLY_RESERVATION_CAP };
+export { DEFAULT_MONTHLY_RESERVATION_CAP };
 
 /**
  * Throws `DomainError('MONTHLY_RESERVATION_LIMIT_REACHED')` if `userId` already
- * holds `MONTHLY_RESERVATION_CAP - additional` or more confirmed reservations
+ * holds `DEFAULT_MONTHLY_RESERVATION_CAP - additional` or more confirmed reservations
  * in `date`'s calendar month. `additional` is how many more the caller is
  * about to insert in this same transaction (default 1; bulk confirm passes the
  * count of days it is about to assign).
@@ -67,9 +67,9 @@ export async function assertWithinMonthlyReservationCap(
     },
   });
 
-  if (count + additional > MONTHLY_RESERVATION_CAP) {
+  if (count + additional > DEFAULT_MONTHLY_RESERVATION_CAP) {
     throw new DomainError('MONTHLY_RESERVATION_LIMIT_REACHED', {
-      details: { month, limit: MONTHLY_RESERVATION_CAP },
+      details: { month, limit: DEFAULT_MONTHLY_RESERVATION_CAP },
     });
   }
 }

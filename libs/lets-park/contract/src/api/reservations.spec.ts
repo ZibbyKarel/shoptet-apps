@@ -197,19 +197,30 @@ describe('myMonthReservationsInputSchema', () => {
 });
 
 describe('myMonthReservationsOutputSchema', () => {
-  it('accepts the reserved dates and the count', () => {
-    const output = { month: '2026-09', reservedDates: [DATE_A], count: 1 };
+  it('accepts the reserved dates, the count and the cap', () => {
+    const output = { month: '2026-09', reservedDates: [DATE_A], count: 1, cap: 5 };
     expect(myMonthReservationsOutputSchema.parse(output)).toEqual(output);
   });
 
   it('accepts an empty month', () => {
-    const output = { month: '2026-09', reservedDates: [], count: 0 };
+    const output = { month: '2026-09', reservedDates: [], count: 0, cap: 5 };
     expect(myMonthReservationsOutputSchema.parse(output)).toEqual(output);
   });
 
   it('rejects a negative count', () => {
     expect(
-      myMonthReservationsOutputSchema.safeParse({ month: '2026-09', reservedDates: [], count: -1 })
+      myMonthReservationsOutputSchema.safeParse({
+        month: '2026-09',
+        reservedDates: [],
+        count: -1,
+        cap: 5,
+      }).success
+    ).toBe(false);
+  });
+
+  it('rejects a missing cap — it is required, not defaulted', () => {
+    expect(
+      myMonthReservationsOutputSchema.safeParse({ month: '2026-09', reservedDates: [], count: 0 })
         .success
     ).toBe(false);
   });

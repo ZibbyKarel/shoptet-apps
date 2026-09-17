@@ -142,6 +142,19 @@ export const monthReservationsOutputSchema = z.object({
   reservedDates: z.array(dateOnlySchema),
   /** `reservedDates.length` — carried separately so a client need not recompute it. */
   count: z.int().nonnegative(),
+  /**
+   * The monthly cap **in force** when this was read — the
+   * `ReservationLimitSettings` singleton's `monthlyReservationCap`, not a
+   * constant.
+   *
+   * It travels with the count because the client's job is `cap - count`, and
+   * the cap is an admin setting now: a client that imported
+   * `DEFAULT_MONTHLY_RESERVATION_CAP` would grey out the wrong cells for every
+   * workspace that changed it. Carried on the shared schema so
+   * `reservation.myMonth` and `admin.reservation.month` answer the same number
+   * by construction.
+   */
+  cap: z.int().positive(),
 });
 export type MonthReservations = z.infer<typeof monthReservationsOutputSchema>;
 
