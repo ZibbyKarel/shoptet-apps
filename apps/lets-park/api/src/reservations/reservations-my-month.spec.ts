@@ -72,3 +72,77 @@ describe('ReservationsService.myMonth', () => {
     expect(result).toEqual({ month: '2026-09', reservedDates: [], count: 0 });
   });
 });
+
+describe('ReservationsService.userMonth', () => {
+  let double: PrismaDouble;
+  let reservations: ReservationsService;
+
+  beforeEach(() => {
+    double = new PrismaDouble();
+    const prisma = double.asPrismaService();
+    const audit = new AuditLogService(prisma);
+    const window = new ReservationWindowService(prisma, audit);
+    reservations = new ReservationsService(
+      prisma,
+      window,
+      new ReservationPolicy(),
+      new WaitlistPromotionService(audit),
+      audit,
+      new NoopDomainEventPublisher()
+    );
+  });
+
+  it('answers about the named user, not the calling admin', async () => {
+    const spot = double.seedSpot({ label: 'A1' });
+    const [admin, holder] = [double.seedUser(), double.seedUser()];
+    double.seedReservation({ parkingSpotId: spot.id, userId: admin.id, date: '2026-09-01' });
+    double.seedReservation({ parkingSpotId: spot.id, userId: holder.id, date: '2026-09-07' });
+    double.seedReservation({ parkingSpotId: spot.id, userId: holder.id, date: '2026-09-14' });
+
+    const result = await reservations.userMonth(
+      { userId: holder.id, month: '2026-09' },
+      authenticated(admin.id)
+    );
+
+    expect(result).toEqual({
+      month: '2026-09',
+      reservedDates: ['2026-09-07', '2026-09-14'],
+      count: 2,
+    });
+  });
+
+  it('answers the same thing myMonth does when the named user is the caller', async () => {
+    const spot = double.seedSpot({ label: 'A1' });
+    const viewer = double.seedUser();
+    double.seedReservation({ parkingSpotId: spot.id, userId: viewer.id, date: '2026-09-07' });
+
+    const actor = authenticated(viewer.id);
+    expect(await reservations.userMonth({ userId: viewer.id, month: '2026-09' }, actor)).toEqual(
+      await reservations.myMonth({ month: '2026-09' }, actor)
+    );
+  });
+
+  it('answers an empty month for a user with no reservations in it', async () => {
+    const spot = double.seedSpot({ label: 'A1' });
+    const [admin, holder] = [double.seedUser(), double.seedUser()];
+    double.seedReservation({ parkingSpotId: spot.id, userId: holder.id, date: '2026-10-01' });
+
+    const result = await reservations.userMonth(
+      { userId: holder.id, month: '2026-09' },
+      authenticated(admin.id)
+    );
+
+    expect(result).toEqual({ month: '2026-09', reservedDates: [], count: 0 });
+  });
+
+  it('answers an empty month for an id that holds nothing, rather than throwing', async () => {
+    const admin = double.seedUser();
+
+    const result = await reservations.userMonth(
+      { userId: 'no-such-user', month: '2026-09' },
+      authenticated(admin.id)
+    );
+
+    expect(result).toEqual({ month: '2026-09', reservedDates: [], count: 0 });
+  });
+});

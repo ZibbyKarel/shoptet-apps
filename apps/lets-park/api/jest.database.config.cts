@@ -26,6 +26,8 @@
  * wrong fix — instead of on the guard's own message. 20s leaves headroom above
  * the guard's 10s so its diagnostic is always the one that fires.
  */
+const { buildTransformIgnorePatterns } = require('../../../jest.preset.js');
+
 module.exports = {
   displayName: 'api-db',
   preset: '../../../jest.preset.js',
@@ -39,7 +41,9 @@ module.exports = {
     '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
     '^.+\\.mjs$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
   },
-  transformIgnorePatterns: ['/node_modules/(?!(?:@orpc|@nestjs/config|@nestjs/passport|jose)/)'],
+  transformIgnorePatterns: [
+    buildTransformIgnorePatterns(['@orpc', '@nestjs/config', '@nestjs/passport', 'jose']),
+  ],
   moduleFileExtensions: ['ts', 'js', 'mjs', 'html'],
   coverageDirectory: '../../../coverage/apps/lets-park/api-db',
 };
