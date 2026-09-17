@@ -9,11 +9,11 @@
  * on what) belong somewhere a test can reach without a session, a query client
  * and a live API. The page keeps the wiring and has no branches of its own.
  *
- * The four tab bodies arrive as {@link AdminScreenProps.panels} rather than
+ * The five tab bodies arrive as {@link AdminScreenProps.panels} rather than
  * being imported here, for the same reason: each of them is a connected
  * component that fetches, and this file has to stay renderable with nothing but
  * an `IntlProvider`. React elements are inert until rendered, so passing all
- * four costs nothing — `Tabs` mounts only the selected one.
+ * five costs nothing — `Tabs` mounts only the selected one.
  *
  * The role gate here is a **courtesy**, not the enforcement. Authorization
  * lives on the API, where every admin procedure carries `@Roles('ADMIN')` and
@@ -37,6 +37,7 @@ export interface AdminPanels {
   readonly users: ReactNode;
   readonly spots: ReactNode;
   readonly window: ReactNode;
+  readonly limits: ReactNode;
 }
 
 export interface AdminScreenProps {
@@ -100,6 +101,7 @@ export function AdminScreen({
             { id: 'users', label: t('tabUsers'), content: panels.users },
             { id: 'spots', label: t('tabSpots'), content: panels.spots },
             { id: 'window', label: t('tabWindow'), content: panels.window },
+            { id: 'limits', label: t('tabLimits'), content: panels.limits },
           ]}
         />
       </Stack>

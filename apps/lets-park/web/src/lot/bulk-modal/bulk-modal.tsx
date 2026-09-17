@@ -272,7 +272,27 @@ function BulkReservationModalContent({
   const activeSummary = bookingForSomeoneElse ? holderSummary.data : monthSummary.data;
   const reservedDates = new Set(activeSummary?.reservedDates ?? []);
   const existingCount = activeSummary?.count ?? 0;
-  const remainingSlots = Math.max(0, DEFAULT_MONTHLY_RESERVATION_CAP - existingCount);
+  /**
+   * The cap **in force** for whoever this batch is for, as the server reported
+   * it alongside their count.
+   *
+   * Not `DEFAULT_MONTHLY_RESERVATION_CAP` — that is only the value a workspace
+   * starts with, and an admin can change it.
+   *
+   * The `??` covers **pending and errored alike**: TanStack Query leaves `data`
+   * `undefined` permanently after a failed fetch, so "not loaded yet" and
+   * "never going to load" are the same expression here. That conflation is what
+   * produced the bug fixed in `5b2287a` — there the fallback was
+   * `POSITIVE_INFINITY`, which let a user whose month query had failed select
+   * without limit. Here the fallback is **bounded** and equal to what the
+   * server answers for an unwritten settings row, so the worst case is a
+   * workspace that lowered its cap to 2 greying out at 5 and the server
+   * rejecting on confirm — no worse than what shipped before this change, and
+   * the server is the arbiter in every branch. Do not replace this with an
+   * unbounded value, and do not widen it to `activeSummary === undefined`.
+   */
+  const cap = activeSummary?.cap ?? DEFAULT_MONTHLY_RESERVATION_CAP;
+  const remainingSlots = Math.max(0, cap - existingCount);
   const preferredSpot = toPreferredSpotView(
     profile.data === undefined ? undefined : profile.data.preferredParkingSpotId,
     spotList.data?.spots,
@@ -381,8 +401,7 @@ function BulkReservationModalContent({
   // `cap` is only ever interpolated into `errorMonthlyCapReached`'s copy —
   // passing it unconditionally for every key would also feed it to keys with
   // no `{cap}` placeholder at all.
-  const displayedErrorValues =
-    displayedErrorKey === 'errorMonthlyCapReached' ? { cap: DEFAULT_MONTHLY_RESERVATION_CAP } : undefined;
+  const displayedErrorValues = displayedErrorKey === 'errorMonthlyCapReached' ? { cap } : undefined;
   // Gated on `open`, matching what the removed local `<ToastRegion>` got for
   // free: it was a descendant of `<Modal open={open}>`, which renders nothing
   // at all while closed (`modal.tsx`'s own early return). This component is
@@ -689,19 +708,21 @@ function BulkReservationModalContent({
           already has reservations this month (`existingCount > 0`, so the
           count itself is worth showing), OR this session's own selection has
           reached the cap together with what already existed
-          (`existingCount + selected.length >= DEFAULT_MONTHLY_RESERVATION_CAP`) — the
-          case a subject starting the month at zero and picking 5 days in this
-          one session hits, where `existingCount` alone would stay `0` and the
-          note would never appear even though day 6 onward is greying out.
+          (`existingCount + selected.length >= cap`, `cap` being whatever the
+          server reported alongside `existingCount` — not a hard-coded five) —
+          the case a subject starting the month at zero and picking as many
+          days as the cap allows in this one session hits, where
+          `existingCount` alone would stay `0` and the note would never appear
+          even though the day after the last pick is greying out.
 
           The subject is the holder whenever an admin is booking for one, so
           the note names them (`capNoteHolder`) rather than saying "you".
         */}
-        {existingCount > 0 || existingCount + selected.length >= DEFAULT_MONTHLY_RESERVATION_CAP ? (
+        {existingCount > 0 || existingCount + selected.length >= cap ? (
           <Text as="span" size="sm" tone="subtle">
             {t(bookingForSomeoneElse ? 'capNoteHolder' : 'capNote', {
               count: existingCount,
-              cap: DEFAULT_MONTHLY_RESERVATION_CAP,
+              cap,
             })}
           </Text>
         ) : null}

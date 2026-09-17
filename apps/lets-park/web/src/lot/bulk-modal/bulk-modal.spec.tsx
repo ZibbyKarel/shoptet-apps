@@ -217,6 +217,7 @@ interface MyMonthOutput {
   readonly month: string;
   readonly reservedDates: readonly string[];
   readonly count: number;
+  readonly cap: number;
 }
 
 interface SetupOptions {
@@ -250,10 +251,10 @@ function setup(options: SetupOptions = {}) {
   }
   apiMocks.confirmBulk.mockResolvedValue(options.confirmOutput ?? confirmed());
   apiMocks.myMonth.mockResolvedValue(
-    options.myMonthOutput ?? { month: '2026-09', reservedDates: [], count: 0 }
+    options.myMonthOutput ?? { month: '2026-09', reservedDates: [], count: 0, cap: 5 }
   );
   apiMocks.adminReservationMonth.mockResolvedValue(
-    options.holderMonthOutput ?? { month: '2026-09', reservedDates: [], count: 0 }
+    options.holderMonthOutput ?? { month: '2026-09', reservedDates: [], count: 0, cap: 5 }
   );
   if (options.spotListFails === true) {
     apiMocks.spotList.mockRejectedValue(new TypeError('Failed to fetch'));
@@ -532,7 +533,7 @@ describe('BulkReservationModal — the monthly cap and the reserved-day highligh
   it('highlights a day the viewer already holds a reservation on', async () => {
     setup({
       viewerUserId: 'user-1',
-      myMonthOutput: { month: '2026-09', reservedDates: ['2026-09-16'], count: 1 },
+      myMonthOutput: { month: '2026-09', reservedDates: ['2026-09-16'], count: 1, cap: 5 },
     });
 
     const cell = await screen.findByRole('button', {
@@ -546,7 +547,9 @@ describe('BulkReservationModal — the monthly cap and the reserved-day highligh
 
   it('disables further day selection once the viewer would exceed the monthly cap', async () => {
     // 4 existing reservations + up to 1 more selectable = cap of 5.
-    const { user } = setup({ myMonthOutput: { month: '2026-09', reservedDates: [], count: 4 } });
+    const { user } = setup({
+      myMonthOutput: { month: '2026-09', reservedDates: [], count: 4, cap: 5 },
+    });
 
     const firstSelectable = await screen.findByRole('button', {
       name: 'dayCell: date=čtvrtek 17. září 2026',
@@ -562,7 +565,7 @@ describe('BulkReservationModal — the monthly cap and the reserved-day highligh
   });
 
   it('does not disable any day when the viewer is well under the cap', async () => {
-    setup({ myMonthOutput: { month: '2026-09', reservedDates: [], count: 1 } });
+    setup({ myMonthOutput: { month: '2026-09', reservedDates: [], count: 1, cap: 5 } });
 
     const day = await screen.findByRole('button', { name: 'dayCell: date=čtvrtek 17. září 2026' });
     expect(day).not.toBeDisabled();
@@ -572,7 +575,9 @@ describe('BulkReservationModal — the monthly cap and the reserved-day highligh
     // `existingCount` stays 0 all along — only `selected.length` moves — so a
     // guard of `existingCount > 0` alone would never show this note, even
     // though day 6 onward greys out mid-session.
-    const { user } = setup({ myMonthOutput: { month: '2026-09', reservedDates: [], count: 0 } });
+    const { user } = setup({
+      myMonthOutput: { month: '2026-09', reservedDates: [], count: 0, cap: 5 },
+    });
 
     expect(screen.queryByText(/^capNote:/)).not.toBeInTheDocument();
 
@@ -602,6 +607,32 @@ describe('BulkReservationModal — the monthly cap and the reserved-day highligh
 
     expect(await screen.findByText('errorMonthlyCapReached: cap=5')).toBeInTheDocument();
   });
+
+  it('greys out day cells against the configured cap, not a hard-coded five', async () => {
+    const { user } = setup({
+      myMonthOutput: { month: '2026-09', reservedDates: [], count: 0, cap: 2 },
+    });
+
+    await user.click(screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' }));
+    await user.click(screen.getByRole('button', { name: 'dayCell: date=středa 2. září 2026' }));
+
+    expect(
+      await screen.findByRole('button', { name: 'dayCellCapped: date=čtvrtek 3. září 2026' })
+    ).toBeDisabled();
+    expect(screen.getByText('capNote: count=0,cap=2')).toBeInTheDocument();
+  });
+
+  it('interpolates the configured cap into the cap-reached error', async () => {
+    const { user } = setup({
+      myMonthOutput: { month: '2026-09', reservedDates: [], count: 0, cap: 8 },
+      previewFailure: await contractFailure('MONTHLY_RESERVATION_LIMIT_REACHED'),
+    });
+
+    await user.click(screen.getByRole('button', { name: 'dayCell: date=úterý 1. září 2026' }));
+    await user.click(screen.getByRole('button', { name: 'ctaGenerate: count=1' }));
+
+    expect(await screen.findByText('errorMonthlyCapReached: cap=8')).toBeInTheDocument();
+  });
 });
 
 describe('BulkReservationModal — the cap follows the holder, not the viewer', () => {
@@ -621,8 +652,8 @@ describe('BulkReservationModal — the cap follows the holder, not the viewer', 
 
   it('reads the holder’s month, not the admin’s, once a colleague is selected', async () => {
     const { user } = asAdminBookingFor({
-      myMonthOutput: { month: '2026-09', reservedDates: ['2026-09-16'], count: 5 },
-      holderMonthOutput: { month: '2026-09', reservedDates: [], count: 0 },
+      myMonthOutput: { month: '2026-09', reservedDates: ['2026-09-16'], count: 5, cap: 5 },
+      holderMonthOutput: { month: '2026-09', reservedDates: [], count: 0, cap: 5 },
     });
 
     await user.selectOptions(screen.getByLabelText('holderField'), 'user-1');
@@ -641,8 +672,8 @@ describe('BulkReservationModal — the cap follows the holder, not the viewer', 
       // reach the grid once the holder is somebody else — this is the working
       // admin flow the previous suppression hack existed to protect, and it
       // still has to work now that the cap is real for the holder.
-      myMonthOutput: { month: '2026-09', reservedDates: ['2026-09-16'], count: 5 },
-      holderMonthOutput: { month: '2026-09', reservedDates: [], count: 0 },
+      myMonthOutput: { month: '2026-09', reservedDates: ['2026-09-16'], count: 5, cap: 5 },
+      holderMonthOutput: { month: '2026-09', reservedDates: [], count: 0, cap: 5 },
     });
 
     await user.selectOptions(screen.getByLabelText('holderField'), 'user-1');
@@ -658,8 +689,8 @@ describe('BulkReservationModal — the cap follows the holder, not the viewer', 
 
   it('caps the grid at the holder’s remaining slots and names them in the note', async () => {
     const { user } = asAdminBookingFor({
-      myMonthOutput: { month: '2026-09', reservedDates: [], count: 0 },
-      holderMonthOutput: { month: '2026-09', reservedDates: ['2026-09-16'], count: 4 },
+      myMonthOutput: { month: '2026-09', reservedDates: [], count: 0, cap: 5 },
+      holderMonthOutput: { month: '2026-09', reservedDates: ['2026-09-16'], count: 4, cap: 5 },
     });
 
     await user.selectOptions(screen.getByLabelText('holderField'), 'user-1');
@@ -682,8 +713,8 @@ describe('BulkReservationModal — the cap follows the holder, not the viewer', 
 
   it('clears the selection when the holder changes, so days picked for one person cannot be booked for another', async () => {
     const { user } = asAdminBookingFor({
-      myMonthOutput: { month: '2026-09', reservedDates: [], count: 0 },
-      holderMonthOutput: { month: '2026-09', reservedDates: [], count: 4 },
+      myMonthOutput: { month: '2026-09', reservedDates: [], count: 0, cap: 5 },
+      holderMonthOutput: { month: '2026-09', reservedDates: [], count: 4, cap: 5 },
     });
 
     // Five days for the admin themselves — allowed, they start the month empty.
@@ -708,8 +739,8 @@ describe('BulkReservationModal — the cap follows the holder, not the viewer', 
 
   it('restores the viewer’s own cap the moment the holder is switched back to the admin', async () => {
     const { user } = asAdminBookingFor({
-      myMonthOutput: { month: '2026-09', reservedDates: ['2026-09-16'], count: 5 },
-      holderMonthOutput: { month: '2026-09', reservedDates: [], count: 0 },
+      myMonthOutput: { month: '2026-09', reservedDates: ['2026-09-16'], count: 5, cap: 5 },
+      holderMonthOutput: { month: '2026-09', reservedDates: [], count: 0, cap: 5 },
     });
 
     await user.selectOptions(screen.getByLabelText('holderField'), 'user-1');
@@ -724,7 +755,7 @@ describe('BulkReservationModal — the cap follows the holder, not the viewer', 
   });
 
   it('does not ask for a holder month at all while the admin books for themselves', async () => {
-    asAdminBookingFor({ myMonthOutput: { month: '2026-09', reservedDates: [], count: 0 } });
+    asAdminBookingFor({ myMonthOutput: { month: '2026-09', reservedDates: [], count: 0, cap: 5 } });
     // Give the modal a real window to have made the call, so this negative
     // assertion could actually fail: wait for the query that *should* fire
     // (the viewer's own month) before asserting the one that must not.
