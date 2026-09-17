@@ -305,6 +305,32 @@ const wrapperLibOverrides = Object.entries(WRAPPED_LIBRARIES).map(([pkg, { owner
 }));
 
 /**
+ * `@nx/enforce-module-boundaries`'s `allow` list: imports of a **workspace-root
+ * tooling config**, which the rule otherwise reads as a project reaching outside
+ * its own root by relative path.
+ *
+ * Both entries are the tool's own prescribed shape, not dependency structure a
+ * consumer could import instead:
+ *
+ * - `eslint.config.*` / `eslint.base.config.*` — every project's flat config
+ *   re-exports the root one, which is how one `DEP_CONSTRAINTS` governs the
+ *   whole workspace rather than fifteen hand-copied arrays.
+ * - `jest.preset.js` — each `jest.config.cts` both sets `preset:` to it (a
+ *   string, invisible to the rule) and `require()`s `buildTransformIgnorePatterns`
+ *   out of it, so the one pnpm-aware `transformIgnorePatterns` builder is
+ *   written once. That `require` is a real import, and it is what the second
+ *   entry admits.
+ *
+ * Factored out because three separate rule blocks below restate the whole
+ * option object — flat config replaces a rule's options rather than merging
+ * them — and a list duplicated three times drifts.
+ */
+const TOOLING_CONFIG_IMPORTS = [
+  '^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$',
+  '^.*/jest\\.preset\\.[cm]?js$',
+];
+
+/**
  * `@nx/enforce-module-boundaries`'s `depConstraints`, factored out to a named
  * constant so `libs/shared/form`'s test-only override below (`formSpecDepConstraints`)
  * can clone it rather than silently drifting from a second, hand-copied array.
@@ -513,7 +539,7 @@ export default [
         'error',
         {
           enforceBuildableLibDependency: true,
-          allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
+          allow: TOOLING_CONFIG_IMPORTS,
           depConstraints: DEP_CONSTRAINTS,
         },
       ],
@@ -583,7 +609,7 @@ export default [
         {
           enforceBuildableLibDependency: true,
           allowCircularSelfDependency: true,
-          allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
+          allow: TOOLING_CONFIG_IMPORTS,
           depConstraints: formSpecDepConstraints,
         },
       ],
@@ -599,7 +625,7 @@ export default [
         'error',
         {
           enforceBuildableLibDependency: true,
-          allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
+          allow: TOOLING_CONFIG_IMPORTS,
           depConstraints: calendarExportSpecDepConstraints,
         },
       ],
