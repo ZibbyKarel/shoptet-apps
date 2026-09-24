@@ -33,5 +33,4 @@ export * from './lib/use-focus-trap';
 export * from './lib/dropdown/dropdown';
 export * from './lib/tabs/tabs';
 export * from './lib/toast/toast';
-export * from './lib/tooltip/tooltip';
 export * from './lib/visually-hidden/visually-hidden';

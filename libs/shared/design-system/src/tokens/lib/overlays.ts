@@ -23,9 +23,7 @@
  * INVENTED: the three above 60. Their *order* is the load-bearing part:
  *
  * - a menu opens from a trigger and must clear the bars around it,
- * - a toast must clear a menu, because it can appear while one is open,
- * - a tooltip is topmost, because it can describe a control on any of the
- *   above — including a toast's dismiss button.
+ * - a toast must clear a menu, because it can appear while one is open.
  *
  * The 10-point gaps leave room to insert a layer without renumbering.
  */
@@ -40,8 +38,6 @@ export const Z_LAYERS = {
   dropdown: '70',
   /** Toast region. INVENTED. */
   toast: '80',
-  /** Tooltip bubble. INVENTED. */
-  tooltip: '90',
 } as const;
 
 /**
@@ -80,12 +76,6 @@ export const OVERLAY_SIZES = {
    * token rather than an inline `border-b-[3px]`.
    */
   tabIndicator: '3px',
-  /**
-   * Maximum width of a tooltip bubble. INVENTED — the design has no tooltip.
-   * Chosen so a bubble wraps to at most three short lines at `--fs-xs`, which
-   * is the point past which a tooltip should have been body copy instead.
-   */
-  tooltipMaxWidth: '240px',
   /**
    * Width of a toast. INVENTED — the design has no toast. Narrower than the
    * small dialog on purpose: a toast is a notice, not a task.

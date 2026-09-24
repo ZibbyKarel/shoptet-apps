@@ -227,7 +227,6 @@
   --z-overlay: 60;
   --z-dropdown: 70;
   --z-toast: 80;
-  --z-tooltip: 90;
 
   --scrim: rgba(10,10,10,0.6);
 
@@ -235,6 +234,5 @@
   --modal-w-md: 620px;
   --menu-min-w: 246px;
   --tab-indicator-h: 3px;
-  --tooltip-max-w: 240px;
   --toast-w: 380px;
 }

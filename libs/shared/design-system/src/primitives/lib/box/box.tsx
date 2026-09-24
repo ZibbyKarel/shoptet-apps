@@ -76,9 +76,9 @@ const INSET_CLASSES: Record<BoxInset, string> = {
  * (`libs/shared/design-system/src/tokens/lib/overlays.ts`) a plain `Box` plausibly needs to
  * spend directly. The modal scrim/dialog pair is named `overlay` in `theme.css`
  * (`--z-overlay`), not `modal` — there is no `--z-modal`, so this follows the
- * token's real name rather than the more casual word for it. `bar`/`toast`/
- * `tooltip` exist in the same scale but are not exposed here because nothing
- * building a plain `Box` has needed them yet; add on demand.
+ * token's real name rather than the more casual word for it. `bar`/`toast`
+ * exist in the same scale but are not exposed here because nothing building a
+ * plain `Box` has needed them yet; add on demand.
  */
 export type BoxLayer = 'sticky' | 'dropdown' | 'overlay';
 

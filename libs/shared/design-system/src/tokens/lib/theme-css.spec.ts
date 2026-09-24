@@ -88,13 +88,11 @@ const UNMAPPED_ON_PURPOSE: Record<string, string> = {
   'z-overlay': 'no --z-index-* namespace; use z-[var(--z-overlay)]',
   'z-dropdown': 'no --z-index-* namespace; use z-[var(--z-dropdown)]',
   'z-toast': 'no --z-index-* namespace; use z-[var(--z-toast)]',
-  'z-tooltip': 'no --z-index-* namespace; use z-[var(--z-tooltip)]',
   // No `--width-*` / `--border-width-*` namespace either.
   'modal-w-sm': 'no --width-* namespace; use max-w-[var(--modal-w-sm)]',
   'modal-w-md': 'no --width-* namespace; use max-w-[var(--modal-w-md)]',
   'menu-min-w': 'no --width-* namespace; use min-w-[var(--menu-min-w)]',
   'tab-indicator-h': 'no --border-width-* namespace; use border-b-[length:var(--tab-indicator-h)]',
-  'tooltip-max-w': 'no --width-* namespace; use max-w-[var(--tooltip-max-w)]',
   'toast-w': 'no --width-* namespace; use max-w-[var(--toast-w)]',
 };
 

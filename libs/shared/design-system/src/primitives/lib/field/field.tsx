@@ -57,13 +57,12 @@ export function useFieldIds(
  * React removes the attribute rather than emitting `aria-describedby=""`.
  *
  * **Written as a merge, never as an assignment, and that is the whole point.**
- * A wrapper such as `Tooltip` describes the control by cloning it with its own
- * `aria-describedby`. A control that spread `{...rest}` first and then wrote
- * `aria-describedby={ids.describedBy}` would overwrite the cloned value with
- * `undefined` whenever it had no hint and no error of its own — the bubble
- * still renders, `role="tooltip"` is still in the accessibility tree, and the
- * screen reader is told nothing. `field.spec.tsx` and the `Tooltip` field case
- * in `tooltip.spec.tsx` both fail if this goes back to an assignment.
+ * A wrapper that describes a control by cloning it with its own
+ * `aria-describedby` would have its value overwritten if a control spread
+ * `{...rest}` first and then wrote `aria-describedby={ids.describedBy}` as an
+ * assignment — the description would silently stop reaching the screen
+ * reader whenever the control had no hint and no error of its own.
+ * `field.spec.tsx` fails if this goes back to an assignment.
  */
 export function mergeDescribedBy(...values: (string | undefined)[]): string | undefined {
   const joined = values.filter(Boolean).join(' ');

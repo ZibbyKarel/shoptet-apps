@@ -5,12 +5,43 @@ import userEvent from '@testing-library/user-event';
 import { DismissableLayerProvider, useDismissableLayer } from './dismissable-layer';
 import { Dropdown, type DropdownItem } from '../dropdown/dropdown';
 import { Modal } from '../modal/modal';
-import { Tooltip } from '../tooltip/tooltip';
 
 const ITEMS: DropdownItem[] = [
   { id: 'a', label: 'První' },
   { id: 'b', label: 'Druhá' },
 ];
+
+/**
+ * Minimal open-on-hover-or-focus layer, standing in for the design system's
+ * (now-deleted, unused-in-product) `Tooltip` primitive, which used to fill
+ * this role in these tests. The escape-dismissal rule these tests exercise
+ * turns on the hover-vs-focus distinction, not on anything Tooltip-specific,
+ * so a bare stand-in registered with the same dismissable layer is enough.
+ */
+function HoverTrigger({ label, text }: { label: string; text: string }) {
+  const [visible, setVisible] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+  const layer = useDismissableLayer({
+    active: visible,
+    elementRef: ref,
+    onDismiss: () => setVisible(false),
+  });
+
+  return (
+    <span
+      ref={ref}
+      onMouseEnter={() => setVisible(true)}
+      onMouseLeave={() => setVisible(false)}
+      onFocus={() => setVisible(true)}
+      onBlur={() => setVisible(false)}
+    >
+      <DismissableLayerProvider layer={layer}>
+        <button type="button">{label}</button>
+        {visible ? <span role="tooltip">{text}</span> : null}
+      </DismissableLayerProvider>
+    </span>
+  );
+}
 
 /**
  * A layer with no styling, no roles and no behaviour of its own, so the tests
@@ -238,9 +269,7 @@ describe('Escape across sibling layers', () => {
     render(
       <div>
         <Dropdown trigger="Menu" items={ITEMS} />
-        <Tooltip content="Nápověda">
-          <button type="button">Detail</button>
-        </Tooltip>
+        <HoverTrigger label="Detail" text="Nápověda" />
       </div>
     );
 
@@ -270,12 +299,8 @@ describe('Escape across sibling layers', () => {
 
     render(
       <div>
-        <Tooltip content="Popis alfa">
-          <button type="button">Alfa</button>
-        </Tooltip>
-        <Tooltip content="Popis beta">
-          <button type="button">Beta</button>
-        </Tooltip>
+        <HoverTrigger label="Alfa" text="Popis alfa" />
+        <HoverTrigger label="Beta" text="Popis beta" />
       </div>
     );
 
@@ -317,11 +342,9 @@ function NestedModals() {
       <Modal open={inner} onClose={() => setInner(false)} title="Vnitřní" hideCloseButton>
         <button type="button">Prvek ve vnitřním</button>
         {/* On the second control, not the first: the first is what the trap
-            focuses, and a tooltip there would open by itself and change how
-            many presses each test below is about. */}
-        <Tooltip content="Nápověda">
-          <button type="button">Druhý prvek ve vnitřním</button>
-        </Tooltip>
+            focuses, and a hover-opened layer there would open by itself and
+            change how many presses each test below is about. */}
+        <HoverTrigger label="Druhý prvek ve vnitřním" text="Nápověda" />
       </Modal>
     </Modal>
   );

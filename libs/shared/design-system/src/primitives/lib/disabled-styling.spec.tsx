@@ -31,7 +31,7 @@ import { Switch } from './switch/switch';
  * **What it does not do**, stated plainly because the previous version of this
  * comment claimed otherwise: it only inspects the components named in the
  * `describe` blocks below, and that list is written by hand. `Modal`,
- * `Dropdown`, `Tabs`, `Toast`, `Tooltip`, `Avatar`, `Badge` and all three
+ * `Dropdown`, `Tabs`, `Toast`, `Avatar`, `Badge` and all three
  * compounds are not checked here. A new component is not covered until someone
  * adds it. The *token* half of the check is derived and complete (see
  * `COLOR_TOKENS` below); the *component* half is not.

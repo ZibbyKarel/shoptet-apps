@@ -237,7 +237,6 @@ export function generateTokensCss(tokens: DesignTokens): string {
   --z-overlay: ${overlays.z.overlay};
   --z-dropdown: ${overlays.z.dropdown};
   --z-toast: ${overlays.z.toast};
-  --z-tooltip: ${overlays.z.tooltip};
 
   --scrim: ${overlays.scrim};
 
@@ -245,7 +244,6 @@ export function generateTokensCss(tokens: DesignTokens): string {
   --modal-w-md: ${overlays.size.modalWidth.md};
   --menu-min-w: ${overlays.size.menuMinWidth};
   --tab-indicator-h: ${overlays.size.tabIndicator};
-  --tooltip-max-w: ${overlays.size.tooltipMaxWidth};
   --toast-w: ${overlays.size.toastWidth};
 }`;
 

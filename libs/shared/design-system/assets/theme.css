@@ -191,8 +191,8 @@
    */
 
   /*
-   * `--z-*`, `--modal-w-*`, `--menu-min-w`, `--tab-indicator-h`,
-   * `--tooltip-max-w` and `--toast-w` are NOT mapped here, for the same reason
+   * `--z-*`, `--modal-w-*`, `--menu-min-w`, `--tab-indicator-h`
+   * and `--toast-w` are NOT mapped here, for the same reason
    * as `--control-h-*` above: Tailwind v4 has no `--z-index-*`, `--width-*` or
    * `--border-width-*` theme namespace to map them into (z-index and widths
    * come off bare numeric scales and the spacing scale respectively), and
