@@ -27,29 +27,30 @@
  */
 
 import { useId, useRef, type KeyboardEvent } from 'react';
+import type { ReservationLockMode } from '@garage/contract';
 import { Stack, Text, ToggleTile } from '@garage/design-system/primitives';
 
-export interface LockModeOption<TValue extends string> {
-  readonly value: TValue;
+export interface LockModeOption {
+  readonly value: ReservationLockMode;
   readonly label: string;
 }
 
-export interface LockModeChoiceProps<TValue extends string> {
+export interface LockModeChoiceProps {
   /** Visible caption above the pills. Also the group's accessible name. */
   readonly label: string;
-  readonly options: readonly LockModeOption<TValue>[];
-  readonly value: TValue;
-  readonly onValueChange: (value: TValue) => void;
+  readonly options: readonly LockModeOption[];
+  readonly value: ReservationLockMode;
+  readonly onValueChange: (value: ReservationLockMode) => void;
   readonly disabled?: boolean | undefined;
 }
 
-export function LockModeChoice<TValue extends string>({
+export function LockModeChoice({
   label,
   options,
   value,
   onValueChange,
   disabled = false,
-}: LockModeChoiceProps<TValue>) {
+}: LockModeChoiceProps) {
   const labelId = useId();
   const pillRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
