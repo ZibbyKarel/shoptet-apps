@@ -18,7 +18,7 @@ import { toDateColumn } from '../common/prisma-mapping';
 import { ReservationPolicy } from './reservation-policy';
 import { ReservationsService } from './reservations.service';
 import { WaitlistPromotionService } from './waitlist-promotion.service';
-import { NoopDomainEventPublisher } from './reservation-events';
+import type { DomainEventPublisher } from './reservation-events';
 import { ReservationLimitsService } from '../reservation-limits/reservation-limits.service';
 import { ReservationWindowService } from '../reservation-window/reservation-window.service';
 import {
@@ -28,6 +28,9 @@ import {
   seedSpot,
   seedUser,
 } from '../testing/database/reservation-harness';
+
+/** Nothing in this suite asserts on published events; a plain no-op stands in. */
+const noopPublisher: DomainEventPublisher = { publish: jest.fn(), notifyPromotions: jest.fn() };
 
 describe('ReservationsService.userMonth against a real PostgreSQL', () => {
   let client: PrismaClient;
@@ -43,7 +46,7 @@ describe('ReservationsService.userMonth against a real PostgreSQL', () => {
       new ReservationPolicy(),
       new WaitlistPromotionService(audit),
       audit,
-      new NoopDomainEventPublisher(),
+      noopPublisher,
       new ReservationLimitsService(prisma, audit)
     );
   });

@@ -79,12 +79,11 @@ export interface WaitlistPromotionNotice {
  * Implementations must not throw and must not block: they are called after the
  * transaction has committed, on the request's way out, and a failure to
  * broadcast must never turn a successful cancellation into an error the user
- * sees. {@link NoopDomainEventPublisher} was what got registered before any
- * real subscriber existed. There are now two implementations — Task 15's
- * Socket.io broadcast and Task 16's outbound Slack notification — and one token
- * resolves to one provider, so `reservations.module.ts` binds it to
+ * sees. There are two implementations — Task 15's Socket.io broadcast and
+ * Task 16's outbound Slack notification — and one token resolves to one
+ * provider, so `reservations.module.ts` binds it to
  * `CompositeDomainEventPublisher`, which forwards to both with each call in its
- * own `try`. Nothing registers the no-op below any more.
+ * own `try`.
  *
  * The "must not throw" clause above is not advice to implementors so much as
  * the composite's specification: it is the class that has to hold the line when
@@ -96,27 +95,4 @@ export abstract class DomainEventPublisher {
 
   /** Notify promoted users out of band. Never called inside a transaction. */
   abstract notifyPromotions(notices: readonly WaitlistPromotionNotice[]): void;
-}
-
-/**
- * The historical default: events are computed, typed and validated by the
- * compiler, and then dropped. No longer registered anywhere as of Task 16 (see
- * the class comment above) — kept rather than deleted because it costs nothing
- * to keep and is the obvious fallback for a future module that needs
- * `DomainEventPublisher` wired but has nothing to send events to yet (e.g. a
- * narrow unit test, or a deployment with both Task 15 and Task 16 disabled).
- *
- * Deliberately silent rather than logging: an `info` line per reservation with
- * no subscriber listening would be pure noise. What makes this safe to forget
- * is the parity between this class and the contract's event map, which the
- * compiler checks regardless of whether anything is bound to it.
- */
-export class NoopDomainEventPublisher extends DomainEventPublisher {
-  publish(): void {
-    // Intentionally empty — see the class comment.
-  }
-
-  notifyPromotions(): void {
-    // Intentionally empty — see the class comment.
-  }
 }

@@ -7,7 +7,10 @@ import { ReservationWindowService } from '../reservation-window/reservation-wind
 import { ReservationsService } from './reservations.service';
 import { WaitlistPromotionService } from './waitlist-promotion.service';
 import { ReservationPolicy } from './reservation-policy';
-import { NoopDomainEventPublisher } from './reservation-events';
+import type { DomainEventPublisher } from './reservation-events';
+
+/** Nothing in this suite asserts on published events; a plain no-op stands in. */
+const noopPublisher: DomainEventPublisher = { publish: jest.fn(), notifyPromotions: jest.fn() };
 
 function authenticated(id: string): AuthenticatedUser {
   return {
@@ -35,7 +38,7 @@ describe('ReservationsService.myMonth', () => {
       new ReservationPolicy(),
       new WaitlistPromotionService(audit),
       audit,
-      new NoopDomainEventPublisher(),
+      noopPublisher,
       new ReservationLimitsService(prisma, audit)
     );
   });
@@ -111,7 +114,7 @@ describe('ReservationsService.userMonth', () => {
       new ReservationPolicy(),
       new WaitlistPromotionService(audit),
       audit,
-      new NoopDomainEventPublisher(),
+      noopPublisher,
       new ReservationLimitsService(prisma, audit)
     );
   });
