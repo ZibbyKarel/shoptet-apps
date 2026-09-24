@@ -5,14 +5,11 @@ import {
   compareDateOnly,
   dayOfWeek,
   daysInMonth,
-  differenceInDays,
   endOfMonth,
   formatDateOnly,
   fromUtcMidnight,
-  isAfter,
   isBefore,
   isDateOnly,
-  isSameDay,
   isWeekend,
   isYearMonth,
   nextWeekday,
@@ -168,8 +165,6 @@ describe('addDays', () => {
 
     it('counts a whole March correctly despite the lost hour', () => {
       expect(addDays('2026-03-01', 30)).toBe('2026-03-31');
-      expect(differenceInDays('2026-03-31', '2026-03-01')).toBe(30);
-      expect(differenceInDays('2026-10-31', '2026-10-01')).toBe(30);
     });
   });
 });
@@ -187,23 +182,12 @@ describe('addMonths', () => {
   });
 });
 
-describe('differenceInDays', () => {
-  it('is signed and exact across a year boundary', () => {
-    expect(differenceInDays('2027-01-01', '2026-12-31')).toBe(1);
-    expect(differenceInDays('2026-12-31', '2027-01-01')).toBe(-1);
-    expect(differenceInDays('2026-01-01', '2026-01-01')).toBe(0);
-    expect(differenceInDays('2025-01-01', '2024-01-01')).toBe(366); // 2024 is a leap year
-  });
-});
-
 describe('comparison', () => {
   it('orders dates', () => {
     expect(compareDateOnly('2026-01-01', '2026-01-02')).toBe(-1);
     expect(compareDateOnly('2026-01-02', '2026-01-01')).toBe(1);
     expect(compareDateOnly('2026-01-01', '2026-01-01')).toBe(0);
     expect(isBefore('2025-12-31', '2026-01-01')).toBe(true);
-    expect(isAfter('2026-01-01', '2025-12-31')).toBe(true);
-    expect(isSameDay('2026-01-01', '2026-01-01')).toBe(true);
   });
 
   it('rejects invalid operands instead of comparing garbage', () => {

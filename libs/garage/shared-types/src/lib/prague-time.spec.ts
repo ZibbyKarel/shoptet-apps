@@ -1,10 +1,4 @@
-import {
-  PRAGUE_TIME_ZONE,
-  endOfDayExclusiveInPrague,
-  startOfDayInPrague,
-  toDateOnlyInPrague,
-  todayInPrague,
-} from './prague-time';
+import { PRAGUE_TIME_ZONE, toDateOnlyInPrague, todayInPrague } from './prague-time';
 
 /**
  * Every assertion below pins an *instant* (a UTC timestamp), never a local
@@ -107,58 +101,5 @@ describe('todayInPrague', () => {
     } finally {
       jest.useRealTimers();
     }
-  });
-});
-
-describe('startOfDayInPrague', () => {
-  it('resolves winter midnight at UTC+1', () => {
-    underEachProcessTimeZone(() => {
-      expect(startOfDayInPrague('2026-01-16').toISOString()).toBe('2026-01-15T23:00:00.000Z');
-    });
-  });
-
-  it('resolves summer midnight at UTC+2', () => {
-    underEachProcessTimeZone(() => {
-      expect(startOfDayInPrague('2026-08-28').toISOString()).toBe('2026-08-27T22:00:00.000Z');
-    });
-  });
-
-  it('resolves midnight on the DST transition days themselves', () => {
-    underEachProcessTimeZone(() => {
-      // The 23-hour day starts while the clock is still on CET.
-      expect(startOfDayInPrague('2026-03-29').toISOString()).toBe('2026-03-28T23:00:00.000Z');
-      expect(startOfDayInPrague('2026-03-30').toISOString()).toBe('2026-03-29T22:00:00.000Z');
-      // The 25-hour day starts while the clock is still on CEST.
-      expect(startOfDayInPrague('2026-10-25').toISOString()).toBe('2026-10-24T22:00:00.000Z');
-      expect(startOfDayInPrague('2026-10-26').toISOString()).toBe('2026-10-25T23:00:00.000Z');
-    });
-  });
-
-  it('round-trips through toDateOnlyInPrague', () => {
-    for (const date of ['2026-01-01', '2026-03-29', '2026-06-15', '2026-10-25', '2026-12-31']) {
-      expect(toDateOnlyInPrague(startOfDayInPrague(date))).toBe(date);
-    }
-  });
-
-  it('rejects an invalid date', () => {
-    expect(() => startOfDayInPrague('2026-02-30')).toThrow(TypeError);
-  });
-});
-
-describe('endOfDayExclusiveInPrague', () => {
-  it('is the next day midnight, so the two DST days are 23 and 25 hours long', () => {
-    const springLength =
-      endOfDayExclusiveInPrague('2026-03-29').getTime() -
-      startOfDayInPrague('2026-03-29').getTime();
-    const autumnLength =
-      endOfDayExclusiveInPrague('2026-10-25').getTime() -
-      startOfDayInPrague('2026-10-25').getTime();
-    const ordinaryLength =
-      endOfDayExclusiveInPrague('2026-08-28').getTime() -
-      startOfDayInPrague('2026-08-28').getTime();
-
-    expect(springLength).toBe(23 * 3_600_000);
-    expect(autumnLength).toBe(25 * 3_600_000);
-    expect(ordinaryLength).toBe(24 * 3_600_000);
   });
 });

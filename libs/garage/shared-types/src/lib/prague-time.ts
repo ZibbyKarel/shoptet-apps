@@ -9,7 +9,7 @@
  * result identical on a server running in UTC and on a laptop in Prague.
  */
 
-import { addDays, formatDateOnly, parseDateOnly, type DateOnly, type DateParts } from './date-only';
+import { formatDateOnly, type DateOnly, type DateParts } from './date-only';
 
 /** IANA identifier of the single time zone this application operates in. */
 export const PRAGUE_TIME_ZONE = 'Europe/Prague';
@@ -52,15 +52,6 @@ function pragueParts(instant: Date): ZonedParts {
   };
 }
 
-/** Offset of Europe/Prague from UTC, in milliseconds, at the given instant. */
-function pragueOffsetMs(instant: Date): number {
-  const { year, month, day, hour, minute, second } = pragueParts(instant);
-  const asUtc = new Date(0);
-  asUtc.setUTCFullYear(year, month - 1, day);
-  asUtc.setUTCHours(hour, minute, second, instant.getUTCMilliseconds());
-  return asUtc.getTime() - instant.getTime();
-}
-
 /**
  * The calendar day `instant` falls on in Europe/Prague.
  *
@@ -81,33 +72,4 @@ export function toDateOnlyInPrague(instant: Date): DateOnly {
  */
 export function todayInPrague(now: Date = new Date()): DateOnly {
   return toDateOnlyInPrague(now);
-}
-
-/**
- * The instant at which the given calendar day starts in Europe/Prague
- * (local midnight), for use as the lower bound of a timestamp range query.
- *
- * Derived by guessing the instant as if the wall clock were UTC and then
- * correcting by the zone offset. The correction is applied twice because the
- * offset at the guess and the offset at the corrected instant can differ
- * across a DST transition; the second pass settles it.
- */
-export function startOfDayInPrague(date: DateOnly): Date {
-  const { year, month, day } = parseDateOnly(date);
-  const guess = new Date(0);
-  guess.setUTCFullYear(year, month - 1, day);
-  guess.setUTCHours(0, 0, 0, 0);
-
-  const firstPass = new Date(guess.getTime() - pragueOffsetMs(guess));
-  const secondPass = new Date(guess.getTime() - pragueOffsetMs(firstPass));
-  return secondPass;
-}
-
-/**
- * The instant at which the given calendar day ends in Europe/Prague, exclusive
- * (i.e. local midnight of the following day). Pairs with
- * `startOfDayInPrague` as a half-open `[start, end)` range.
- */
-export function endOfDayExclusiveInPrague(date: DateOnly): Date {
-  return startOfDayInPrague(addDays(date, 1));
 }

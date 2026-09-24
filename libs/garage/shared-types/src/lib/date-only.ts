@@ -186,11 +186,6 @@ export function addMonths(value: DateOnly, months: number): DateOnly {
   });
 }
 
-/** Whole calendar days between two dates (`a - b`). */
-export function differenceInDays(a: DateOnly, b: DateOnly): number {
-  return epochDay(a) - epochDay(b);
-}
-
 /** `-1` when `a` is earlier, `0` when equal, `1` when `a` is later. */
 export function compareDateOnly(a: DateOnly, b: DateOnly): -1 | 0 | 1 {
   assertDateOnly(a);
@@ -201,14 +196,6 @@ export function compareDateOnly(a: DateOnly, b: DateOnly): -1 | 0 | 1 {
 
 export function isBefore(a: DateOnly, b: DateOnly): boolean {
   return compareDateOnly(a, b) < 0;
-}
-
-export function isAfter(a: DateOnly, b: DateOnly): boolean {
-  return compareDateOnly(a, b) > 0;
-}
-
-export function isSameDay(a: DateOnly, b: DateOnly): boolean {
-  return compareDateOnly(a, b) === 0;
 }
 
 /** First day of the month containing `value`. */
