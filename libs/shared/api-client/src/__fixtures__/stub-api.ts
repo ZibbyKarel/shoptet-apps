@@ -19,11 +19,9 @@ import { createApiClient } from '../lib/api-client';
 import type { ApiClient, ApiFetch } from '../lib/api-client';
 import { ERROR_DEFINITIONS } from '@garage/contract';
 import type { ErrorCode } from '@garage/contract';
+import { rpcPayload, stubTransport, type StubbedResponse } from './stub-transport';
 
-export interface StubbedResponse {
-  status: number;
-  body: unknown;
-}
+export type { StubbedResponse };
 
 export interface StubbedApi {
   client: ApiClient;
@@ -32,11 +30,6 @@ export interface StubbedApi {
 }
 
 const URL_BASE = 'https://api.test/rpc';
-
-/** oRPC's RPC envelope. A payload outside it deserialises to `undefined`. */
-export function rpcPayload(value: unknown): { json: unknown; meta: [] } {
-  return { json: value, meta: [] };
-}
 
 /**
  * The response `apps/garage/api` produces for a domain error, wrapped in the RPC
@@ -65,17 +58,7 @@ export function transportErrorResponse(status: number, message: string): Stubbed
 }
 
 export function stubApi(respond: (callIndex: number) => StubbedResponse): StubbedApi {
-  const requests: Request[] = [];
-
-  const fetch: ApiFetch = async (request) => {
-    const callIndex = requests.length;
-    requests.push(request.clone());
-    const { status, body } = respond(callIndex);
-    return new Response(JSON.stringify(body), {
-      status,
-      headers: { 'content-type': 'application/json' },
-    });
-  };
+  const { requests, fetch } = stubTransport(respond);
 
   return { client: createApiClient({ url: URL_BASE, fetch }), requests };
 }
