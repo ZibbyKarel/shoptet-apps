@@ -30,7 +30,7 @@
  *    indistinguishable in the logs because this class rethrew silently and
  *    Passport's `fail(info)` path discards `info`. They are now reported
  *    through `nestjs-pino`, classified by {@link AuthFailureKind} and rate
- *    limited by {@link FailureLogThrottle} — see {@link reportFailure} for the
+ *    limited by {@link recordFailureLog} — see {@link reportFailure} for the
  *    level and volume reasoning.
  *
  *    **No secret or token is ever logged.** A line carries the failure kind,
@@ -58,7 +58,6 @@ import { JwksClient } from 'jwks-rsa';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import * as z from 'zod';
 import type { ApiEnv } from '../env';
-import { FailureLogThrottle } from './failure-log-throttle';
 import type { JwtVerificationRules } from './jwt-verify-options';
 import { ACCEPTED_JWT_ALGORITHMS, jwtVerifyOptions } from './jwt-verify-options';
 import type { AuthTokenClaims } from './token-claims';
@@ -207,10 +206,16 @@ export class JwksVerifierService {
    */
   private clientPromise: Promise<JwksClient> | null = null;
 
-  /** One log line per failure kind per minute. See {@link reportFailure}. */
-  private readonly failureLog = new FailureLogThrottle<AuthFailureKind>(
-    AUTH_FAILURE_LOG_INTERVAL_MS
-  );
+  /**
+   * One log line per failure kind per minute. See {@link reportFailure} for
+   * the level/volume reasoning and {@link recordFailureLog} for the throttle
+   * itself. Bounded at six entries: keyed by {@link AuthFailureKind}, never by
+   * anything a caller controls.
+   */
+  private readonly failureLogState = new Map<
+    AuthFailureKind,
+    { lastLoggedAt: number; suppressed: number }
+  >();
 
   constructor(
     configService: ConfigService<ApiEnv, true>,
@@ -437,7 +442,7 @@ export class JwksVerifierService {
    * passed to the logger on any path.
    */
   private reportFailure(failure: JwksVerificationError, kid: string | undefined): void {
-    const { shouldLog, suppressedSinceLastLog } = this.failureLog.record(failure.kind);
+    const { shouldLog, suppressedSinceLastLog } = this.recordFailureLog(failure.kind);
     if (!shouldLog) {
       return;
     }
@@ -455,5 +460,34 @@ export class JwksVerifierService {
       return;
     }
     this.logger.error(context, 'Cannot verify tokens — the issuer or its JWKS is unusable');
+  }
+
+  /**
+   * Records an occurrence of `kind` and decides whether it should be logged.
+   *
+   * The first occurrence of a kind is reported immediately; further
+   * occurrences within {@link AUTH_FAILURE_LOG_INTERVAL_MS} are counted rather
+   * than logged, and the next line that does get through carries how many were
+   * swallowed. Deliberately has a side effect: the counter has to advance
+   * whether or not the line is emitted, and splitting that into "ask" and
+   * "tell" invites a caller that asks and then forgets to tell.
+   */
+  private recordFailureLog(kind: AuthFailureKind): {
+    shouldLog: boolean;
+    suppressedSinceLastLog: number;
+  } {
+    const timestamp = Date.now();
+    const previous = this.failureLogState.get(kind);
+
+    if (
+      previous !== undefined &&
+      timestamp - previous.lastLoggedAt < AUTH_FAILURE_LOG_INTERVAL_MS
+    ) {
+      previous.suppressed += 1;
+      return { shouldLog: false, suppressedSinceLastLog: 0 };
+    }
+
+    this.failureLogState.set(kind, { lastLoggedAt: timestamp, suppressed: 0 });
+    return { shouldLog: true, suppressedSinceLastLog: previous?.suppressed ?? 0 };
   }
 }
