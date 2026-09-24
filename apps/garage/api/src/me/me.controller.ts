@@ -4,14 +4,12 @@
  * taking the subject from `context.user` rather than from the payload.
  */
 
-import { Controller, Post, Req, Res } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import { Controller } from '@nestjs/common';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import type { AuthenticatedUser } from '../auth/authenticated-user';
-import { CurrentUser } from '../auth/current-user.decorator';
 import { implementer } from '../orpc/implementer';
 import { RpcRouteHandler } from '../orpc/rpc-route-handler';
-import { RPC_ROUTE_PREFIX, rpcRoute } from '../orpc/rpc-route';
+import { RPC_ROUTE_PREFIX } from '../orpc/rpc-route';
+import { RpcRoute } from '../orpc/rpc-route.decorator';
 import { MeService } from './me.service';
 
 @Controller(RPC_ROUTE_PREFIX)
@@ -35,30 +33,18 @@ export class MeController {
     );
   }
 
-  @Post(rpcRoute('me', 'get'))
-  getProfile(
-    @Req() request: Request,
-    @Res() response: Response,
-    @CurrentUser() user: AuthenticatedUser
-  ): Promise<void> {
-    return this.rpc.handle(request, response, user);
+  @RpcRoute('me', 'get')
+  getProfile(): Promise<void> {
+    throw new Error('replaced by @RpcRoute');
   }
 
-  @Post(rpcRoute('me', 'updateSettings'))
-  updateSettings(
-    @Req() request: Request,
-    @Res() response: Response,
-    @CurrentUser() user: AuthenticatedUser
-  ): Promise<void> {
-    return this.rpc.handle(request, response, user);
+  @RpcRoute('me', 'updateSettings')
+  updateSettings(): Promise<void> {
+    throw new Error('replaced by @RpcRoute');
   }
 
-  @Post(rpcRoute('me', 'regenerateIcsToken'))
-  regenerateIcsToken(
-    @Req() request: Request,
-    @Res() response: Response,
-    @CurrentUser() user: AuthenticatedUser
-  ): Promise<void> {
-    return this.rpc.handle(request, response, user);
+  @RpcRoute('me', 'regenerateIcsToken')
+  regenerateIcsToken(): Promise<void> {
+    throw new Error('replaced by @RpcRoute');
   }
 }

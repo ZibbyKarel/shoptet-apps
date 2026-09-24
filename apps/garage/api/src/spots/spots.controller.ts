@@ -11,15 +11,13 @@
  * output of against `libs/garage/contract`.
  */
 
-import { Controller, Post, Req, Res } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import { Controller } from '@nestjs/common';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import type { AuthenticatedUser } from '../auth/authenticated-user';
-import { CurrentUser } from '../auth/current-user.decorator';
 import { Roles } from '../auth/roles.decorator';
 import { implementer } from '../orpc/implementer';
 import { RpcRouteHandler } from '../orpc/rpc-route-handler';
-import { RPC_ROUTE_PREFIX, rpcRoute } from '../orpc/rpc-route';
+import { RPC_ROUTE_PREFIX } from '../orpc/rpc-route';
+import { RpcRoute } from '../orpc/rpc-route.decorator';
 import { SpotsService } from './spots.service';
 
 @Controller(RPC_ROUTE_PREFIX)
@@ -54,52 +52,32 @@ export class SpotsController {
   }
 
   /** Active spots. Any authenticated user. */
-  @Post(rpcRoute('spot', 'list'))
-  listSpots(
-    @Req() request: Request,
-    @Res() response: Response,
-    @CurrentUser() user: AuthenticatedUser
-  ): Promise<void> {
-    return this.rpc.handle(request, response, user);
+  @RpcRoute('spot', 'list')
+  listSpots(): Promise<void> {
+    throw new Error('replaced by @RpcRoute');
   }
 
   @Roles('ADMIN')
-  @Post(rpcRoute('admin', 'spot', 'list'))
-  adminListSpots(
-    @Req() request: Request,
-    @Res() response: Response,
-    @CurrentUser() user: AuthenticatedUser
-  ): Promise<void> {
-    return this.rpc.handle(request, response, user);
+  @RpcRoute('admin', 'spot', 'list')
+  adminListSpots(): Promise<void> {
+    throw new Error('replaced by @RpcRoute');
   }
 
   @Roles('ADMIN')
-  @Post(rpcRoute('admin', 'spot', 'create'))
-  createSpot(
-    @Req() request: Request,
-    @Res() response: Response,
-    @CurrentUser() user: AuthenticatedUser
-  ): Promise<void> {
-    return this.rpc.handle(request, response, user);
+  @RpcRoute('admin', 'spot', 'create')
+  createSpot(): Promise<void> {
+    throw new Error('replaced by @RpcRoute');
   }
 
   @Roles('ADMIN')
-  @Post(rpcRoute('admin', 'spot', 'update'))
-  updateSpot(
-    @Req() request: Request,
-    @Res() response: Response,
-    @CurrentUser() user: AuthenticatedUser
-  ): Promise<void> {
-    return this.rpc.handle(request, response, user);
+  @RpcRoute('admin', 'spot', 'update')
+  updateSpot(): Promise<void> {
+    throw new Error('replaced by @RpcRoute');
   }
 
   @Roles('ADMIN')
-  @Post(rpcRoute('admin', 'spot', 'deactivate'))
-  deactivateSpot(
-    @Req() request: Request,
-    @Res() response: Response,
-    @CurrentUser() user: AuthenticatedUser
-  ): Promise<void> {
-    return this.rpc.handle(request, response, user);
+  @RpcRoute('admin', 'spot', 'deactivate')
+  deactivateSpot(): Promise<void> {
+    throw new Error('replaced by @RpcRoute');
   }
 }

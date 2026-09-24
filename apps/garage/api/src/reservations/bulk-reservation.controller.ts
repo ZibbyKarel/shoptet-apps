@@ -13,14 +13,12 @@
  * themselves.
  */
 
-import { Controller, Post, Req, Res } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import { Controller } from '@nestjs/common';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import type { AuthenticatedUser } from '../auth/authenticated-user';
-import { CurrentUser } from '../auth/current-user.decorator';
 import { implementer } from '../orpc/implementer';
 import { RpcRouteHandler } from '../orpc/rpc-route-handler';
-import { RPC_ROUTE_PREFIX, rpcRoute } from '../orpc/rpc-route';
+import { RPC_ROUTE_PREFIX } from '../orpc/rpc-route';
+import { RpcRoute } from '../orpc/rpc-route.decorator';
 import { BulkReservationService } from './bulk-reservation.service';
 
 @Controller(RPC_ROUTE_PREFIX)
@@ -46,21 +44,13 @@ export class BulkReservationController {
     );
   }
 
-  @Post(rpcRoute('reservation', 'previewBulk'))
-  previewBulk(
-    @Req() request: Request,
-    @Res() response: Response,
-    @CurrentUser() user: AuthenticatedUser
-  ): Promise<void> {
-    return this.rpc.handle(request, response, user);
+  @RpcRoute('reservation', 'previewBulk')
+  previewBulk(): Promise<void> {
+    throw new Error('replaced by @RpcRoute');
   }
 
-  @Post(rpcRoute('reservation', 'confirmBulk'))
-  confirmBulk(
-    @Req() request: Request,
-    @Res() response: Response,
-    @CurrentUser() user: AuthenticatedUser
-  ): Promise<void> {
-    return this.rpc.handle(request, response, user);
+  @RpcRoute('reservation', 'confirmBulk')
+  confirmBulk(): Promise<void> {
+    throw new Error('replaced by @RpcRoute');
   }
 }

@@ -3,14 +3,12 @@
  * parking screen is what everybody opens the application for.
  */
 
-import { Controller, Post, Req, Res } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import { Controller } from '@nestjs/common';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import type { AuthenticatedUser } from '../auth/authenticated-user';
-import { CurrentUser } from '../auth/current-user.decorator';
 import { implementer } from '../orpc/implementer';
 import { RpcRouteHandler } from '../orpc/rpc-route-handler';
-import { RPC_ROUTE_PREFIX, rpcRoute } from '../orpc/rpc-route';
+import { RPC_ROUTE_PREFIX } from '../orpc/rpc-route';
+import { RpcRoute } from '../orpc/rpc-route.decorator';
 import { DayOverviewService } from './day-overview.service';
 
 @Controller(RPC_ROUTE_PREFIX)
@@ -33,12 +31,8 @@ export class OverviewController {
     );
   }
 
-  @Post(rpcRoute('overview', 'day'))
-  getDay(
-    @Req() request: Request,
-    @Res() response: Response,
-    @CurrentUser() user: AuthenticatedUser
-  ): Promise<void> {
-    return this.rpc.handle(request, response, user);
+  @RpcRoute('overview', 'day')
+  getDay(): Promise<void> {
+    throw new Error('replaced by @RpcRoute');
   }
 }

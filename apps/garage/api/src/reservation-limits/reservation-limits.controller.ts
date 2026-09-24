@@ -3,15 +3,13 @@
  * the cap as the `cap` field on their month summary, not as a settings read.
  */
 
-import { Controller, Post, Req, Res } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import { Controller } from '@nestjs/common';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import type { AuthenticatedUser } from '../auth/authenticated-user';
-import { CurrentUser } from '../auth/current-user.decorator';
 import { Roles } from '../auth/roles.decorator';
 import { implementer } from '../orpc/implementer';
 import { RpcRouteHandler } from '../orpc/rpc-route-handler';
-import { RPC_ROUTE_PREFIX, rpcRoute } from '../orpc/rpc-route';
+import { RPC_ROUTE_PREFIX } from '../orpc/rpc-route';
+import { RpcRoute } from '../orpc/rpc-route.decorator';
 import { ReservationLimitsService } from './reservation-limits.service';
 
 @Controller(RPC_ROUTE_PREFIX)
@@ -38,22 +36,14 @@ export class ReservationLimitsController {
   }
 
   @Roles('ADMIN')
-  @Post(rpcRoute('admin', 'reservationLimits', 'get'))
-  getSettings(
-    @Req() request: Request,
-    @Res() response: Response,
-    @CurrentUser() user: AuthenticatedUser
-  ): Promise<void> {
-    return this.rpc.handle(request, response, user);
+  @RpcRoute('admin', 'reservationLimits', 'get')
+  getSettings(): Promise<void> {
+    throw new Error('replaced by @RpcRoute');
   }
 
   @Roles('ADMIN')
-  @Post(rpcRoute('admin', 'reservationLimits', 'update'))
-  updateSettings(
-    @Req() request: Request,
-    @Res() response: Response,
-    @CurrentUser() user: AuthenticatedUser
-  ): Promise<void> {
-    return this.rpc.handle(request, response, user);
+  @RpcRoute('admin', 'reservationLimits', 'update')
+  updateSettings(): Promise<void> {
+    throw new Error('replaced by @RpcRoute');
   }
 }

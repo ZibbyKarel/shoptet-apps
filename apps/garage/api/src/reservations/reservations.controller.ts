@@ -19,15 +19,13 @@
  * next to the service that owns them.
  */
 
-import { Controller, Post, Req, Res } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import { Controller } from '@nestjs/common';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import type { AuthenticatedUser } from '../auth/authenticated-user';
-import { CurrentUser } from '../auth/current-user.decorator';
 import { Roles } from '../auth/roles.decorator';
 import { implementer } from '../orpc/implementer';
 import { RpcRouteHandler } from '../orpc/rpc-route-handler';
-import { RPC_ROUTE_PREFIX, rpcRoute } from '../orpc/rpc-route';
+import { RPC_ROUTE_PREFIX } from '../orpc/rpc-route';
+import { RpcRoute } from '../orpc/rpc-route.decorator';
 import { ReservationsService } from './reservations.service';
 
 @Controller(RPC_ROUTE_PREFIX)
@@ -63,40 +61,24 @@ export class ReservationsController {
     );
   }
 
-  @Post(rpcRoute('reservation', 'create'))
-  createReservation(
-    @Req() request: Request,
-    @Res() response: Response,
-    @CurrentUser() user: AuthenticatedUser
-  ): Promise<void> {
-    return this.rpc.handle(request, response, user);
+  @RpcRoute('reservation', 'create')
+  createReservation(): Promise<void> {
+    throw new Error('replaced by @RpcRoute');
   }
 
-  @Post(rpcRoute('reservation', 'cancel'))
-  cancelReservation(
-    @Req() request: Request,
-    @Res() response: Response,
-    @CurrentUser() user: AuthenticatedUser
-  ): Promise<void> {
-    return this.rpc.handle(request, response, user);
+  @RpcRoute('reservation', 'cancel')
+  cancelReservation(): Promise<void> {
+    throw new Error('replaced by @RpcRoute');
   }
 
-  @Post(rpcRoute('reservation', 'myMonth'))
-  myMonthReservations(
-    @Req() request: Request,
-    @Res() response: Response,
-    @CurrentUser() user: AuthenticatedUser
-  ): Promise<void> {
-    return this.rpc.handle(request, response, user);
+  @RpcRoute('reservation', 'myMonth')
+  myMonthReservations(): Promise<void> {
+    throw new Error('replaced by @RpcRoute');
   }
 
   @Roles('ADMIN')
-  @Post(rpcRoute('admin', 'reservation', 'month'))
-  adminUserMonthReservations(
-    @Req() request: Request,
-    @Res() response: Response,
-    @CurrentUser() user: AuthenticatedUser
-  ): Promise<void> {
-    return this.rpc.handle(request, response, user);
+  @RpcRoute('admin', 'reservation', 'month')
+  adminUserMonthReservations(): Promise<void> {
+    throw new Error('replaced by @RpcRoute');
   }
 }

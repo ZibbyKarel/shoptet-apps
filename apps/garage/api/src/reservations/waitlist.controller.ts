@@ -7,14 +7,12 @@
  * and there never will be: promotion is not something a client can ask for.
  */
 
-import { Controller, Post, Req, Res } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import { Controller } from '@nestjs/common';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import type { AuthenticatedUser } from '../auth/authenticated-user';
-import { CurrentUser } from '../auth/current-user.decorator';
 import { implementer } from '../orpc/implementer';
 import { RpcRouteHandler } from '../orpc/rpc-route-handler';
-import { RPC_ROUTE_PREFIX, rpcRoute } from '../orpc/rpc-route';
+import { RPC_ROUTE_PREFIX } from '../orpc/rpc-route';
+import { RpcRoute } from '../orpc/rpc-route.decorator';
 import { WaitlistService } from './waitlist.service';
 
 @Controller(RPC_ROUTE_PREFIX)
@@ -40,21 +38,13 @@ export class WaitlistController {
     );
   }
 
-  @Post(rpcRoute('waitlist', 'join'))
-  joinWaitlist(
-    @Req() request: Request,
-    @Res() response: Response,
-    @CurrentUser() user: AuthenticatedUser
-  ): Promise<void> {
-    return this.rpc.handle(request, response, user);
+  @RpcRoute('waitlist', 'join')
+  joinWaitlist(): Promise<void> {
+    throw new Error('replaced by @RpcRoute');
   }
 
-  @Post(rpcRoute('waitlist', 'leave'))
-  leaveWaitlist(
-    @Req() request: Request,
-    @Res() response: Response,
-    @CurrentUser() user: AuthenticatedUser
-  ): Promise<void> {
-    return this.rpc.handle(request, response, user);
+  @RpcRoute('waitlist', 'leave')
+  leaveWaitlist(): Promise<void> {
+    throw new Error('replaced by @RpcRoute');
   }
 }
