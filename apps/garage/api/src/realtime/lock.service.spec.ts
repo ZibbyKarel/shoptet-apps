@@ -15,7 +15,7 @@ import { ConfigService } from '@nestjs/config';
 import type { UserSummary } from '@garage/contract';
 import type { ApiEnv } from '../env';
 import type { LockCell } from './lock.service';
-import { InMemoryLockService } from './lock.service';
+import { LockService } from './lock.service';
 
 const TTL_MS = 30_000;
 
@@ -39,7 +39,7 @@ const BOB: UserSummary = {
   licensePlate: null,
 };
 
-function buildService(ttlMs = TTL_MS): InMemoryLockService {
+function buildService(ttlMs = TTL_MS): LockService {
   // The real `ConfigService.get` shape, because that is how the service reads
   // its TTL — a hand-written `{ ttlMs }` would test a constructor this class
   // does not have.
@@ -49,11 +49,11 @@ function buildService(ttlMs = TTL_MS): InMemoryLockService {
       return ttlMs;
     },
   } as unknown as ConfigService<ApiEnv, true>;
-  return new InMemoryLockService(configService);
+  return new LockService(configService);
 }
 
-describe('InMemoryLockService', () => {
-  let service: InMemoryLockService;
+describe('LockService', () => {
+  let service: LockService;
 
   beforeEach(() => {
     jest.useFakeTimers();

@@ -9,18 +9,20 @@
  * may therefore be relied on for correctness of the reservation itself — the
  * unique indexes are what enforce that (`doc/database.md`).
  *
- * ## Why an abstract class with one in-memory implementation
+ * ## Why one concrete class, no abstraction for Redis
  *
  * The MVP is a single instance (global constraint 8), so a `Map` in this
- * process *is* the whole truth about who is editing what. What this abstraction
- * buys is not indirection for its own sake: it is the one seam that has to
- * exist for the multi-instance upgrade to be a new class rather than a rewrite
- * of the gateway. See {@link LockService} for the Redis shape each method maps
- * onto, and `doc/realtime.md` §"Single instance" for the whole upgrade path.
- *
- * **Redis is deliberately not implemented.** An unused implementation is an
- * untested one, and this project has already paid for claims that were reasoned
- * rather than exercised.
+ * process *is* the whole truth about who is editing what. `plan.md` puts a
+ * multi-instance deployment (and the Redis lock this class would need then)
+ * explicitly out of scope, and there is no second implementation to type-check
+ * a seam against — so this is a plain `@Injectable()` class rather than an
+ * interface with one implementation. See `doc/realtime.md` §"Single instance"
+ * for the upgrade path if that constraint ever changes: every method below has
+ * a Redis equivalent (`SET NX PX` for {@link acquire}, a Lua compare-and-delete
+ * for {@link release}, a per-socket key set for {@link releaseSocket}, keyspace
+ * notifications for {@link onExpired}), but an unimplemented Redis class would
+ * be untested code kept "because it costs nothing to keep" — this project has
+ * already paid for claims that were reasoned rather than exercised.
  *
  * ## Ownership is by user, not by socket — and both are tracked
  *
@@ -103,85 +105,6 @@ export interface LockGrant {
 /** Told when a hold lapses on its own, so the gateway can broadcast it. */
 export type LockExpiryListener = (cell: LockCell, holder: UserSummary) => void;
 
-/**
- * Where editing holds live.
- *
- * ## The upgrade path, method by method
- *
- * A second instance makes this `Map` wrong rather than slow: two users on two
- * instances would both be granted the same cell. The replacement is Redis, and
- * every method below already has its Redis equivalent — which is the point of
- * the interface existing before there is a second implementation:
- *
- * | this interface | Redis |
- * | --- | --- |
- * | {@link acquire} (new) | `SET cell <holder> NX PX <ttl>` |
- * | {@link acquire} (renewal) | the same `SET` with `XX`, guarded by a Lua compare on the holder |
- * | {@link release} | Lua: `GET` the cell, `DEL` only if the holder **and its socket** match |
- * | {@link releaseSocket} | a `SET` of cell keys per socket id, walked on disconnect |
- * | {@link onExpired} | keyspace notifications (`Ex`) on the lock key prefix |
- *
- * `SET NX PX` is what makes the compare-and-set atomic across instances; the
- * Lua guard on release is what stops one instance dropping another's hold after
- * a TTL lapse and re-acquisition in between. Neither is needed here, because a
- * single Node process runs this class's methods to completion without
- * interleaving — an in-process `Map` is *already* atomic in the only sense that
- * matters. That is why the in-memory implementation is not "the Redis one
- * without the network": it is a genuinely simpler thing, and pretending
- * otherwise would be the kind of abstraction that costs without paying.
- *
- * The expiry listener is the seam that would need the most care under Redis:
- * keyspace notifications are best-effort, so a multi-instance deployment would
- * pair them with a sweep. Recorded here rather than built —
- * `doc/realtime.md` §"Single instance".
- */
-export abstract class LockService {
-  /** How long a fresh or renewed hold lasts. Read by the gateway for nothing but its logs. */
-  abstract readonly ttlMs: number;
-
-  /**
-   * Takes the hold, or extends it if the caller already has it.
-   *
-   * Idempotent for the current holder by design: the contract has no separate
-   * heartbeat command, so a renewal *is* a second `cell:lock`.
-   */
-  abstract acquire(cell: LockCell, requester: LockRequester): LockGrant;
-
-  /**
-   * Gives a hold back. Returns `true` only if this **connection** is the one
-   * currently holding the cell — the same `(user, socketId)` pair
-   * {@link acquire} last recorded.
-   *
-   * A `false` is not an error worth telling the client about — the three ways
-   * to get one are a client releasing a hold that already lapsed, a client
-   * releasing a cell somebody else holds, and a *superseded* connection of the
-   * holder releasing a hold its user has since re-taken elsewhere. The first is
-   * routine; the second is a client disagreeing with the contract; the third is
-   * the one this signature exists for, and in all three the answer is to do
-   * nothing, which is what returning `false` causes.
-   */
-  abstract release(cell: LockCell, requester: LockRequester): boolean;
-
-  /**
-   * Frees every hold whose *current* connection is this one. Returns the cells
-   * that were actually freed, so the gateway can broadcast `cell:unlocked` for
-   * each — the guarantee `libs/garage/realtime-client` relies on when it says "a
-   * dropped socket drops the server's lock with it".
-   */
-  abstract releaseSocket(socketId: string): LockCell[];
-
-  /**
-   * Registers a listener for holds that lapse on their own.
-   *
-   * **This is load-bearing, not bookkeeping.** `useCellLock` puts a contended
-   * cell into `held-by-other` and then *sits still* — it deliberately does not
-   * poll — so a hold that lapses with no broadcast leaves every other client
-   * showing "právě upravuje …" for a user who closed their laptop. See
-   * `doc/decision/0111-*`.
-   */
-  abstract onExpired(listener: LockExpiryListener): void;
-}
-
 /** One live hold. */
 interface HeldLock {
   readonly cell: LockCell;
@@ -203,18 +126,27 @@ function cellKey(cell: LockCell): string {
   return `${cell.date}|${cell.parkingSpotId}`;
 }
 
+/**
+ * Where editing holds live: an in-process `Map`, TTL'd and swept per hold.
+ */
 @Injectable()
-export class InMemoryLockService extends LockService implements OnModuleDestroy {
+export class LockService implements OnModuleDestroy {
+  /** How long a fresh or renewed hold lasts. Read by the gateway for nothing but its logs. */
   readonly ttlMs: number;
 
   private readonly locks = new Map<string, HeldLock>();
   private readonly expiryListeners: LockExpiryListener[] = [];
 
   constructor(configService: ConfigService<ApiEnv, true>) {
-    super();
     this.ttlMs = configService.get('REALTIME_LOCK_TTL_MS', { infer: true });
   }
 
+  /**
+   * Takes the hold, or extends it if the caller already has it.
+   *
+   * Idempotent for the current holder by design: the contract has no separate
+   * heartbeat command, so a renewal *is* a second `cell:lock`.
+   */
   acquire(cell: LockCell, requester: LockRequester): LockGrant {
     const key = cellKey(cell);
     const existing = this.locks.get(key);
@@ -253,6 +185,19 @@ export class InMemoryLockService extends LockService implements OnModuleDestroy 
     return { outcome: 'ACQUIRED', holder: requester.user, expiresAt: new Date(expiresAt) };
   }
 
+  /**
+   * Gives a hold back. Returns `true` only if this **connection** is the one
+   * currently holding the cell — the same `(user, socketId)` pair
+   * {@link acquire} last recorded.
+   *
+   * A `false` is not an error worth telling the client about — the three ways
+   * to get one are a client releasing a hold that already lapsed, a client
+   * releasing a cell somebody else holds, and a *superseded* connection of the
+   * holder releasing a hold its user has since re-taken elsewhere. The first is
+   * routine; the second is a client disagreeing with the contract; the third is
+   * the one this signature exists for, and in all three the answer is to do
+   * nothing, which is what returning `false` causes.
+   */
   release(cell: LockCell, requester: LockRequester): boolean {
     const key = cellKey(cell);
     const existing = this.locks.get(key);
@@ -272,6 +217,12 @@ export class InMemoryLockService extends LockService implements OnModuleDestroy 
     return true;
   }
 
+  /**
+   * Frees every hold whose *current* connection is this one. Returns the cells
+   * that were actually freed, so the gateway can broadcast `cell:unlocked` for
+   * each — the guarantee `libs/garage/realtime-client` relies on when it says "a
+   * dropped socket drops the server's lock with it".
+   */
   releaseSocket(socketId: string): LockCell[] {
     const released: LockCell[] = [];
     for (const [key, lock] of this.locks) {
@@ -288,6 +239,15 @@ export class InMemoryLockService extends LockService implements OnModuleDestroy 
     return released;
   }
 
+  /**
+   * Registers a listener for holds that lapse on their own.
+   *
+   * **This is load-bearing, not bookkeeping.** `useCellLock` puts a contended
+   * cell into `held-by-other` and then *sits still* — it deliberately does not
+   * poll — so a hold that lapses with no broadcast leaves every other client
+   * showing "právě upravuje …" for a user who closed their laptop. See
+   * `doc/decision/0111-*`.
+   */
   onExpired(listener: LockExpiryListener): void {
     this.expiryListeners.push(listener);
   }

@@ -54,11 +54,11 @@ const SECRETS = ['icsToken', 'email', 'oktaId', 'role', 'active', 'preferredPark
  * middle of this one would only make it flaky.
  */
 class LeakyLockService extends LockService {
-  readonly ttlMs = 30_000;
+  override readonly ttlMs = 30_000;
 
   private readonly held = new Map<string, UserSummary>();
 
-  acquire(cell: LockCell, requester: LockRequester): LockGrant {
+  override acquire(cell: LockCell, requester: LockRequester): LockGrant {
     const key = `${cell.date}|${cell.parkingSpotId}`;
     const holder = this.held.get(key);
     const expiresAt = new Date(Date.now() + this.ttlMs);
@@ -82,15 +82,15 @@ class LeakyLockService extends LockService {
     return { outcome: 'ACQUIRED', holder: fat, expiresAt };
   }
 
-  release(): boolean {
+  override release(): boolean {
     return true;
   }
 
-  releaseSocket(): LockCell[] {
+  override releaseSocket(): LockCell[] {
     return [];
   }
 
-  onExpired(): void {
+  override onExpired(): void {
     // Nothing lapses in this spec.
   }
 }

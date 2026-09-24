@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
-import { InMemoryLockService, LockService } from './lock.service';
+import { LockService } from './lock.service';
 import { RealtimeHandshakeAuthenticator } from './realtime-handshake';
 import { RealtimeGateway } from './realtime.gateway';
 import { RealtimeDomainEventPublisher } from './realtime.publisher';
@@ -38,10 +38,7 @@ import { RealtimeDomainEventPublisher } from './realtime.publisher';
 @Module({
   imports: [AuthModule],
   providers: [
-    // The abstract class is the injection token, so a replacement — the Redis
-    // implementation, if this ever stops being a single instance — cannot
-    // silently have the wrong shape.
-    { provide: LockService, useClass: InMemoryLockService },
+    LockService,
     // Not exported: who may connect is this module's own business, and the
     // gateway is the only thing that installs it.
     RealtimeHandshakeAuthenticator,
