@@ -89,8 +89,6 @@ export interface SignOutRegistry {
   readonly revoke: (token: RevocableToken) => void;
   /** True when this session has signed out, or cannot be identified at all. */
   readonly isRevoked: (token: RevocableToken) => boolean;
-  /** Number of sessions currently held as revoked. For tests and diagnostics. */
-  readonly size: () => number;
 }
 
 export interface SignOutRegistryOptions {
@@ -290,7 +288,5 @@ export function createSignOutRegistry(options: SignOutRegistryOptions): SignOutR
       if (subject === undefined || subject === '') return true;
       return revoked.has(subject);
     },
-
-    size: () => revoked.size,
   };
 }

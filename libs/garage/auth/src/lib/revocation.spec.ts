@@ -88,7 +88,7 @@ describe('createSignOutRegistry', () => {
 
     registry.revoke({});
 
-    expect(registry.size()).toBe(0);
+    expect(registry.isRevoked({ sub: SESSION_A })).toBe(false);
   });
 
   it('is idempotent', () => {
@@ -97,7 +97,6 @@ describe('createSignOutRegistry', () => {
     registry.revoke({ sub: SESSION_A });
     registry.revoke({ sub: SESSION_A });
 
-    expect(registry.size()).toBe(1);
     expect(registry.isRevoked({ sub: SESSION_A })).toBe(true);
   });
 
@@ -107,14 +106,14 @@ describe('createSignOutRegistry', () => {
   it('drops a revocation once the retention window has closed', () => {
     const { registry, setNow } = registryAt(1000);
     registry.revoke({ sub: SESSION_A });
-    expect(registry.size()).toBe(1);
+    expect(registry.isRevoked({ sub: SESSION_A })).toBe(true);
 
     // Pruning happens on write, so a later sign-out by anyone is what sweeps.
     setNow(1000 + RETENTION);
     registry.revoke({ sub: SESSION_B });
 
-    expect(registry.size()).toBe(1);
     expect(registry.isRevoked({ sub: SESSION_A })).toBe(false);
+    expect(registry.isRevoked({ sub: SESSION_B })).toBe(true);
   });
 
   it('keeps a revocation for the whole retention window', () => {
