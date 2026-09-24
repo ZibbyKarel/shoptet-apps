@@ -1,5 +1,9 @@
 # TODO
 
-1. [x] pokud admin dělá hromadnou rezervaci pro jiného uživatele je možné momentálně vybrat více než 5 dní. Omezení na 5 parkovacích míst za měsíc se musí vztahovat k vybrenému uživateli a né k přihlášenému v tomto případě. (main@75afa3c)
+1. [ ] Admin musí mít možnost pro hosta vytvořit rezervaci na nějaké místo v půlhodinnových blocích. Zároveň u každého místa musí být vidět, na jaké časy je zarezervované. Na takové místo pak nemůže jít vytvořit rezervace na celý den.
 
-2. [x] musíme v rámci administrátorské sekce dovolit adminovi definovat kolik rezervací může jeden uživatel za měsíc vytvořit. Defaultně máme teď 5 na měsíc ale bude to možné měnit. Všechna místa, kde se momentálně kontroluje počet rezervací za měsíc pak tuto hodnotu musí konzumovat. (main@6bbb463)
+2. [ ] Potřebujeme upravit fungování systému. Celkový počet míst, které je uživatel schopen si zarezervovat je prakticky neomezený. Omezený je jen v časovém okně, které definuje admin (tedy defaultně týden před začátkem nového měsíce). Důvodem je, aby si jeden uživatel nezabral na celý měsíc dopředu místo. V časech mimo rezervační okno si pak uživatel může rezervovat místa další pokud nějaká zbyla
+
+3. [ ] Admin musí mít možnost nějaké místo označit jako skryté - tedy vidí jej jen admini
+
+4. [ ] Některá parkovací místa mají nabíječku na elektromobily. Admin musí mít možnost to u parkovacího místa nastavit + u parkovacího místa, které má elektro nabíječku se bude zobrazovat symbol pro elektronabíječky (takový ten zelený blesk)
